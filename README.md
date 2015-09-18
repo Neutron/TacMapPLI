@@ -11,7 +11,6 @@ TacMap is a browser based track visualizaton tool
 *  Cesium Web Map
 *  AngularJS Framework
 *  HTML5 IndexedDb
-*  SAXON CE XSLT library
 *  Node.js
 *  SocketIO
 
