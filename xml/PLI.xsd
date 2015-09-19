@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:complexType name="PositionLocationInformationType">
+        <xs:sequence>
+            <xs:element name="EnityInfo" type="EntityInformationType"/>
+            <xs:element name="GeoLoc" type="GeographicLocationType"/>
+            <xs:element name="NetLoc" type="NetworkLocationType"/>
+            <xs:element name="OrgLoc" type="OrganizationLocationType"/>
+            <xs:element name="RelativeLoc" type="RelativeLocationType"/>
+            <xs:element name="InterfaceLoc" type="InterfaceLocationType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="EntityInformationType">
+        <xs:sequence>
+            <xs:element name="Info">
+                <xs:complexType>
+                    <xs:attribute name="identifier" use="required"/>
+                    <xs:attribute name="fullname"/>
+                    <xs:attribute name="shortname"/>
+                    <xs:attribute name="description"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Icon" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Src">
+                            <xs:complexType>
+                                <xs:attribute name="iconurl"/>
+                                <xs:attribute name="iconbinary"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element minOccurs="0" name="Info">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                                <xs:attribute name="code"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="EntityType">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="Structure">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Village">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Town">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="City">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="County">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Region">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Country">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Vehicle">
+                            <xs:complexType>
+                                <xs:attribute name="id"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Convoy">
+                            <xs:complexType>
+                                <xs:attribute name="id"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Group">
+                            <xs:complexType>
+                                <xs:attribute name="id"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Unit">
+                            <xs:complexType>
+                                <xs:attribute name="id"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="GeographicLocationType">
+        <xs:choice>
+            <xs:element name="Cartesian">
+                <xs:complexType>
+                    <xs:attribute name="abscissa"/>
+                    <xs:attribute name="ordinate"/>
+                    <xs:attribute name="elevation"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Geographic">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="Numeric">
+                            <xs:complexType>
+                                <xs:attribute name="latitude"/>
+                                <xs:attribute name="longitude"/>
+                                <xs:attribute name="altitude"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="DegMinSec">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="Latitude">
+                                        <xs:complexType>
+                                            <xs:attribute name="degrees"/>
+                                            <xs:attribute name="minutes"/>
+                                            <xs:attribute name="seconds"/>
+                                            <xs:attribute name="direction"/>
+                                            <xs:attribute name="altitude"/>
+                                        </xs:complexType>
+                                    </xs:element>
+                                    <xs:element name="Longitude">
+                                        <xs:complexType>
+                                            <xs:attribute name="degrees"/>
+                                            <xs:attribute name="minutes"/>
+                                            <xs:attribute name="seconds"/>
+                                            <xs:attribute name="direction"/>
+                                            <xs:attribute name="altitude"/>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Grid">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="UTM">
+                            <xs:complexType>
+                                <xs:attribute name="utm-zone"/>
+                                <xs:attribute name="easting"/>
+                                <xs:attribute name="northing"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="MGRS">
+                            <xs:complexType>
+                                <xs:attribute name="grid-zone"/>
+                                <xs:attribute name="grid-square"/>
+                                <xs:attribute name="numerical-location"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="NetworkLocationType">
+        <xs:sequence>
+            <xs:element maxOccurs="unbounded" name="Profile">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="IPinfo">
+                            <xs:complexType>
+                                <xs:attribute name="address"/>
+                                <xs:attribute name="broadcast"/>
+                                <xs:attribute name="subnetmask"/>
+                                <xs:attribute name="gateway"/>
+                                <xs:attribute name="dns1"/>
+                                <xs:attribute name="dns2"/>
+                                <xs:attribute name="dns3"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="URL">
+                            <xs:complexType>
+                                <xs:attribute name="server"/>
+                                <xs:attribute name="client"/>
+                                <xs:attribute name="default"/>
+                                <xs:attribute name="error"/>
+                                <xs:attribute name="info"/>
+                                <xs:attribute name="identity"/>
+                                <xs:attribute name="access"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="name"/>
+                    <xs:attribute name="description"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="OrganizationLocationType">
+        <xs:sequence>
+            <xs:element name="Parent" type="EntityInformationType"/>
+            <xs:element maxOccurs="unbounded" name="SubUnits" type="EntityInformationType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="RelativeLocationType">
+        <xs:sequence>
+            <xs:element name="Entity" type="EntityInformationType"/>
+            <xs:element name="LocationInfo">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="StreetAddress">
+                            <xs:complexType>
+                                <xs:attribute name="number"/>
+                                <xs:attribute name="streetname"/>
+                                <xs:attribute name="appartment"/>
+                                <xs:attribute name="city"/>
+                                <xs:attribute name="state"/>
+                                <xs:attribute name="country"/>
+                                <xs:attribute name="zoneid"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Level">
+                            <xs:complexType>
+                                <xs:attribute name="number"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="RoomNumber">
+                            <xs:complexType>
+                                <xs:attribute name="number"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="SeatNumber">
+                            <xs:complexType>
+                                <xs:attribute name="number"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="VehicleId">
+                            <xs:complexType>
+                                <xs:attribute name="identifier"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="VesselId">
+                            <xs:complexType>
+                                <xs:attribute name="identifier"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="InterfaceLocationType">
+        <xs:choice>
+            <xs:element name="Device">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="Mobile">
+                            <xs:complexType>
+                                <xs:attribute name="type"/>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Computer">
+                            <xs:complexType>
+                                <xs:attribute name="type"/>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Laptop">
+                            <xs:complexType>
+                                <xs:attribute name="type"/>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Virtual">
+                            <xs:complexType>
+                                <xs:attribute name="type"/>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Embedded">
+                            <xs:complexType>
+                                <xs:attribute name="type"/>
+                                <xs:attribute name="name"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Service">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="Web">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                                <xs:attribute name="url"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="File">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                                <xs:attribute name="url"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="Stream">
+                            <xs:complexType>
+                                <xs:attribute name="name"/>
+                                <xs:attribute name="url"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:element name="PositionLocationInformation" type="PositionLocationInformationType"/>
+    <xs:element name="EnityInfo" type="EntityInformationType"/>
+    <xs:element name="GeoLoc" type="GeographicLocationType"/>
+    <xs:element name="NetLoc" type="NetworkLocationType"/>
+    <xs:element name="OrgLoc" type="OrganizationLocationType"/>
+    <xs:element name="RelativeLoc" type="RelativeLocationType"/>
+    <xs:element name="InterfaceLoc" type="InterfaceLocationType"/>
+</xs:schema>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Icons>
+    <Icon type="bluedot" path="img/bluedot.png"/>
+    <Icon type="car" path="img/car.png"/>
+    <Icon type="tacicon" path="img/tacicon.png"/>
+    <Icon type="usflag" path="img/usflag.png"/>
+    <Icon type="marker" path="img/marker.png"/>
+</Icons>

@@ -30,19 +30,10 @@ app.use(express.static(__dirname + '/public'));
 app.use(compression());
 
 app.get('/', function (req, res) {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/public/geoview.html');
 });
-
-app.get('/server', function (req, res) {
-    res.sendFile(__dirname + '/public/server.html');
-});
-
-app.get('/unit', function (req, res) {
-    res.sendFile(__dirname + '/public/unit.html');
-});
-
 app.get('/json/*', function (req, res) {
-    res.sendFile(__dirname + '/public' + req.url);
+    res.sendFile(__dirname + '/' + req.url);
 });
 
 app.post('/json/*', function (req, res) {
@@ -59,10 +50,15 @@ app.put('/json/*', function (req, res) {
     });
 });
 
+
+app.get('/xml/*', function (req, res) {
+    res.sendFile(__dirname + '/' + req.url);
+});
+
 app.put('/xml/*', function (req, res) {
     console.log("Put " + req.url);
     console.log(req.body);
-    fs.writeFile(__dirname + '/public' + req.url, req.body, function () {
+    fs.writeFile(__dirname + '/' + req.url, req.body, function () {
         res.end();
     });
 });
@@ -86,7 +82,7 @@ server.listen(server_port, server_ip_address, function () {
 var missionid = "Default Mission";
 var missiondata = [];
 var servers = [];
-var units = [];
+var users = [];
 var allconnections = [];
 var missionRunning = false;
 
@@ -99,7 +95,7 @@ io.on('connection', function (socket) {
         console.log(i.id + " disconnected");
         delete allconnections[i];
     });
-    // Use socket to communicate with this particular unit only, sending it it's own id
+    // Use socket to communicate with this particular user only, sending it it's own id
     socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
 
     socket.on('server connected', function (data) {
@@ -115,19 +111,19 @@ io.on('connection', function (socket) {
             io.emit('start mission');
         }
     });
-    socket.on('unit connected', function (data) {
-        console.log("units connect: " + data.id + " set mission: " + missionid);
-        units.push({unit: data.id});
-        io.emit('unit connected', {missionid: missionid, missiondata: missiondata});
+    socket.on('user connected', function (data) {
+        console.log("users connect: " + data.id + " set mission: " + missionid);
+        users.push({user: data.id});
+        io.emit('user connected', {missionid: missionid, missiondata: missiondata});
     });
     socket.on('send msg', function (data) {
-        console.log('send msg from ' + data.message.unit + ' to ' + data.net);
+        console.log('send msg from ' + data.message.user + ' to ' + data.net);
         socket.to(data.net).emit('msg sent', data);
     });
-    socket.on('unit join', function (data) {
-        //console.log(data.unitid + ' joined ' + data.netname);
+    socket.on('user join', function (data) {
+        //console.log(data.userid + ' joined ' + data.netname);
         socket.join(data.netname);
-        io.emit('unit joined', {unitid: data.unitid, netname: data.netname});
+        io.emit('user joined', {userid: data.userid, netname: data.netname});
     });
     socket.on('server join', function (data) {
         //console.log(data.serverid + ' joined ' + data.netname);
@@ -139,10 +135,10 @@ io.on('connection', function (socket) {
         socket.leave(data.netname);
         io.emit('server left', {serverid: data.serverid, netname: data.netname});
     });
-    socket.on('unit leave', function (data) {
-        //console.log(data.unitid + ' left ' + data.netname);
+    socket.on('user leave', function (data) {
+        //console.log(data.userid + ' left ' + data.netname);
         socket.leave(data.netname);
-        io.emit('unit left', {unitid: data.unitid, netname: data.netname});
+        io.emit('user left', {userid: data.userid, netname: data.netname});
     });
     socket.on('add entity', function (data) {
         console.log("emit add entity: " + data._id);
@@ -152,7 +148,7 @@ io.on('connection', function (socket) {
         console.log("set mission: " + data.missionid);
         missionid = data.missionid;
         missiondata = data.missiondata;
-        io.emit('set mission', {target: "unit", missionid: missionid, missiondata: missiondata});
+        io.emit('set mission', {target: "user", missionid: missionid, missiondata: missiondata});
     });
     socket.on('mission running', function () {
         missionRunning = true;
