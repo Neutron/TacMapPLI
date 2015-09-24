@@ -1,310 +1,68 @@
 /* global resources */
 // ***** SERVER CONTROLLERS ******//
-TacMapServer.controller('storeCtl', function ($indexedDB, $scope, $http, GeoService, MsgService, DlgBx) {
+TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoService, MsgService, DlgBx) {
     var stctl = this;
+    stctl.maplist = [{
+            id: 0, name: 'Default Map'
+        }];
+    stctl.map = [];
+    stctl.currmap = [];
+    $scope.selmap = stctl.maplist[0];
     console.log("storeCtl");
-    stctl.xj = new X2JS();
-    var dB = $indexedDB;
-    var ellipsoid = scene.globe.ellipsoid;
-    stctl.trackselected = [];
-    stctl.graphicselected = [];
-    stctl.currmission = [];
-    stctl.editchecked = false;
-    stctl.editlocchecked = false;
-    stctl.import = false;
-    //
-    stctl.entities = [];
-    stctl.tracks = [];
-    stctl.mission = [];
-    stctl.missionlist = [];
-    stctl.polypoints = [];
-    stctl.loc = [];
-    stctl.showPP = true;
-    $scope.selmission = {
-        id: 0, name: 'Default Mission'
-    };
-    //
-    stctl.lftClickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
-    stctl.lftClickHandler.setInputAction(function (mouse) {
-        var pickedObject = scene.pick(mouse.position);
-        if (Cesium.defined(pickedObject) && pickedObject.id.position !== undefined && pickedObject.id.billboard) {
-            stctl.selectUnit(pickedObject.id);
-        } else {
-            stctl.loc = [];
-            stctl.trackselected = null;
-            $scope.$apply();
-        }
-    },
-            Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    stctl.rtClickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
-    stctl.rtClickHandler.setInputAction(function (mouse) {
-        //console.log("edit: " + stctl.editchecked);
-        var cartesian = viewer.camera.pickEllipsoid(mouse.position, ellipsoid);
-        if (stctl.editchecked && cartesian && stctl.trackselected !== null) {
-            //console.log("trackselected: " + stctl.trackselected._id);
-            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
-            stctl.addPolypoint(stctl.loc, Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
-        }
-        if (stctl.editlocchecked && cartesian && stctl.trackselected !== null) {
-            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
-            stctl.setLocation(stctl.trackselected, Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
-        }
-    },
-            Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-
-    stctl.selectUnit = function (u, zoomto) {
-        stctl.trackselected = GeoService.sdatasources[$scope.selmission.name].entities.getById(u._id);
-        stctl.trackselectedid = stctl.trackselected._id;
-        stctl.loc = stctl.getLoc(stctl.trackselected);
-        if (zoomto) {
-            GeoService.sdatasources[$scope.selmission.name].selectedEntity = stctl.trackselected;
-            viewer.selectedEntity = stctl.trackselected;
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(stctl.loc[1], stctl.loc[0], 10000.0),
-                duration: 1
-            });
-        } else {
-            $scope.$apply();
-        }
-    };
-    stctl.selectPolygon = function (p, zoomto) {
-        stctl.polyselected = GeoService.sdatasources[$scope.selmission.name].entities.getById(p._id);
-        stctl.polyselectedid = stctl.polyselected._id;
-        stctl.loc = stctl.getLoc(stctl.polyselected);
-        if (zoomto) {
-            GeoService.sdatasources[$scope.selmission.name].selectedEntity = stctl.polyselected;
-            viewer.selectedEntity = stctl.polyselected;
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(stctl.loc[1], stctl.loc[0], 10000.0),
-                duration: 1
-            });
-        } else {
-            $scope.$apply();
-        }
-    };
-
-    stctl.getLoc = function (entity) {
-        var cartesian = entity.position.getValue();
-        var cartographic = ellipsoid.cartesianToCartographic(cartesian);
-        var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
-        var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
-        entity.description = "Location: " + latitudeString + ", " + longitudeString;
-        return ([latitudeString, longitudeString]);
-    };
-
-    stctl.setLocation = function (entity, lat, lng) {
-        if (entity !== null) {
-            GeoService.sdatasources[$scope.selmission.name].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
-            stctl.removeAllPp();
-            stctl.updateDb(entity._id, '_location', lat + "," + lng);
-            stctl.selectUnit(entity);
-        } else {
-
-        }
-    };
-    //
-    stctl.addTrack = function (lat, lng) {
-        console.log("addUnit");
-        DlgBx.prompt("No Track Selected .. Enter Name to Create Track", "").then(function (trackname) {
-            var overwrite = null;
-            var overwriteid = null;
-            for (n = 0; n < stctl.missionlist.length - 1; n++) {
-                if (newname === stctl.missionlist[n].value) {
-                    overwrite = stctl.missionlist[n].value;
-                    overwriteid = stctl.missionlist[n].value;
-                }
-            }
-            if (overwrite !== null) {
-                DlgBx.confirm("This Action will Overwrite Mission", overwrite).then(function (yes) {
-                    if (yes) {
-                        console.log("Save " + overwrite);
-                        stctl.overwriteMission(overwrite);
-                        stctl.currmission = currentmission;
-                        stctl.loadMission({
-                            id: overwriteid, name: overwrite
-                        });
-                    }
-                });
-            } else {
-                console.log("Save " + newname);
-                stctl.copyMission($scope.selmission.name, newname);
-                stctl.missionlist.push({
-                    id: stctl.missionlist.length - 1, name: newname
-                });
-                stctl.currmission = currentmission;
-                stctl.loadMission(stctl.missionlist[stctl.missionlist.length - 1]);
-            }
-        });
-    };
-    stctl.addPolypoint = function (startpt, lat, lng) {
-        if (GeoService.polypoints[stctl.polyselected._id]) {
-            stctl.polypoints[stctl.polyselected._id] = GeoService.polypoints[stctl.polyselected._id];
-        }
-        if (!stctl.polypoints[stctl.polyselected._id]) {
-            stctl.polypoints[stctl.polyselected._id] = [];
-            stctl.polypoints[stctl.polyselected._id].push([startpt[0], startpt[1]]);
-        }
-        if (stctl.polypoints[stctl.polyselected._id].length === 0) {
-            stctl.polypoints[stctl.polyselected._id].push([startpt[0], startpt[1]]);
-        }
-        stctl.polypoints[stctl.polyselected._id].push([lat, lng]);
-        GeoService.polypoints[stctl.polyselected._id] = stctl.polypoints[stctl.polyselected._id];
-        var obj = stctl.polypoints[stctl.polyselected._id];
-        var len = obj.length;
-        //console.log("len: " + len);
-        if (len > 1) {
-            var arr = [obj[len - 2][1], obj[len - 2][0], obj[len - 1][1], obj[len - 1][0]];
-            GeoService.ppdatasources[$scope.selmission.name].entities.add({
-                id: stctl.polyselected._id + 'PP' + stctl.polypoints[stctl.polyselected._id].length,
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(arr),
-                    width: 1,
-                    material: Cesium.Color.LIGHTYELLOW
-                }
-            });
-            stctl.updateDb(stctl.polyselected._id, "polypoints", stctl.polypoints[stctl.polyselected._id]);
-        }
-    };
-    stctl.removeLastPp = function () {
-        stctl.polypoints[stctl.polyselected._id] = GeoService.polypoints[stctl.polyselected._id];
-        if (stctl.polypoints[stctl.polyselected._id]) {
-            if (stctl.polyselected && stctl.polypoints[stctl.polyselected._id].length > 1) {
-                console.log("Remove Polypoint " + stctl.polyselected._id + 'PP' + stctl.polypoints[stctl.polyselected._id].length);
-                GeoService.ppdatasources[$scope.selmission.name].entities.removeById(stctl.polyselected._id + 'PP' + stctl.polypoints[stctl.polyselected._id].length);
-                stctl.polypoints[stctl.polyselected._id].splice(-1, 1);
-                GeoService.polypoints[stctl.polyselected._id] = stctl.PP[stctl.polyselected._id];
-                stctl.updateDb(stctl.polyselected._id, "polypoints", stctl.polypoints[stctl.polyselected._id]);
-            }
-        }
-    };
-    stctl.removeAllWp = function () {
-        if (GeoService.polypoints[stctl.trackselected._id]) {
-            stctl.polypoints[stctl.trackselected._id] = GeoService.polypoints[stctl.trackselected._id];
-        }
-        if (stctl.polypoints[stctl.trackselected._id]) {
-            var len = stctl.polypoints[stctl.trackselected._id].length;
-            for (ln = len; ln > 0; ln--) {
-                GeoService.ppdatasources[$scope.selmission.name].entities.removeById(stctl.trackselected._id + 'PP' + ln);
-            }
-        }
-        stctl.polypoints[stctl.trackselected._id] = [];
-        GeoService.polypoints[stctl.trackselected._id] = [];
-        stctl.updateDb(stctl.trackselected._id, "polypoints", stctl.polypoints[stctl.trackselected._id]);
-    };
-    //
-    stctl.saveMission = function (currentmission) {
-        console.log("saveMission");
-        DlgBx.prompt("Enter Save As Name or Overwrite", currentmission.value).then(function (newname) {
-            var overwrite = null;
-            var overwriteid = null;
-            for (n = 0; n < stctl.missionlist.length - 1; n++) {
-                if (newname === stctl.missionlist[n].value) {
-                    overwrite = stctl.missionlist[n].value;
-                    overwriteid = stctl.missionlist[n].value;
-                }
-            }
-            if (overwrite !== null) {
-                DlgBx.confirm("This Action will Overwrite Mission", overwrite).then(function (yes) {
-                    if (yes) {
-                        console.log("Save " + overwrite);
-                        stctl.overwriteMission(overwrite);
-                        stctl.currmission = currentmission;
-                        stctl.loadMission({
-                            id: overwriteid, name: overwrite
-                        });
-                    }
-                });
-            } else {
-                console.log("Save " + newname);
-                stctl.copyMission($scope.selmission.name, newname);
-                stctl.missionlist.push({
-                    id: stctl.missionlist.length - 1, name: newname
-                });
-                stctl.currmission = currentmission;
-                stctl.loadMission(stctl.missionlist[stctl.missionlist.length - 1]);
-            }
-        });
-    };
-    stctl.loadMission = function (nextmission) {
-        console.log("loadMission " + nextmission.name);
-        //console.log("Current Mission:" + stctl.currmission.value);
-        $scope.netselected = [];
-        viewer.dataSources.remove(GeoService.sdatasources[$scope.selmission.name]);
-        viewer.dataSources.remove(GeoService.ppdatasources[$scope.selmission.name]);
-        dB.openStore("Missions", function (store) {
-            store.find(nextmission.name).then(function (sc) {
-                stctl.entities = sc.data.Mission.Entities.Entity;
-                GeoService.initGeodesy(nextmission.name, sc.data, $scope);
-                stctl.currmission = nextmission;
-                MsgService.setMission(nextmission.name, sc.data);
-            });
-        });
-        $scope.selmission = nextmission;
-    };
-    stctl.hidePolypoints = function () {
-        stctl.showPP = false;
-        GeoService.hideAllPP();
-    };
-    stctl.showPolypoints = function () {
-        console.log("showPolypoints");
-        stctl.showPP = true;
-        GeoService.showAllPP();
-    };
-    //
     stctl.clearDb = function () {
         console.log("Clear DB");
         DlgBx.confirm("Confirm Deletion of Local Data").then(function () {
-            viewer.dataSources.remove(GeoService.sdatasources[$scope.selmission.name]);
-            viewer.dataSources.remove(GeoService.ppdatasources[$scope.selmission.name]);
-            dB.openStore('Resources', function (store) {
+            viewer.dataSources.remove(GeoService.sdatasources[$scope.selmap.name]);
+            viewer.dataSources.remove(GeoService.ppdatasources[$scope.selmap.name]);
+            DbService.dB.openStore('Resources', function (store) {
                 store.clear();
             });
-            dB.openStore('Mission', function (store) {
+            DbService.dB.openStore('Map', function (store) {
                 store.clear();
             });
         });
     };
-    stctl.exportMission = function () {
-        console.log("exportMission");
-        DlgBx.prompt("Enter Export Save As Name:", $scope.selmission.name).then(function (newname) {
-            if (newname === 'Default Mission') {
-                DlgBx.alert("You Can't' Overwrite the Default Mission");
+    stctl.exportMap = function () {
+        console.log("exportMap");
+        DlgBx.prompt("Enter Export Save As Name:", $scope.selmap.name).then(function (newname) {
+            if (newname === 'Default Map') {
+                DlgBx.alert("You Can't' Overwrite the Default Map");
             } else {
                 var overwrite = null;
-                for (n = 0; n < stctl.missionlist.length; n++) {
-                    if (newname === stctl.missionlist[n].mission) {
-                        overwrite = stctl.missionlist[n].mission;
+                for (n = 0; n < stctl.maplist.length; n++) {
+                    if (newname === stctl.maplist[n].map) {
+                        overwrite = stctl.maplist[n].map;
                     }
                 }
                 if (overwrite !== null) {
-                    DlgBx.confirm("This Action will Overwrite Mission", overwrite).then(function (yes) {
+                    DlgBx.confirm("This Action will Overwrite Map", overwrite).then(function (yes) {
                         if (yes) {
                             console.log("Export " + overwrite);
-                            dB.openStore("Missions", function (store) {
+                            DbService.dB.openStore("Maps", function (store) {
                                 store.find(overwrite).then(function (scen) {
-                                    var mission = scen.data;
-                                    //console.log(mission);
-                                    $http.put("/json/" + overwrite.replace(' ', '') + '.json', mission);
+                                    var map = scen.data;
+                                    //console.log(map);
+                                    $http.put("/json/" + overwrite.replace(' ', '') + '.json', map);
                                 });
                             });
                         }
                     });
                 } else {
                     console.log("Export " + newname);
-                    dB.openStore("Missions", function (store) {
-                        store.find($scope.selmission.name).then(function (scen) {
-                            var mission = scen.data;
-                            $http.post("/json/" + newname.replace(' ', '') + '.json', mission).success(function () {
+                    DbService.dB.openStore("Maps", function (store) {
+                        store.find($scope.selmap.name).then(function (scen) {
+                            var map = scen.data;
+                            $http.post("/json/" + newname.replace(' ', '') + '.json', map).success(function () {
                                 console.log("Saved " + newname + " to /json/" + newname.replace(' ', '') + ".json");
-                                stctl.missionlist.push({
-                                    id: stctl.missionlist.length - 1, name: newname.replace(' ', '') + ".json", url: "/json/" + newname.replace(' ', '') + ".json"
+                                stctl.maplist.push({
+                                    id: stctl.maplist.length - 1, name: newname.replace(' ', '') + ".json", url: "/json/" + newname.replace(' ', '') + ".json"
                                 });
-                                dB.openStore('Resources', function (store) {
+                                DbService.dB.openStore('Resources', function (store) {
                                     store.upsert({
-                                        name: "missions.json", url: "/json/missions.json", data: stctl.missionlist
+                                        name: "maps.json", url: "/json/maps.json", data: stctl.maplist
                                     }).then(function () {
-                                        store.find("missions.json").then(function (st) {
-                                            $http.put('/json/missions.json', st.data);
+                                        store.find("maps.json").then(function (st) {
+                                            $http.put('/json/maps.json', st.data);
                                         });
                                     });
                                 });
@@ -316,48 +74,48 @@ TacMapServer.controller('storeCtl', function ($indexedDB, $scope, $http, GeoServ
             stctl.import = false;
         });
     };
-    stctl.importMission = function () {
+    stctl.importMap = function () {
         stctl.import = true;
     };
-    stctl.getFile = function (savedmission) {
-        console.log("Get File: " + savedmission.name + ", " + savedmission.url);
-        $http.get(savedmission.url).success(function (sdata) {
-            DlgBx.prompt("Enter Save As Name or Overwrite", savedmission.mission).then(function (newname) {
-                if (newname === "Default Mission") {
-                    DlgBx.alert("You Can't' Overwrite the Default Mission");
+    stctl.getFile = function (savedmap) {
+        console.log("Get File: " + savedmap.name + ", " + savedmap.url);
+        $http.get(savedmap.url).success(function (sdata) {
+            DlgBx.prompt("Enter Save As Name or Overwrite", savedmap.map).then(function (newname) {
+                if (newname === "Default Map") {
+                    DlgBx.alert("You Can't' Overwrite the Default Map");
                 } else {
                     var overwrite = null;
                     var overwriteid = null;
-                    for (i = 0; i < stctl.missionlist.length; i++) {
-                        if (newname === stctl.missionlist[i].value) {
-                            overwrite = stctl.missionlist[i].value;
+                    for (i = 0; i < stctl.maplist.length; i++) {
+                        if (newname === stctl.maplist[i].value) {
+                            overwrite = stctl.maplist[i].value;
                             console.log(overwrite);
-                            overwriteid = stctl.missionlist[i].value;
+                            overwriteid = stctl.maplist[i].value;
                             break;
                         }
                     }
                     if (overwrite !== null) {
                         console.log(overwrite);
-                        DlgBx.confirm("This Action will Overwrite Mission " + overwrite).then(function (yes) {
+                        DlgBx.confirm("This Action will Overwrite Map " + overwrite).then(function (yes) {
                             if (yes) {
-                                stctl.mission = sdata;
-                                stctl.overwriteMission(overwrite);
+                                stctl.map = sdata;
+                                stctl.overwriteMap(overwrite);
                             }
                         });
                     } else {
                         console.log("Save " + newname);
-                        stctl.mission = sdata;
-                        dB.openStore("Missions", function (store) {
+                        stctl.map = sdata;
+                        DbService.dB.openStore("Maps", function (store) {
                             store.insert({
                                 name: newname, data: sdata
                             }).then(function () {
-                                stctl.missionlist.push({
-                                    id: stctl.missionlist.length - 1, name: newname
+                                stctl.maplist.push({
+                                    id: stctl.maplist.length - 1, name: newname
                                 });
-                                stctl.currmission = {
-                                    id: stctl.missionlist.length - 1, name: newname
+                                stctl.currmap = {
+                                    id: stctl.maplist.length - 1, name: newname
                                 };
-                                stctl.loadMission(savedmission);
+                                stctl.loadMap(savedmap);
                             });
                         });
                     }
@@ -365,87 +123,133 @@ TacMapServer.controller('storeCtl', function ($indexedDB, $scope, $http, GeoServ
             });
         });
     };
-    //
     stctl.updateDb = function (entityId, fieldname, value) {
-        dB.openStore("Missions", function (store) {
-            store.find($scope.selmission.name).then(function (mission) {
-                stctl.mission = mission.data;
-                for (i = 0; i < stctl.mission.Mission.Entities.Entity.length; i++) {
-                    if (stctl.mission.Mission.Entities.Entity[i]._id === entityId) {
-                        stctl.mission.Mission.Entities.Entity[i][fieldname] = value;
+        DbService.dB.openStore("Maps", function (store) {
+            store.find($scope.selmap.name).then(function (map) {
+                stctl.map = map.data;
+                for (i = 0; i < stctl.map.Map.Entities.Entity.length; i++) {
+                    if (stctl.map.Map.Entities.Entity[i]._id === entityId) {
+                        stctl.map.Map.Entities.Entity[i][fieldname] = value;
                     }
                 }
             }).then(function () {
                 store.upsert({
-                    name: $scope.selmission.name, data: stctl.mission
+                    name: $scope.selmap.name, data: stctl.map
                 });
             });
         });
     };
-    stctl.updateMission = function () {
-        dB.openStore("Missions", function (store) {
+    stctl.updateMap = function () {
+        DbService.dB.openStore("Maps", function (store) {
             store.upsert({
-                name: $scope.selmission.name, data: stctl.mission
+                name: $scope.selmap.name, data: mapctl.map
             });
         });
     };
-    stctl.copyMission = function (currentmission, newmissionid) {
-        dB.openStore("Missions", function (store) {
-            store.find(currentmission).then(function (mission) {
+    stctl.copyMap = function (currentmap, newmapid) {
+        DbService.dB.openStore("Maps", function (store) {
+            store.find(currentmap).then(function (map) {
                 store.insert({
-                    name: newmissionid, data: mission.data
+                    name: newmapid, data: map.data
                 });
             });
         });
     };
-    stctl.overwriteMission = function (missionid) {
-        console.log("overwriteMission: " + missionid);
-        dB.openStore("Missions", function (store) {
-            store.find(missionid).then(function () {
-                store[ "delete"](missionid).then(function () {
+    stctl.overwriteMap = function (mapid) {
+        console.log("overwriteMap: " + mapid);
+        DbService.dB.openStore("Maps", function (store) {
+            store.find(mapid).then(function () {
+                store[ "delete"](mapid).then(function () {
                     store.insert({
-                        name: missionid, data: stctl.mission
+                        name: mapid, data: mapctl.map
                     });
                 });
             });
         });
     };
-    stctl.deleteMission = function (currentmission) {
-        if ($scope.selmission.id === 0) {
-            DlgBx.alert("Can't delete Default Mission");
+    stctl.deleteMap = function (currentmap) {
+        if ($scope.selmap.id === 0) {
+            DlgBx.alert("Can't delete Default Map");
         } else {
-            DlgBx.confirm("Confirm deletion of Mission: " + currentmission.value).then(function (yes) {
-                console.log("Confirm response: " + $scope.selmission.id);
-                if (yes && $scope.selmission.id !== 0) {
-                    console.log("Delete from Idb: " + currentmission.value);
-                    dB.openStore("Missions", function (store) {
-                        store[ "delete"](currentmission.value);
+            DlgBx.confirm("Confirm deletion of Map: " + currentmap.value).then(function (yes) {
+                console.log("Confirm response: " + $scope.selmap.id);
+                if (yes && $scope.selmap.id !== 0) {
+                    console.log("Delete from Idb: " + currentmap.value);
+                    DbService.dB.openStore("Maps", function (store) {
+                        store[ "delete"](currentmap.value);
                     });
                     var na = [];
-                    for (i = 0; i < stctl.missionlist.length; i++) {
-                        if (stctl.missionlist[i].value !== currentmission.value) {
-                            na.push(stctl.missionlist[i]);
+                    for (i = 0; i < stctl.maplist.length; i++) {
+                        if (stctl.maplist[i].value !== currentmap.value) {
+                            na.push(stctl.maplist[i]);
                         }
                     }
-                    stctl.missionlist = na;
-                    stctl.loadMission(stctl.missionlist[na.length - 1]);
+                    stctl.maplist = na;
+                    stctl.loadMap(stctl.maplist[na.length - 1]);
                 } else {
                 }
             });
         }
     };
-    //
-    stctl.addFile = function (mission, filename, data) {
-        $http.post("/json/" + filename, data).success(function () {
-            console.log("Saved " + mission + " to /json/" + filename + ".json");
-            stctl.missionlist.push({
-                id: stctl.missionlist.length - 1, name: filename, url: "/json/" + filename
+    stctl.saveMap = function (currentmap) {
+        console.log("saveMap");
+        DlgBx.prompt("Enter Save As Name or Overwrite", currentmap.value).then(function (newname) {
+            var overwrite = null;
+            var overwriteid = null;
+            for (n = 0; n < stctl.maplist.length - 1; n++) {
+                if (newname === stctl.maplist[n].value) {
+                    overwrite = stctl.maplist[n].value;
+                    overwriteid = stctl.maplist[n].value;
+                }
+            }
+            if (overwrite !== null) {
+                DlgBx.confirm("This Action will Overwrite Map", overwrite).then(function (yes) {
+                    if (yes) {
+                        console.log("Save " + overwrite);
+                        stctl.overwriteMap(overwrite);
+                        stctl.currmap = currentmap;
+                        stctl.loadMap({
+                            id: overwriteid, name: overwrite
+                        });
+                    }
+                });
+            } else {
+                console.log("Save " + newname);
+                stctl.copyMap($scope.selmap.name, newname);
+                stctl.maplist.push({
+                    id: stctl.maplist.length - 1, name: newname
+                });
+                stctl.currmap = currentmap;
+                stctl.loadMap(stctl.maplist[stctl.maplist.length - 1]);
+            }
+        });
+    };
+    stctl.loadMap = function (nextmap) {
+        console.log("loadMap " + nextmap.name);
+        //console.log("Current Map:" + stctl.currmap.value);
+        $scope.netselected = [];
+        viewer.dataSources.remove(GeoService.sdatasources[$scope.selmap.name]);
+        console.log();
+        DbService.dB.openStore("Maps", function (store) {
+            store.find(nextmap.name).then(function (sc) {
+                GeoService.initGeodesy($scope, nextmap.name, sc.data);
+                stctl.currmap = nextmap;
+                MsgService.setMap(nextmap.name, sc.data);
             });
-            dB.openStore('Resources', function (store) {
+        });
+        $scope.selmap = nextmap;
+    };
+    stctl.addFile = function (map, filename, data) {
+        $http.post("/json/" + filename, data).success(function () {
+            console.log("Saved " + map + " to /json/" + filename + ".json");
+            stctl.maplist.push({
+                id: stctl.maplist.length - 1, name: filename, url: "/json/" + filename
+            });
+            DbService.dB.openStore('Resources', function (store) {
                 store.upsert({
-                    name: "missions.json", url: resources[1], data: stctl.missionlist
+                    name: "maps.json", url: resources[1], data: mapctl.maplist
                 }).then(function () {
-                    $http.post("/json/missions.json", stctl.missionlist).success(
+                    $http.post("/json/maps.json", stctl.maplist).success(
                             function () {
                                 console.log("Updated File List");
                             });
@@ -453,20 +257,11 @@ TacMapServer.controller('storeCtl', function ($indexedDB, $scope, $http, GeoServ
             });
         });
     };
-    stctl.overwriteFile = function (mission, filename, data) {
+    stctl.overwriteFile = function (map, filename, data) {
         $http.post("/json/" + filename, data).success(function () {
-            console.log("Saved " + mission + " to /json/" + filename + ".json");
+            console.log("Saved " + map + " to /json/" + filename + ".json");
         });
     };
-    //
-    stctl.togglePolypoints = function () {
-        if (stctl.showPP) {
-            stctl.showPolypoints();
-        } else {
-            stctl.hidePolypoints();
-        }
-    };
-    //
     stctl.sortByKey = function (array, key) {
         return array.sort(function (a, b) {
             var x = a[key];
@@ -474,86 +269,23 @@ TacMapServer.controller('storeCtl', function ($indexedDB, $scope, $http, GeoServ
             return ((x < y) ? -1 : ((x > y) ? 1 : 0));
         });
     };
-    //
-    stctl.syncResource = function (msnid, $http, url, dB, stctl, GeoService) {
-        $http.get(url).success(function (resdata, status, headers) {
-            var mod = headers()[ 'last-modified'];
-            var filename = url.substring(url.lastIndexOf('/') + 1);
-            var jdata = stctl.xj.xml_str2json(resdata);
-            var mname = jdata.Mission._name;
-            var jname = mname.replace(' ', '').toLowerCase();
-            stctl.missionlist.push({
-                id: msnid, name: mname, url: 'json/' + jname + '.json'
-            });
-            dB.openStore('Missions', function (mstore) {
-                mstore.upsert({
-                    name: mname, url: 'json/' + jname + '.json', data: jdata
-                }).then(function () {
-                    dB.openStore('Resources', function (store) {
-                        store.getAllKeys().then(function (keys) {
-                            if (keys.indexOf(filename) === -1) {
-                                store.upsert({
-                                    name: filename, url: url, lastmod: mod, data: resdata
-                                });
-                            } else {
-                                store.find(filename).then(function (dbrec) {
-                                    if (dbrec.lastmod !== mod) {
-                                        console.log('upsert ' + filename);
-                                        store.upsert({
-                                            name: filename, url: url, lastmod: mod, data: resdata
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                        if (filename === 'DefaultMission.xml') {
-                            console.log('init geo');
-                            stctl.mission = jdata;
-                            stctl.entities = jdata.Mission.Entities.Entity;
-                            GeoService.initGeodesy(jdata.Mission._name, jdata);
-                            $scope.selmission.name = jdata.Mission._name;
-                        }
-                        ;
-                    });
-                });
-            });
-
-        }).error(function () {
-            console.log('Error getting resource');
-        });
-    };
-    //
-    MsgService.socket.on('connection', function (data) {
-        MsgService.serverid = data.socketid;
-        MsgService.connectServer(data, $scope.selmission.name, stctl.mission);
-    });
-    MsgService.socket.on('track connected', function (data) {
-        console.log("Unit connected " + data.id);
-        MsgService.setMission($scope.selmission.name, stctl.mission);
-        //msgctl.messages.push({text: "Unit " + data.socketid + " connected"});
-    });
     MsgService.socket.on('init server', function (data) {
-        console.log('init server: ' + data.missionid);
-        $scope.selmission.name = data.scenarioname;
-        $http.get('xml/missions.xml').success(function (resdata, status, headers) {
-            var msns = stctl.xj.xml_str2json(resdata);
-            for (i = 0; i < msns.Missions.Mission.length; i++) {
-                var u = msns.Missions.Mission[i]._url;
-                var n = msns.Missions.Mission[i]._name;
-                console.log(n);
+        console.log('init server: ' + data.mapid);
+        $http.get('xml/maps.xml').success(function (resdata, status, headers) {
+            var maps = DbService.xj.xml_str2json(resdata);
+            for (i = 0; i < maps.Maps.Map.length; i++) {
+                var u = maps.Maps.Map[i]._url;
+                var n = maps.Maps.Map[i]._name;
                 if (u.substring(u.indexOf('.')) === '.xml') {
-                    stctl.syncResource(msns.Missions.Mission[i]._id, $http, msns.Missions.Mission[i]._url, dB, stctl, GeoService);
+                    DbService.syncResource($scope, $http, maps.Maps.Map[i]._id, maps.Maps.Map[i]._url, stctl, GeoService);
                 } else {
-                    stctl.missionlist.push({
-                        id: msns.Missions.Mission[i]._id, name: n, url: u
-                    });
                     $http.get(u).success(function (jsondata, status, headers) {
-                        dB.openStore('Missions', function (mstore) {
+                        DbService.dB.openStore('Maps', function (mstore) {
                             console.log(n);
                             mstore.upsert({
                                 name: n, url: u, data: jsondata
                             });
-                            $http.post("/json/missions.json", angular.toJson(stctl.sortByKey(stctl.missionlist, 'id')));
+                            $http.post("/json/maps.json", angular.toJson(stctl.sortByKey(stctl.maplist, 'id')));
                         });
                     });
                 }
@@ -561,9 +293,197 @@ TacMapServer.controller('storeCtl', function ($indexedDB, $scope, $http, GeoServ
         });
     });
 });
-TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, GeoService, MsgService) {
+TacMapServer.controller('mapCtl', function ($indexedDB, $scope, $http, GeoService, DbService, MsgService, DlgBx) {
+    var mapctl = this;
+    var ellipsoid = scene.globe.ellipsoid;
+    mapctl.trackselected = null;
+    mapctl.geofenceselected = null;
+    mapctl.currmap = [];
+    mapctl.editgeofencechecked = false;
+    mapctl.editlocchecked = false;
+    mapctl.import = false;
+    //
+    mapctl.maps = [];
+    mapctl.entities = [];
+    mapctl.tracks = [];
+    mapctl.geofences = [];
+    mapctl.loc = [];
+    //
+    mapctl.lftClickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    mapctl.lftClickHandler.setInputAction(function (mouse) {
+        var pickedObject = scene.pick(mouse.position);
+        if (typeof pickedObject !== 'undefined') {
+            if (Cesium.defined(pickedObject) && pickedObject.id.billboard || pickedObject.id.ellipsoid || pickedObject.id.point) {
+                mapctl.selectTrack(pickedObject.id);
+            } else {
+                mapctl.trackselected = null;
+                mapctl.geofenceselected = null;
+                mapctl.loc = [];
+                $scope.$apply();
+            }
+        } else {
+            mapctl.trackselected = null;
+            mapctl.geofenceselected = null;
+            mapctl.loc = [];
+            $scope.$apply();
+        }
+    },
+            Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    mapctl.rtClickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    mapctl.rtClickHandler.setInputAction(function (mouse) {
+        //console.log("edit: " + mapctl.editgeofencechecked);
+        var cartesian = viewer.camera.pickEllipsoid(mouse.position, ellipsoid);
+        if (mapctl.editlocchecked && cartesian && mapctl.trackselected !== null) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            mapctl.setLocation(mapctl.trackselected, Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+        } else if (mapctl.editlocchecked && cartesian && mapctl.trackselected === null) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            mapctl.addTrack(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+        } else if (mapctl.editgeofencechecked && cartesian && mapctl.geofenceselected === null) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            mapctl.addGeoFence(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+        } else if (mapctl.editgeofencechecked && cartesian && mapctl.geofenceselected !== null) {
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            mapctl.addGeoFencePoint(Cesium.Math.toDegrees(mapctl.geofenceselected,cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+        }
+    },
+            Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+    mapctl.selectTrack = function (u, zoomto) {   
+        mapctl.trackselected = GeoService.sdatasources[$scope.selmap.name].entities.getById(u._id);
+        mapctl.loc = mapctl.getLoc(mapctl.trackselected);
+        if (zoomto) {
+            GeoService.sdatasources[$scope.selmap.name].selectedEntity = mapctl.trackselected;
+            viewer.selectedEntity = mapctl.trackselected;
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(mapctl.loc[1], mapctl.loc[0], 10000.0),
+                duration: 1
+            });
+        } else {
+            $scope.$apply();
+        }
+    };
+    mapctl.selectGeoFence = function (u, zoomto) {
+        //console.log("selectTrack");
+        mapctl.geofenceselected = GeoService.sdatasources[$scope.selmap.name].entities.getById(u._id);
+        mapctl.loc = mapctl.getLoc(mapctl.geofenceselected);
+        if (zoomto) {
+            GeoService.sdatasources[$scope.selmap.name].selectedEntity = mapctl.geofenceselected;
+            viewer.selectedEntity = mapctl.geofenceselected;
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(mapctl.loc[1], mapctl.loc[0], 10000.0),
+                duration: 1
+            });
+        } else {
+            $scope.$apply();
+        }
+    };
+    mapctl.selectPolygon = function (p, zoomto) {
+        mapctl.polyselected = GeoService.sdatasources[$scope.selmap.name].entities.getById(p._id);
+        mapctl.polyselectedid = mapctl.polyselected._id;
+        mapctl.loc = mapctl.getLoc(mapctl.polyselected);
+        if (zoomto) {
+            GeoService.sdatasources[$scope.selmap.name].selectedEntity = mapctl.polyselected;
+            viewer.selectedEntity = mapctl.polyselected;
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(mapctl.loc[1], mapctl.loc[0], 10000.0),
+                duration: 1
+            });
+        } else {
+            $scope.$apply();
+        }
+    };
+    mapctl.getLoc = function (entity) {
+        var cartesian = entity.position.getValue();
+        var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+        var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+        var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+        entity.description = "Location: " + latitudeString + ", " + longitudeString;
+        return ([latitudeString, longitudeString]);
+    };
+    mapctl.setLocation = function (entity, lat, lng) {
+        //console.log(entity._id);
+        if (typeof entity._id !== 'undefined') {
+            GeoService.sdatasources[$scope.selmap.name].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
+            mapctl.updateDb(entity._id, '_location', lat + "," + lng);
+            mapctl.selectTrack(entity);
+        } else {
+            mapctl.addTrack(lat, lng);
+        }
+    };
+    //  
+    mapctl.addTrack = function (lat, lng) {
+        console.log("addTrack");
+        DlgBx.prompt("No Track Selected .. Enter Name to Create Track", "").then(function (trackname) {
+            var overwrite = null;
+            for (n = 0; n < mapctl.tracks.length - 1; n++) {
+                if (trackname === mapctl.tracks[n]._name) {
+                    overwrite = mapctl.tracks[n]._name;
+                }
+            }
+            if (overwrite !== null) {
+                DlgBx.alert("Track name exists");
+            } else {
+                console.log("Create track " + trackname);
+                var trck = {
+                    "_id": trackname + "_Track",
+                    "_name": trackname,
+                    "_type": "track",
+                    "_location": [lat,lng]
+                };
+                mapctl.tracks.push(trck);
+                mapctl.trackselected = trck;
+                GeoService.addCesiumPoint(trck, 'BLUE');
+            }
+        });
+    };
+    //  
+    mapctl.addGeoFence = function (lat, lng) {
+        console.log("addPolyline");
+        DlgBx.prompt("No GeoFence Selected .. Enter Name to Create new GeoFence", "").then(function (geofencename) {
+            var overwrite = null;
+            for (n = 0; n < mapctl.tracks.length - 1; n++) {
+                if (geofencename === mapctl.geofences[n]._name) {
+                    overwrite = mapctl.geofences[n]._name;
+                }
+            }
+            if (overwrite !== null) {
+                DlgBx.alert("GeoFence name exists");
+            } else {
+                console.log("Create GeoFence " + geofencename);
+                var geofnce = {
+                    "_id": geofencename + "_GeoFence",
+                    "_name": geofencename,
+                    "_type": "geofence",
+                    "_location": [lat,lng],
+                    "_points": [lat,lng]
+                };
+                mapctl.geofences.push(geofnce);
+                mapctl.geofenceselected = geofnce;
+                GeoService.addCesiumPoint(geofnce, 'RED');
+            }
+        });
+    };
+    mapctl.addGeoFencePoint = function (geofid,lat, lng) {
+        mapctl.geofences[geofid].points.push([lat,lng]);
+        console.log(mapctl.geofences[geofid]);
+    };
+    mapctl.showTrace = function (track) {
+        console.log("showTrace");
+        mapctl.showPP = true;
+        GeoService.showTrace(track);
+    };
+    MsgService.socket.on('connection', function (data) {
+        MsgService.serverid = data.socketid;
+        MsgService.connectServer(data, $scope.selmap.name, mapctl.map);
+    });
+    MsgService.socket.on('track connected', function (data) {
+        console.log("Unit connected " + data.id);
+        MsgService.setMap($scope.selmap.name, mapctl.map);
+        //msgctl.messages.push({text: "Unit " + data.socketid + " connected"});
+    });
+});
+TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, DbService, GeoService, MsgService) {
     var msgctl = this;
-    msgctl.dB = $indexedDB;
     msgctl.messages = [];
     msgctl.tracks = [];
     msgctl.sendReport = function (msgobj) {
@@ -572,7 +492,7 @@ TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, G
     };
     msgctl.moveUnit = function (uid, sentto, net, lat, lon) {
         console.log("moveUnit: " + uid);
-        GeoService.sdatasources[$scope.selmission.name].entities.getById(uid).position = Cesium.Cartesian3.fromDegrees(lon, lat);
+        GeoService.sdatasources[$scope.selmap.name].entities.getById(uid).position = Cesium.Cartesian3.fromDegrees(lon, lat);
         msgctl.sendReport({
             user: uid, to: sentto, time: new Date(), position: [lat, lon], network: net
         });
@@ -583,7 +503,7 @@ TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, G
         msgctl.messages.push({
             text: "POSREP " + data.net + " " + data.message.user
         });
-        GeoService.sdatasources[$scope.selmission.name].entities.getById(data.message.user).position = Cesium.Cartesian3.fromDegrees(data.message.position[1], data.message.position[0]);
+        GeoService.sdatasources[$scope.selmap.name].entities.getById(data.message.user).position = Cesium.Cartesian3.fromDegrees(data.message.position[1], data.message.position[0]);
     });
     MsgService.socket.on('user disconnected', function (data) {
         console.log("Unit disconnected " + data.socketid);
@@ -615,11 +535,11 @@ TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, G
             text: 'Left Network: ' + data.netname
         });
     });
-    MsgService.socket.on("start mission", function () {
+    MsgService.socket.on("start map", function () {
         msgctl.running = true;
         $scope.$apply();
     });
-    MsgService.socket.on("stop mission", function () {
+    MsgService.socket.on("stop map", function () {
         msgctl.running = false;
         $scope.$apply();
     });
@@ -627,7 +547,6 @@ TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, G
         msgctl.time = data.time;
         $scope.$apply();
     });
-    //
     msgctl.timeCalc = function (timeobj) {
         var day = timeobj.Day;
         var hr = timeobj.HourTime;

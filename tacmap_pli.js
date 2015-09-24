@@ -79,12 +79,12 @@ server.listen(server_port, server_ip_address, function () {
     console.log('listening on ' + server_port);
 });
 //
-var missionid = "Default Mission";
-var missiondata = [];
+var mapid = "Default Map";
+var mapdata = [];
 var servers = [];
 var users = [];
 var allconnections = [];
-var missionRunning = false;
+var mapRunning = false;
 
 io.on('connection', function (socket) {
 
@@ -99,22 +99,22 @@ io.on('connection', function (socket) {
     socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
 
     socket.on('server connected', function (data) {
-        console.log("server connect to socket: " + data.socketid + ", mission:" + data.missionid);
+        console.log("server connect to socket: " + data.socketid + ", map:" + data.mapid);
         servers.push({server: data.socketid});
-        if (missionid === "Default Mission") {
-            missiondata = data.missiondata;
-            io.emit('init server', {target: "server", missionid: data.missionid, missiondata: missiondata});
+        if (mapid === "Default Mission") {
+            mapdata = data.mapdata;
+            io.emit('init server', {target: "server", mapid: data.mapid, mapdata: mapdata});
         } else {
-            io.emit('init server', {target: "server", missionid: missionid, missiondata: missiondata});
+            io.emit('init server', {target: "server", mapid: mapid, mapdata: mapdata});
         }
-        if (missionRunning) {
-            io.emit('start mission');
+        if (mapRunning) {
+            io.emit('start map');
         }
     });
     socket.on('user connected', function (data) {
-        console.log("users connect: " + data.id + " set mission: " + missionid);
+        console.log("users connect: " + data.id + " set map: " + mapid);
         users.push({user: data.id});
-        io.emit('user connected', {missionid: missionid, missiondata: missiondata});
+        io.emit('user connected', {mapid: mapid, mapdata: mapdata});
     });
     socket.on('send msg', function (data) {
         console.log('send msg from ' + data.message.user + ' to ' + data.net);
@@ -144,21 +144,21 @@ io.on('connection', function (socket) {
         console.log("emit add entity: " + data._id);
         io.emit('add entity', data);
     });
-    socket.on('set mission', function (data) {
-        console.log("set mission: " + data.missionid);
-        missionid = data.missionid;
-        missiondata = data.missiondata;
-        io.emit('set mission', {target: "user", missionid: missionid, missiondata: missiondata});
+    socket.on('set map', function (data) {
+        console.log("set map: " + data.mapid);
+        mapid = data.mapid;
+        mapdata = data.mapdata;
+        io.emit('set map', {target: "user", mapid: mapid, mapdata: mapdata});
     });
-    socket.on('mission running', function () {
-        missionRunning = true;
-        io.emit('start mission');
+    socket.on('map running', function () {
+        mapRunning = true;
+        io.emit('start map');
     });
-    socket.on('mission stopped', function () {
-        missionRunning = false;
-        io.emit('stop mission');
+    socket.on('map stopped', function () {
+        mapRunning = false;
+        io.emit('stop map');
     });
-    socket.on('mission time', function (data) {
+    socket.on('map time', function (data) {
         io.emit('set time',data);
     });
 });

@@ -1,37 +1,93 @@
 /* global TacMapServer, TacMapUnit */
 // ***** SERVER SERVICES ******//
+TacMapServer.factory('DbService', function ($indexedDB) {
+    var dbsvc = {
+    };
+    dbsvc.xj = new X2JS();
+    dbsvc.dB = $indexedDB;
+    dbsvc.syncResource = function ($scope, $http, mapid, url, stctl, GeoService) {
+        console.log("syncResource " + mapid)
+        $http.get(url).success(function (resdata, status, headers) {
+            var mod = headers()[ 'last-modified'];
+            var filename = url.substring(url.lastIndexOf('/') + 1);
+            var jdata = dbsvc.xj.xml_str2json(resdata);
+            var mname = jdata.Map._name;
+            var jname = mname.replace(' ', '').toLowerCase();
+            if (mname!=='Default Map'){
+                stctl.maplist.push({
+                    id: mapid, name: mname, url: 'json/' + jname + '.json'
+                });
+            }
+            dbsvc.dB.openStore('Maps', function (mstore) {
+                mstore.upsert({
+                    name: mname, url: 'json/' + jname + '.json', data: jdata
+                }).then(function () {
+                    dbsvc.dB.openStore('Resources', function (store) {
+                        store.getAllKeys().then(function (keys) {
+                            if (keys.indexOf(filename) === -1) {
+                                store.upsert({
+                                    name: filename, url: url, lastmod: mod, data: resdata
+                                });
+                            } else {
+                                store.find(filename).then(function (dbrec) {
+                                    if (dbrec.lastmod !== mod) {
+                                        console.log('upsert ' + filename);
+                                        store.upsert({
+                                            name: filename, url: url, lastmod: mod, data: resdata
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                        if (filename === 'DefaultMap.xml') {
+                            console.log('init geo');
+                            stctl.map = jdata;
+                            GeoService.initGeodesy($scope, jdata.Map._name, jdata);
+                        }
+                        ;
+                    });
+                });
+            });
+
+        }).error(function () {
+            console.log('Error getting resource');
+        });
+    };
+    return dbsvc;
+});
 TacMapServer.factory('GeoService', function () {
     var geosvc = {
     };
-    geosvc.entities =[];
-    geosvc.missionid = null;
-    geosvc.sdatasources =[];
-    geosvc.polypoints =[];
-    geosvc.ppdatasources =[];
-    geosvc.initGeodesy = function (missionid, missiondata) {
-        console.log("initGeodesy " + missionid);
-        geosvc.missionid = missionid;
-        geosvc.sdatasources[geosvc.missionid] = new Cesium.CustomDataSource(geosvc.missionid);
-        viewer.dataSources.add(geosvc.sdatasources[geosvc.missionid]);
-        geosvc.ppdatasources[geosvc.missionid] = new Cesium.CustomDataSource(geosvc.missionid + "PP");
-        viewer.dataSources.add(geosvc.ppdatasources[geosvc.missionid]);
-        //console.log(missiondata);
-        var polygons = missiondata.Mission.Polygons.Polygon;
-        var entities = missiondata.Mission.Entities.Entity;
-        geosvc.entities = missiondata.Mission.Entities.Entity;
-        geosvc.addPolygons(polygons);
-        geosvc.addEntities(entities);
-        //console.log(geosvc.movementsegments);
-        viewer.zoomTo(geosvc.sdatasources[geosvc.missionid].entities.getById("Default"));
+    geosvc.entities = [];
+    geosvc.mapid = null;
+    geosvc.sdatasources = [];
+    geosvc.initGeodesy = function ($scope, mapid, mapdata) {
+        console.log("initGeodesy " + mapid);
+        geosvc.mapid = mapid;
+        geosvc.sdatasources[geosvc.mapid] = new Cesium.CustomDataSource(geosvc.mapid);
+        viewer.dataSources.add(geosvc.sdatasources[geosvc.mapid]);
+        geosvc.addPolygons(mapdata.Map.Polygons.Polygon);
+        geosvc.addEntities(mapdata.Map.Entities.Entity);
+        geosvc.addTracks(mapdata.Map.Tracks.Track);
+        geosvc.addGeoFences(mapdata.Map.GeoFences.GeoFence);
+        viewer.zoomTo(geosvc.sdatasources[geosvc.mapid].entities.getById("Default"));
     };
     geosvc.addEntities = function (entities) {
         //console.log('addEntities ' + entities.length);
         for (i = 0; i < entities.length; i++) {
             if (entities[i]._location.length > 0) {
-                geosvc.addCesiumBillBoard(entities[i]);
+                geosvc.addCesiumBillboard(entities[i]);
             }
         }
-    };   
+    };
+    geosvc.addTracks = function (entities) {
+        //console.log('addEntities ' + entities.length);
+        for (i = 0; i < entities.length; i++) {
+            if (entities[i]._location.length > 0) {
+                geosvc.addCesiumBillboard(entities[i]);
+            }
+        }
+    };
     geosvc.addPolygons = function (polygons) {
         //console.log('addPolygons ' + polygons.length);
         //console.log(polygons);
@@ -41,29 +97,10 @@ TacMapServer.factory('GeoService', function () {
             }
         }
     };
-    geosvc.addStoredPolypoints = function (entity) {
-        //console.log("addStoredWaypoints: " + entity._id);
-        var w = entity.polypoints;
-        var uid = entity._id;
-        geosvc.polypoints[uid] =[];
-        geosvc.polypoints[uid].push(w[0]);
-        for (p = 1; p < w.length; p++) {
-            geosvc.polypoints[uid].push(w[p]);
-            var arr =[w[p - 1][1], w[p - 1][0], w[p][1], w[p][0]];
-            geosvc.ppdatasources[geosvc.missionid].entities.add({
-                id: uid + 'PP' + geosvc.polypoints[uid].length,
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArray(arr),
-                    width: 1,
-                    material: Cesium.Color.LIGHTYELLOW
-                }
-            });
-        }
-    };
-    geosvc.addPolygons = function (polygons) {
-        for (i = 0; i < polygons.length; i++) {
-            if (polygons[i]._locations.length > 0) {
-                geosvc.addCesiumPolygon(polygons[i]);
+    geosvc.addGeoFences = function (geofences) {
+        for (i = 0; i < geofences.length; i++) {
+            if (geofences[i]._points.length > 0) {
+                geosvc.addCesiumPolyline(geofences[i]);
             }
         }
     };
@@ -73,7 +110,7 @@ TacMapServer.factory('GeoService', function () {
         //console.log(loc);
         loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
         //Cartesian wants long, lat
-        geosvc.sdatasources[geosvc.missionid].entities.add({
+        geosvc.sdatasources[geosvc.mapid].entities.add({
             id: poly._id,
             name: poly._name,
             polygon: {
@@ -86,12 +123,12 @@ TacMapServer.factory('GeoService', function () {
         });
     };
     geosvc.addCesiumPolyline = function (poly) {
-        //console.log('addPolygon');
-        var loc = poly._locations;
+        //console.log('addCesiumPolyline');
+        var loc = poly._points;
         //console.log(loc);
         loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
         //Cartesian wants long, lat
-        geosvc.sdatasources[geosvc.missionid].entities.add({
+        geosvc.sdatasources[geosvc.mapid].entities.add({
             id: poly._id,
             name: poly._name,
             polyline: {
@@ -103,10 +140,11 @@ TacMapServer.factory('GeoService', function () {
             }
         });
     };
-    geosvc.addCesiumBillBoard = function (entity) {
+    geosvc.addCesiumBillboard = function (entity) {
+        console.log("Add billboard");
         var loc = entity._location;
         loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
-        geosvc.sdatasources[geosvc.missionid].entities.add({
+        geosvc.sdatasources[geosvc.mapid].entities.add({
             id: entity._id,
             name: entity._name,
             position: Cesium.Cartesian3.fromDegrees(loc[1], loc[0]),
@@ -123,26 +161,73 @@ TacMapServer.factory('GeoService', function () {
                 pixelOffset: new Cesium.Cartesian2(0, 15)
             }
         });
+    };
+    geosvc.addCesiumPoint = function (entity, color) {
+        console.log("Add point " + geosvc.mapid + ", " + entity._id + ", " + entity._location);
+        var loc = entity._location;
+        //loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        geosvc.sdatasources[geosvc.mapid].entities.add({
+            id: entity._id,
+            name: entity._name,
+            position: Cesium.Cartesian3.fromDegrees(loc[1], loc[0]),
+            point: {
+                pixelSize: 5,
+                color: Cesium.Color[color],
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            },
+            label: {
+                text: entity._name,
+                font: '10pt monospace',
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                outlineWidth: 2,
+                verticalOrigin: Cesium.VerticalOrigin.TOP,
+                pixelOffset: new Cesium.Cartesian2(0, 15)
+            }
+        });
         if (entity.polypoints) {
             geosvc.addStoredWaypoints(entity);
         }
-    }; 
+    };
+    geosvc.addCesiumEllipsoid = function (entity) {
+        console.log("Add elipsoid");
+        var loc = entity._location;
+        loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        geosvc.sdatasources[geosvc.mapid].entities.add({
+            id: entity._id,
+            name: entity._name,
+            position: Cesium.Cartesian3.fromDegrees(loc[1], loc[0]),
+            ellipsoid: {
+                radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
+                material: Cesium.Color.BLUE.withAlpha(0.5),
+            },
+            label: {
+                text: entity._name,
+                font: '10pt monospace',
+                verticalOrigin: Cesium.VerticalOrigin.TOP,
+                pixelOffset: new Cesium.Cartesian2(0, 15)
+            }
+        });
+        if (entity.polypoints) {
+            geosvc.addStoredWaypoints(entity);
+        }
+    };
     return geosvc;
 });
 TacMapServer.factory('MsgService', function () {
     var msgsvc = {
     };
     msgsvc.serverid;
-    msgsvc.missionid;
+    msgsvc.mapid;
     msgsvc.connected = false;
     msgsvc.sending = false;
     msgsvc.lastSendingTime = 0;
-    msgsvc.users =[];
+    msgsvc.users = [];
     msgsvc.socket = io();
     // Sends a message
-    msgsvc.setMission = function (name, missiondata) {
-        msgsvc.socket.emit('set mission', {
-            missionid: name, missiondata: missiondata
+    msgsvc.setMap = function (name, mapdata) {
+        msgsvc.socket.emit('set map', {
+            mapid: name, mapdata: mapdata
         });
     };
     msgsvc.sendMessage = function (msg) {
@@ -157,20 +242,20 @@ TacMapServer.factory('MsgService', function () {
             });
         }
     };
-    msgsvc.connectServer = function (data, sname, missionjson) {
+    msgsvc.connectServer = function (data, sname, mapjson) {
         console.log(data.message + " " + data.socketid);
         msgsvc.connected = true;
-        msgsvc.missionid = sname;
-        //console.log(missionjson);
+        msgsvc.mapid = sname;
+        //console.log(mapjson);
         msgsvc.socket.emit('server connected', {
-            message: 'server', socketid: data.socketid, missionid: msgsvc.missionid, missiondata: missionjson
+            message: 'server', socketid: data.socketid, mapid: msgsvc.mapid, mapdata: mapjson
         });
     };
     msgsvc.disconnectServer = function (data) {
         console.log("Server Disconnected " + data.socketid);
         msgsvc.connected = false;
         msgsvc.socket.emit('server disconnected', {
-            message: 'server', socketid: data.socketid, mission: msgsvc.missionid
+            message: 'server', socketid: data.socketid, map: msgsvc.mapid
         });
     };
     return msgsvc;

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Missions>
-    <Mission id='0' name="Default Mission" url="xml/DefaultMission.xml"/>
-    <Mission id='1' name="CAMPEN Mission" url="xml/CAMPEN.xml"/>
-</Missions>
