@@ -293,7 +293,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         });
     });
 });
-TacMapServer.controller('mapCtl', function ($indexedDB, $scope, $http, GeoService, DbService, MsgService, DlgBx) {
+TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,MsgService, DlgBx) {
     var mapctl = this;
     var ellipsoid = scene.globe.ellipsoid;
     mapctl.trackselected = null;
@@ -482,7 +482,7 @@ TacMapServer.controller('mapCtl', function ($indexedDB, $scope, $http, GeoServic
         //msgctl.messages.push({text: "Unit " + data.socketid + " connected"});
     });
 });
-TacMapServer.controller('messageCtl', function ($indexedDB, $scope, $interval, DbService, GeoService, MsgService) {
+TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, MsgService) {
     var msgctl = this;
     msgctl.messages = [];
     msgctl.tracks = [];
