@@ -15,13 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /* global Cesium, angular, stctl */
-
 var databasename = "tacmapDb";
 var storestructure = [
     ['Resources', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['Maps', 'name', false, [['data', 'data', false]]]
+    ['Maps', 'name', false, [['data', 'data', false]]],
+    ['User', 'name', false, [['data', 'data', false]]]
 ];
-var compression = false;
 var viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,

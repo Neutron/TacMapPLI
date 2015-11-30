@@ -1,19 +1,20 @@
-/* global TacMapServer, TacMapUnit */
+/* global TacMapServer, TacMapUnit, viewer, Cesium */
 // ***** SERVER SERVICES ******//
 TacMapServer.factory('DbService', function ($indexedDB) {
     var dbsvc = {
     };
     dbsvc.xj = new X2JS();
     dbsvc.dB = $indexedDB;
+    dbsvc.map=[];
     dbsvc.syncResource = function ($scope, $http, mapid, url, stctl, GeoService) {
-        console.log("syncResource " + mapid)
+        console.log("syncResource " + mapid);
         $http.get(url).success(function (resdata, status, headers) {
             var mod = headers()[ 'last-modified'];
             var filename = url.substring(url.lastIndexOf('/') + 1);
             var jdata = dbsvc.xj.xml_str2json(resdata);
             var mname = jdata.Map._name;
             var jname = mname.replace(' ', '').toLowerCase();
-            if (mname!=='Default Map'){
+            if (mname !== 'Default Map') {
                 stctl.maplist.push({
                     id: mapid, name: mname, url: 'json/' + jname + '.json'
                 });
@@ -40,7 +41,7 @@ TacMapServer.factory('DbService', function ($indexedDB) {
                             }
                         });
                         if (filename === 'DefaultMap.xml') {
-                            console.log('init geo');
+                            //console.log('init geo');
                             stctl.map = jdata;
                             GeoService.initGeodesy($scope, jdata.Map._name, jdata);
                         }
@@ -48,9 +49,25 @@ TacMapServer.factory('DbService', function ($indexedDB) {
                     });
                 });
             });
-
         }).error(function () {
             console.log('Error getting resource');
+        });
+    };
+    dbsvc.updateDb = function (mapname,entityId, fieldname, value) {
+        console.log('updateDb '+entityId+' map name:'+mapname+' fieldname:'+fieldname+' value:'+value);
+        dbsvc.dB.openStore("Maps", function (store) {
+            store.find(mapname).then(function (map) {
+                dbsvc.map = map.data;
+                for (i = 0; i < dbsvc.map.Map.Entities.Entity.length; i++) {
+                    if (dbsvc.map.Map.Entities.Entity[i]._id === entityId) {
+                        dbsvc.map.Map.Entities.Entity[i][fieldname] = value;
+                    }
+                }
+            }).then(function () {
+                store.upsert({
+                    name: mapname, data: dbsvc.map
+                });
+            });
         });
     };
     return dbsvc;
@@ -182,7 +199,7 @@ TacMapServer.factory('GeoService', function () {
                 style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                 outlineWidth: 2,
                 verticalOrigin: Cesium.VerticalOrigin.TOP,
-                pixelOffset: new Cesium.Cartesian2(0, 15)
+                pixelOffset: new Cesium.Cartesian2(0,15)
             }
         });
         if (entity.polypoints) {
@@ -219,7 +236,6 @@ TacMapServer.factory('MsgService', function () {
     };
     msgsvc.serverid;
     msgsvc.mapid;
-    msgsvc.connected = false;
     msgsvc.sending = false;
     msgsvc.lastSendingTime = 0;
     msgsvc.users = [];
@@ -230,25 +246,50 @@ TacMapServer.factory('MsgService', function () {
             mapid: name, mapdata: mapdata
         });
     };
-    msgsvc.sendMessage = function (msg) {
+    msgsvc.publishMsg = function (endpointid, mapviewid, networkid, msgtype, msg) {
         var message = msg;
         console.log("sendMessage");
-        //console.log("sendMessage from "+message.user+" to "+message.to+" at "+message.time+" posrep: "+message.position[0]+", "+message.position[1]);
-        // if there is a non-empty message and a socket connection
         if (message && msgsvc.connected) {
-            // tell server to execute 'new message' and send along one parameter
-            msgsvc.socket.emit('send msg', {
-                message: message
+            msgsvc.socket.emit('publish msg', {
+                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'message', message: msg
             });
         }
     };
-    msgsvc.connectServer = function (data, sname, mapjson) {
+    msgsvc.publishView = function (endpointid, mapviewid, networkid, vwdata) {
+        var message = msg;
+        console.log("sendMessage");
+        if (message && msgsvc.connected) {
+            // tell server to execute 'new message' and send along one parameter
+            msgsvc.socket.emit('publish msg', {
+                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'view', mapview: vwdata
+            });
+        }
+    };
+    msgsvc.publishLocation = function (endpointid, mapviewid, networkid, location) {
+        var message = msg;
+        console.log("sendMessage");
+        if (message && msgsvc.connected) {
+            // tell server to execute 'new message' and send along one parameter
+            msgsvc.socket.emit('publish msg', {
+                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'location', location: location
+            });
+        }
+    };
+    msgsvc.publishEntity = function (endpointid, mapviewid, networkid, entity) {
+        var message = msg;
+        console.log("sendMessage");
+        if (message && msgsvc.connected) {
+            // tell server to execute 'new message' and send along one parameter
+            msgsvc.socket.emit('publish msg', {
+                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'entity', entity: entity
+            });
+        }
+    };
+    msgsvc.connectServer = function (data, sname) {
         console.log(data.message + " " + data.socketid);
-        msgsvc.connected = true;
         msgsvc.mapid = sname;
-        //console.log(mapjson);
-        msgsvc.socket.emit('server connected', {
-            message: 'server', socketid: data.socketid, mapid: msgsvc.mapid, mapdata: mapjson
+        msgsvc.socket.emit('initial connection', {
+            endpointid: data.socketid
         });
     };
     msgsvc.disconnectServer = function (data) {

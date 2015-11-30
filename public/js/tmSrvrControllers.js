@@ -1,13 +1,25 @@
-/* global resources */
+/* global resources, TacMapServer, Cesium, scene, angular, stctl, viewer */
 // ***** SERVER CONTROLLERS ******//
 TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoService, MsgService, DlgBx) {
     var stctl = this;
     stctl.maplist = [{
             id: 0, name: 'Default Map'
         }];
-    stctl.map = [];
-    stctl.currmap = [];
     $scope.selmap = stctl.maplist[0];
+    stctl.mapview = [];
+    stctl.newnet = "";
+    stctl.newmap = [];
+    stctl.currmap = [];
+    stctl.user = [];
+    stctl.user.name = 'User';
+    stctl.user.mapview = stctl.user.name + '-Map';
+    stctl.user.network = stctl.user.name + '-Net';
+    stctl.networks = [];
+    stctl.userProfile = "views/userProfile.html";
+    stctl.planMaps = "views/planMaps.html";
+    stctl.msgLog = "views/msgLog.html";
+    stctl.editprofile = false;
+    stctl.publishmap = false;
     console.log("storeCtl");
     stctl.clearDb = function () {
         console.log("Clear DB");
@@ -123,22 +135,6 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             });
         });
     };
-    stctl.updateDb = function (entityId, fieldname, value) {
-        DbService.dB.openStore("Maps", function (store) {
-            store.find($scope.selmap.name).then(function (map) {
-                stctl.map = map.data;
-                for (i = 0; i < stctl.map.Map.Entities.Entity.length; i++) {
-                    if (stctl.map.Map.Entities.Entity[i]._id === entityId) {
-                        stctl.map.Map.Entities.Entity[i][fieldname] = value;
-                    }
-                }
-            }).then(function () {
-                store.upsert({
-                    name: $scope.selmap.name, data: stctl.map
-                });
-            });
-        });
-    };
     stctl.updateMap = function () {
         DbService.dB.openStore("Maps", function (store) {
             store.upsert({
@@ -217,7 +213,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                 console.log("Save " + newname);
                 stctl.copyMap($scope.selmap.name, newname);
                 stctl.maplist.push({
-                    id: stctl.maplist.length - 1, name: newname
+                    id: stctl.maplist.length - 1, name: newname, url: "/json/" + newname
                 });
                 stctl.currmap = currentmap;
                 stctl.loadMap(stctl.maplist[stctl.maplist.length - 1]);
@@ -269,8 +265,33 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             return ((x < y) ? -1 : ((x > y) ? 1 : 0));
         });
     };
-    MsgService.socket.on('init server', function (data) {
-        console.log('init server: ' + data.mapid);
+    stctl.saveMapView = function (viewname) {
+        var camera = $scope.viewer.scene.camera;
+        var viewdata = {
+            position: camera.position.clone(),
+            direction: camera.direction.clone(),
+            up: camera.up.clone(),
+            right: camera.right.clone(),
+            transform: camera.transform.clone(),
+            frustum: camera.frustum.clone()
+        };
+        DbService.dB.openStore('Maps', function (mstore) {
+            console.log("Save Map View: " + viewname);
+            mstore.upsert({
+                name: viewname, data: viewdata
+            });
+        });
+    };
+    stctl.saveUserData = function () {
+        DbService.dB.openStore('Maps', function (mstore) {
+            console.log("Save User Data: " + stctl.user.name);
+            mstore.upsert({
+                name: 'userdata', data: stctl.user
+            });
+        });
+    };
+    MsgService.socket.on('new connection', function (data) {
+        console.log('new connection: ' + data.id);
         $http.get('xml/maps.xml').success(function (resdata, status, headers) {
             var maps = DbService.xj.xml_str2json(resdata);
             for (i = 0; i < maps.Maps.Map.length; i++) {
@@ -293,7 +314,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         });
     });
 });
-TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,MsgService, DlgBx) {
+TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgService, DlgBx) {
     var mapctl = this;
     var ellipsoid = scene.globe.ellipsoid;
     mapctl.trackselected = null;
@@ -344,11 +365,11 @@ TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,
             mapctl.addGeoFence(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
         } else if (mapctl.editgeofencechecked && cartesian && mapctl.geofenceselected !== null) {
             var cartographic = ellipsoid.cartesianToCartographic(cartesian);
-            mapctl.addGeoFencePoint(Cesium.Math.toDegrees(mapctl.geofenceselected,cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+            mapctl.addGeoFencePoint(Cesium.Math.toDegrees(mapctl.geofenceselected, cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
         }
     },
             Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-    mapctl.selectTrack = function (u, zoomto) {   
+    mapctl.selectTrack = function (u, zoomto) {
         mapctl.trackselected = GeoService.sdatasources[$scope.selmap.name].entities.getById(u._id);
         mapctl.loc = mapctl.getLoc(mapctl.trackselected);
         if (zoomto) {
@@ -401,10 +422,9 @@ TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,
         return ([latitudeString, longitudeString]);
     };
     mapctl.setLocation = function (entity, lat, lng) {
-        //console.log(entity._id);
         if (typeof entity._id !== 'undefined') {
             GeoService.sdatasources[$scope.selmap.name].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
-            mapctl.updateDb(entity._id, '_location', lat + "," + lng);
+            DbService.updateDb($scope.selmap.name,entity._id, '_location', lat + "," + lng);
             mapctl.selectTrack(entity);
         } else {
             mapctl.addTrack(lat, lng);
@@ -428,11 +448,12 @@ TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,
                     "_id": trackname + "_Track",
                     "_name": trackname,
                     "_type": "track",
-                    "_location": [lat,lng]
+                    "_location": [lat, lng]
                 };
                 mapctl.tracks.push(trck);
                 mapctl.trackselected = trck;
                 GeoService.addCesiumPoint(trck, 'BLUE');
+                DbService.updateDb($scope.selmap.name,trackname, '_location', lat + "," + lng);
             }
         });
     };
@@ -454,8 +475,8 @@ TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,
                     "_id": geofencename + "_GeoFence",
                     "_name": geofencename,
                     "_type": "geofence",
-                    "_location": [lat,lng],
-                    "_points": [lat,lng]
+                    "_location": [lat, lng],
+                    "_points": [lat, lng]
                 };
                 mapctl.geofences.push(geofnce);
                 mapctl.geofenceselected = geofnce;
@@ -463,8 +484,8 @@ TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,
             }
         });
     };
-    mapctl.addGeoFencePoint = function (geofid,lat, lng) {
-        mapctl.geofences[geofid].points.push([lat,lng]);
+    mapctl.addGeoFencePoint = function (geofid, lat, lng) {
+        mapctl.geofences[geofid].points.push([lat, lng]);
         console.log(mapctl.geofences[geofid]);
     };
     mapctl.showTrace = function (track) {
@@ -473,8 +494,7 @@ TacMapServer.controller('mapCtl', function ($scope, $http, DbService,GeoService,
         GeoService.showTrace(track);
     };
     MsgService.socket.on('connection', function (data) {
-        MsgService.serverid = data.socketid;
-        MsgService.connectServer(data, $scope.selmap.name, mapctl.map);
+        MsgService.connectServer(data, $scope.selmap.name);
     });
     MsgService.socket.on('track connected', function (data) {
         console.log("Unit connected " + data.id);

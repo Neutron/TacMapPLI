@@ -1,6 +1,6 @@
 (function () {
     "use strict";
-    /*global console,require,__dirname,process*/
+    /*global console,require,__dirname,process, app, argv*/
     /*jshint es3:false*/
 
     var express = require('express');

@@ -34,22 +34,21 @@ button::-moz-focus-inner {
 }
 
 #cesiumContainer{
-    position:absolute;
-    left:180px;
     height:100%;
-    width:86%;
+    width:100%;
     margin:0;
-    overflow:hidden;
     padding:0;
+    overflow:hidden;
     font-family:sans-serif;
 }
 #infoCol{
     position:absolute;
-    left:0;
-    top:0;
-    height:100%;
+    left:4px;
+    top:4px;
+    height:auto;
     width:180px;
     margin:2px;
+    z-index : 1;
 }
 .sect{
     width:100%;
@@ -254,4 +253,7 @@ option{
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+.smbtngrp{
+   margin-left:2px; 
 }

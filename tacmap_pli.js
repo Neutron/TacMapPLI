@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+/* global __dirname, require, process */
+
 var express = require('express');
 var compression = require('compression');
 var url = require('url');
@@ -29,32 +31,37 @@ app.use(bodyParser.json());
 app.use(express.static(__dirname + '/public'));
 app.use(compression());
 
+//SOCKET IO
+var server = http.createServer(app);
+var io = require('socket.io').listen(server);
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8000;
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+server.listen(server_port, server_ip_address, function () {
+    console.log('listening on ' + server_port);
+});
+//
+
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/public/geoview.html');
 });
 app.get('/json/*', function (req, res) {
     res.sendFile(__dirname + '/' + req.url);
 });
-
 app.post('/json/*', function (req, res) {
     //console.log(request.body);
     fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function () {
         res.end();
     });
 });
-
 app.put('/json/*', function (req, res) {
     //console.log(req.body);
     fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function () {
         res.end();
     });
 });
-
-
 app.get('/xml/*', function (req, res) {
     res.sendFile(__dirname + '/' + req.url);
 });
-
 app.put('/xml/*', function (req, res) {
     console.log("Put " + req.url);
     console.log(req.body);
@@ -62,103 +69,108 @@ app.put('/xml/*', function (req, res) {
         res.end();
     });
 });
-
-app.post('/entity/*'),function(req,res){
+app.post('/entity/*'), function (req, res) {
     console.log("Post entity " + req.url);
     console.log(req.body);
     fs.writeFile(__dirname + '/public' + req.url, req.body, function () {
         res.end();
     });
-}
+};
 
-var server = http.createServer(app);
-var io = require('socket.io').listen(server);
-var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8000
-var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1'
-server.listen(server_port, server_ip_address, function () {
-    console.log('listening on ' + server_port);
-});
-//
-var mapid = "Default Map";
-var mapdata = [];
-var servers = [];
-var users = [];
-var allconnections = [];
-var mapRunning = false;
+//The following code implements a peer map service that uses SockeIO namespaces
+//to publish and subscribe to position reporting and other data.
+
+//mapviewservers is a collection of map scenarios.  These can be persisted on the server or
+//in broswers in order to allow sharing from different devices or browsers.
+var mapviewservers = [];
+//mapio is a collection of socketIO namespaces.  These are created from browsers and used
+//to segregate map scenarios.
+var mapio = [];
+//networks is a collection of socketIO channels.  Endpoints are added and removed from channels.
+var networks = [];
+//endpoints is a collection of connected clients.  Information about endpoints can be persisted
+//on the server or in broswers in order to allow sharing from different devices or browsers.
+var endpoints = [];
+
 
 io.on('connection', function (socket) {
+    endpoints[socket.id] = [];
+    socketOps(socket);
+});
 
-    allconnections.push(socket);
+var socketOps = function (socket) {
 
-    socket.on('disconnect', function () {
-        var i = allconnections.indexOf(socket);
-        console.log(i.id + " disconnected");
-        delete allconnections[i];
-    });
-    // Use socket to communicate with this particular user only, sending it it's own id
+    // Use socket to communicate with an endpoint, sending it it's own id
     socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
 
-    socket.on('server connected', function (data) {
-        console.log("server connect to socket: " + data.socketid + ", map:" + data.mapid);
-        servers.push({server: data.socketid});
-        if (mapid === "Default Mission") {
-            mapdata = data.mapdata;
-            io.emit('init server', {target: "server", mapid: data.mapid, mapdata: mapdata});
-        } else {
-            io.emit('init server', {target: "server", mapid: mapid, mapdata: mapdata});
-        }
-        if (mapRunning) {
-            io.emit('start map');
-        }
+    socket.on('initial connection', function (data) {
+        console.log("initial connection: " + data.endpointid);
+        io.emit('new connection',{id:data.endpointid});
     });
-    socket.on('user connected', function (data) {
-        console.log("users connect: " + data.id + " set map: " + mapid);
-        users.push({user: data.id});
-        io.emit('user connected', {mapid: mapid, mapdata: mapdata});
+
+    // Add endpoint to a network on a mapview.
+    socket.on('endpoint connected', function (data) {
+        console.log("endpoint connect: " + data.endpointid);
+        endpoints[data.mapviewid][data.netname][data.endpointid] = data.endpointinfo;
+        mapio[data.mapviewid].to(data.netname).emit('endpoints connected', {endpoints: endpoints[data.mapviewid][data.netname]});
     });
-    socket.on('send msg', function (data) {
-        console.log('send msg from ' + data.message.user + ' to ' + data.net);
-        socket.to(data.net).emit('msg sent', data);
+
+    socket.on('disconnect', function () {
+        var i = endpoints.indexOf(socket.id);
+        console.log(endpoints.id + " disconnected");
     });
-    socket.on('user join', function (data) {
-        //console.log(data.userid + ' joined ' + data.netname);
-        socket.join(data.netname);
-        io.emit('user joined', {userid: data.userid, netname: data.netname});
+
+    // Initialize a mapview to display a specific set of networks and entities
+    // Provides initial mapview area and view information.  A mapview has networks and networks have endpoints
+    socket.on('init mapview', function (data) {
+        console.log("MapView server connect to socket: " + data.socketid + ", mapview:" + data.mapviewid);
+        mapviewservers[data.mapviewid] = {mapviewserver: data.socketid, mapviewid: data.mapviewid, data: data.mapviewdata};
+        mapio[data.mapviewid] = io.of('/' + data.mapviewid);
+        mapio[data.mapviewid].emit('init server', mapviewservers[data.mapviewid]);
+        mapio[data.mapviewid].on('connection', socketOps);
     });
-    socket.on('server join', function (data) {
-        //console.log(data.serverid + ' joined ' + data.netname);
-        socket.join(data.netname);
-        io.emit('server joined', {serverid: data.serverid, netname: data.netname});
+    // Initialize a network as a socketIO room
+    socket.on('create network', function (data) {
+        console.log("Network created: " + data.netname + " on " + data.mapviewid);
+        networks[data.mapviewid] = [];
+        networks[data.mapviewid][data.netname] = data.netinfo;
+        endpoints[data.mapviewid] = [];
+        endpoints[data.mapviewid][data.netname] = [];
+        mapio[data.mapviewid].emit('network created', {networks: networks[data.mapviewid]});
     });
-    socket.on('server leave', function (data) {
-        // console.log(data.serverid + ' left ' + data.netname);
-        socket.leave(data.netname);
-        io.emit('server left', {serverid: data.serverid, netname: data.netname});
+    // Remove a network as a socketIO room
+    socket.on('close network', function (data) {
+        console.log("Close Network: " + data.netname + " on " + data.mapviewid);
+        mapio[data.mapviewid].leave(data.netname);
+        networks[data.mapviewid].remove(networks[data.mapviewid][data.netname]);
+        endpoints[data.mapviewid][data.netname].remove(endpoints[data.mapviewid][data.netname][data.endpointid]);
+        mapio[data.mapviewid].emit('network closed', {network: data.netname, networks: networks[data.mapviewid]});
     });
-    socket.on('user leave', function (data) {
-        //console.log(data.userid + ' left ' + data.netname);
-        socket.leave(data.netname);
-        io.emit('user left', {userid: data.userid, netname: data.netname});
+    // Join endpoint to a network on a mapview.
+    socket.on('endpoint join', function (data) {
+        console.log(data.endpointid + ' joined ' + data.netname);
+        mapio[data.mapviewid].join(data.netname);
+        endpoints[data.mapviewid][data.netname][data.endpointid] = data.endpointinfo;
+        mapio[data.mapviewid].to(data.netname).emit('endpoint joined', {endpoints: endpoints[data.mapviewid][data.netname]});
     });
-    socket.on('add entity', function (data) {
-        console.log("emit add entity: " + data._id);
-        io.emit('add entity', data);
+    // Disconnect endpoint from a network on a mapview.
+    socket.on('endpoint leave', function (data) {
+        console.log(data.userid + ' left ' + data.netname + ' on ' + data.mapviewid);
+        endpoints[data.mapviewid][data.netname].remove(endpoints[data.mapviewid][data.netname][data.endpointid]);
+        mapio[data.mapviewid].leave(data.netname);
+        mapio[data.mapviewid].to(data.netname).emit('endpoint left', {endpointid: data.endpointid, endpoints: endpoints[data.mapviewid][data.netname]});
     });
-    socket.on('set map', function (data) {
-        console.log("set map: " + data.mapid);
-        mapid = data.mapid;
-        mapdata = data.mapdata;
-        io.emit('set map', {target: "user", mapid: mapid, mapdata: mapdata});
+    // Publish a message to a network on a mapview.  These will be processed client side using
+    // data.msg.type and data.msg.content information
+    // data.type can be: entity, location, mapview, and message.  
+    // Information is stored in data.entity, data.location, data.mapview, data.message
+    socket.on('publish msg', function (data) {
+        console.log('send msg from ' + data.endpointid + ' on ' + data.mapviewid + ' to ' + data.net);
+        mapio[data.mapviewid].to(data.netname).emit('msg sent', data);
     });
-    socket.on('map running', function () {
-        mapRunning = true;
-        io.emit('start map');
+
+    // Publish time information to a network on a mapview.
+    socket.on('mapview time', function (data) {
+        io.emit('set mapview time', data);
     });
-    socket.on('map stopped', function () {
-        mapRunning = false;
-        io.emit('stop map');
-    });
-    socket.on('map time', function (data) {
-        io.emit('set time',data);
-    });
-});
+};
