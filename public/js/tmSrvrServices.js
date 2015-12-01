@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
-/* global TacMapServer, TacMapUnit, viewer, Cesium */
+/* global TacMapServer, TacMapUnit, viewer, Cesium, DbService, angular */
 // ***** SERVER SERVICES ******//
-TacMapServer.factory('DbService', function ($indexedDB) {
+TacMapServer.factory('DbService', function ($indexedDB, $q) {
     var dbsvc = {
     };
     dbsvc.xj = new X2JS();
@@ -57,7 +57,7 @@ TacMapServer.factory('DbService', function ($indexedDB) {
         });
     };
     dbsvc.syncResource = function ($scope, $http, mapid, url, stctl, GeoService) {
-        console.log("syncResource " + mapid);
+        //console.log("syncResource " + mapid);
         $http.get(url).success(function (resdata, status, headers) {
             var mod = headers()[ 'last-modified'];
             var filename = url.substring(url.lastIndexOf('/') + 1);
@@ -135,6 +135,25 @@ TacMapServer.factory('DbService', function ($indexedDB) {
         dbsvc.dB.openStore('Maps', function (store) {
             store.upsert({
                 name: mapname, data: data
+            });
+        });
+    };
+    dbsvc.getUsers = function (callback) {
+        dbsvc.dB.openStore('User', function (mstore) {
+            mstore.getAllKeys().then(function (keys) {
+                callback(keys);
+            });
+        });
+    };
+    dbsvc.initUser = function ($scope, uname, callback) {
+        dbsvc.dB.openStore('User', function (mstore) {
+            var user = {};
+            user.id = $scope.socketID;
+            user.name = uname;
+            user.mapview = uname + '-Map';
+            user.network = uname + '-Net';
+            mstore.upsert({name: uname, data: user}).then(function () {
+                callback(user);
             });
         });
     };
@@ -309,9 +328,9 @@ TacMapServer.factory('MsgService', function () {
     msgsvc.users = [];
     msgsvc.socket = io();
     // Sends a message
-    msgsvc.setMap = function (name, mapdata) {
-        msgsvc.socket.emit('set map', {
-            mapid: name, mapdata: mapdata
+    msgsvc.setMap = function (socketid, mapname, mapdata) {
+        msgsvc.socket.emit('init mapview', {
+            socketid: socketid, mapviewid: mapname, mapviewdata: mapdata
         });
     };
     msgsvc.joinUser = function () {
@@ -354,14 +373,13 @@ TacMapServer.factory('MsgService', function () {
             msgsvc.socket.emit('publish msg', entity);
         }
     };
-    msgsvc.connectServer = function (data, sname) {
+    msgsvc.connectEndpoint = function (data, userdata) {
         console.log(data.message + " " + data.socketid);
-        msgsvc.mapid = sname;
         msgsvc.socket.emit('initial connection', {
-            endpointid: data.socketid
+            endpoint: userdata
         });
     };
-    msgsvc.disconnectServer = function (data) {
+    msgsvc.disconnectEndpoint = function (data) {
         console.log("Server Disconnected " + data.socketid);
         msgsvc.connected = false;
         msgsvc.socket.emit('server disconnected', {

@@ -14,17 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
-/* global resources, TacMapServer, Cesium, scene, angular, stctl, viewer */
+/* global resources, TacMapServer, Cesium, scene, angular, stctl, viewer, usrctl */
 // ***** SERVER CONTROLLERS ******//
 TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoService, MsgService, DlgBx) {
     var stctl = this;
     stctl.maplist = [{
-            id: 0, name: 'Default Map', url:'json/defaultmap.json'
+            id: 0, name: 'Default Map', url: 'json/defaultmap.json'
         }];
     $scope.selmap = stctl.maplist[0];
     stctl.mapview = [];
     stctl.newnet = "";
-    stctl.map= [];
+    stctl.map = [];
     stctl.newmap = [];
     stctl.currmap = [];
     stctl.networks = [];
@@ -80,7 +80,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                                 stctl.maplist.push({
                                     id: stctl.maplist.length, name: newname.replace(' ', ''), url: "/json/" + newname.replace(' ', '') + ".json"
                                 });
-                                DbService.updateDbFile('Resources','maps.json',stctl.maplist,"/json/maps.json",$http);
+                                DbService.updateDbFile('Resources', 'maps.json', stctl.maplist, "/json/maps.json", $http);
 //                                DbService.dB.openStore('Resources', function (store) {
 //                                    store.upsert({
 //                                        name: "maps.json", url: "/json/maps.json", data: stctl.maplist
@@ -158,7 +158,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         DbService.dB.openStore("Maps", function (store) {
             store.find(currentmap).then(function (map) {
                 store.insert({
-                    name: newmapid, url:map.url, data: map.data
+                    name: newmapid, url: map.url, data: map.data
                 });
             });
         });
@@ -194,7 +194,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                     }
                     stctl.maplist = na;
                     stctl.loadMap(stctl.maplist[0]);
-                    DbService.updateDbFile('Resources','maps.json',stctl.maplist,"/json/maps.json",$http);
+                    DbService.updateDbFile('Resources', 'maps.json', stctl.maplist, "/json/maps.json", $http);
                 }
             });
         }
@@ -225,11 +225,11 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                 console.log("Save " + newname);
                 stctl.copyMap($scope.selmap.name, newname);
                 stctl.maplist.push({
-                    id: stctl.maplist.length, name: newname, url: "/json/" + newname
+                    id: stctl.maplist.length, name: newname, url: '/json/' + newname + '.json"'
                 });
                 stctl.currmap = currentmap;
                 stctl.loadMap(stctl.maplist[stctl.maplist.length - 1]);
-                DbService.updateDbFile('Resources','maps.json',stctl.maplist,"/json/maps.json",$http);
+                DbService.updateDbFile('Resources', 'maps.json', stctl.maplist, "/json/maps.json", $http);
             }
         });
     };
@@ -300,13 +300,14 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         DbService.initMaps($scope, $http, stctl, GeoService);
     });
 });
-TacMapServer.controller('userCtl', function ($scope, DbService, MsgService) {
+TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, DlgBx) {
     var usrctl = this;
-    usrctl.user = [];
-    usrctl.user.id = $scope.socketID;
-    usrctl.user.name = 'User';
-    usrctl.user.mapview = usrctl.user.name + '-Map';
-    usrctl.user.network = usrctl.user.name + '-Net';
+//    $scope.user = [];
+//    $scope.user.id = $scope.socketID;
+//    $scope.user.name = 'User';
+//    $scope.user.mapview = $scope.user.name + '-Map';
+//    $scope.user.network = $scope.user.name + '-Net';
+    usrctl.usernames = [];
     usrctl.editprofile = false;
     usrctl.saveUserData = function () {
         DbService.dB.openStore('User', function (mstore) {
@@ -318,15 +319,36 @@ TacMapServer.controller('userCtl', function ($scope, DbService, MsgService) {
     };
     usrctl.loadUserData = function () {
         DbService.dB.openStore('User', function (mstore) {
-            console.log("Load User Data: " + usrctl.user.name);
-            mstore.find(usrctl.user.name).then(function (dbres) {
-                usrctl.user = dbres.data;
-                usrctl.user.id = $scope.socketID;
+            console.log("Load User Data: " + $scope.user.name);
+            mstore.find($scope.user.name).then(function (dbres) {
+                $scope.user = dbres.data;
+                $scope.user.id = $scope.socketID;
             });
         });
     };
     usrctl.publishUserData = function () {
         MsgService.publishEntity(usrctl.user);
+    };
+    MsgService.socket.on('connection', function (data) {
+        $scope.socketID = data.socketid;
+        console.log('connection ' + $scope.socketID);
+        DbService.getUsers(function (ulist) {
+            usrctl.usernames=ulist;
+            usrctl.registerUser(data,ulist);
+        });
+    });
+    usrctl.registerUser = function (data,ulist) {
+        DlgBx.prompt("Enter User Name: ", '').then(function (uname) {
+            if (ulist.indexOf(uname) === -1) {
+                DbService.initUser($scope, uname, function (usr) {
+                    MsgService.connectEndpoint(data, $scope.selmap.name, usr);
+                });
+            } else {
+                DlgBx.alert("Name In Use").then(function () {
+                    usrctl.registerUser(data,ulist);
+                });
+            }
+        });
     };
 });
 TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgService, DlgBx) {
@@ -538,10 +560,7 @@ TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgSe
         console.log("showTrace");
         mapctl.showPP = true;
         GeoService.showTrace(track);
-    };
-    MsgService.socket.on('connection', function (data) {
-        MsgService.connectServer(data, $scope.selmap.name);
-    });
+    }
     MsgService.socket.on('track connected', function (data) {
         console.log("Unit connected " + data.id);
         MsgService.setMap($scope.selmap.name, mapctl.map);

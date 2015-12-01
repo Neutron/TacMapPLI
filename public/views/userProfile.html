@@ -20,18 +20,18 @@
 -->
 <div data-ng-controller="userCtl as usrctl">
     <div class="topspc">
-        <span>User Name:  {{usrctl.user.name}}</span>
-        <input type="text"  data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.name"/>
+        <span>User Name:  {{$scope.user.name}}</span>
+        <input type="text"  data-ng-show="usrctl.editprofilechecked" data-ng-model="$scope.user.name"/>
     </div>
 
     <div class="topspc">
-        <span>Map View: {{usrctl.user.mapview}}</span>
-        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.mapview"/>
+        <span>Map View: {{$scope.user.mapview}}</span>
+        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="$scope.user.mapview"/>
 
     </div>
     <div class="topspc">
-        <span data-ng-model="usrctl.user.network">Network: {{usrctl.user.network}}</span>
-        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.network"/>
+        <span data-ng-model="$scope.user.network">Network: {{$scope.user.network}}</span>
+        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="$scope.user.network"/>
     </div>
 
     <div data-ng-show="usrctl.editprofilechecked">

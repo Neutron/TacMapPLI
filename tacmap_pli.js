@@ -82,7 +82,7 @@ app.post('/entity/*'), function (req, res) {
 
 //mapviewservers is a collection of map scenarios.  These can be persisted on the server or
 //in broswers in order to allow sharing from different devices or browsers.
-var mapviewservers = [];
+var mapviews = [];
 //mapio is a collection of socketIO namespaces.  These are created from browsers and used
 //to segregate map scenarios.
 var mapio = [];
@@ -104,8 +104,10 @@ var socketOps = function (socket) {
     socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
 
     socket.on('initial connection', function (data) {
-        console.log("initial connection: " + data.endpointid);
-        io.emit('new connection',{id:data.endpointid});
+        console.log("initial connection: ");
+        console.log(data);
+        endpoints.push(data.endpoint);
+        io.emit('new connection',data.endpoint);
     });
 
     // Add endpoint to a network on a mapview.
@@ -117,16 +119,16 @@ var socketOps = function (socket) {
 
     socket.on('disconnect', function () {
         var i = endpoints.indexOf(socket.id);
-        console.log(endpoints.id + " disconnected");
+        console.log(socket.id + " disconnected");
     });
 
     // Initialize a mapview to display a specific set of networks and entities
     // Provides initial mapview area and view information.  A mapview has networks and networks have endpoints
     socket.on('init mapview', function (data) {
-        console.log("MapView server connect to socket: " + data.socketid + ", mapview:" + data.mapviewid);
-        mapviewservers[data.mapviewid] = {mapviewserver: data.socketid, mapviewid: data.mapviewid, data: data.mapviewdata};
+        console.log("MapView connect to socket: " + data.socketid + ", mapview:" + data.mapviewid);
+        mapviews[data.mapviewid] = {mapview: data.socketid, mapviewid: data.mapviewid, data: data.mapviewdata};
         mapio[data.mapviewid] = io.of('/' + data.mapviewid);
-        mapio[data.mapviewid].emit('init server', mapviewservers[data.mapviewid]);
+        mapio[data.mapviewid].emit('init server', mapviews[data.mapviewid]);
         mapio[data.mapviewid].on('connection', socketOps);
     });
     // Initialize a network as a socketIO room

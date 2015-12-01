@@ -22,7 +22,7 @@
         <!--        <select data-ng-options="map.name for map in stctl.maplist track by map.id" data-ng-change="stctl.loadMap(selmap)"
                         data-ng-model="selmap" >
                 </select>-->
-        <div data-ng-repeat="m in stctl.maplist track by m.id">
+        <div data-ng-repeat="m in stctl.maplist track by $index">
             <div class="filelisting">
                 <span data-ng-click="stctl.loadMap(m)">{{m.name}}</span>
             </div>
