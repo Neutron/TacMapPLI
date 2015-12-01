@@ -1,3 +1,19 @@
+/** 
+ * Copyright (C) 2015 JD NEUSHUL
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **/
 /* global TacMapServer, TacMapUnit, viewer, Cesium */
 // ***** SERVER SERVICES ******//
 TacMapServer.factory('DbService', function ($indexedDB) {
@@ -6,6 +22,40 @@ TacMapServer.factory('DbService', function ($indexedDB) {
     dbsvc.xj = new X2JS();
     dbsvc.dB = $indexedDB;
     dbsvc.map = [];
+    dbsvc.initMaps = function ($scope, $http, stctl, GeoService) {
+        dbsvc.dB.openStore('Resources', function (mstore) {
+            mstore.getAllKeys().then(function (keys) {
+                if (keys.indexOf('maps.json') === -1) {
+                    $http.get('xml/maps.xml').success(function (resdata, status, headers) {
+                        var maps = dbsvc.xj.xml_str2json(resdata);
+                        for (i = 0; i < maps.Maps.Map.length; i++) {
+                            var u = maps.Maps.Map[i]._url;
+                            var n = maps.Maps.Map[i]._name;
+                            if (u.substring(u.indexOf('.')) === '.xml') {
+                                dbsvc.syncResource($scope, $http, maps.Maps.Map[i]._id, maps.Maps.Map[i]._url, stctl, GeoService);
+                            } else {
+                                $http.get(u).success(function (jsondata, status, headers) {
+                                    var jsmod = headers()[ 'last-modified'];
+                                    dbsvc.dB.openStore('Maps', function (mstore) {
+                                        mstore.upsert({
+                                            name: n, url: u, lastmod: jsmod, data: jsondata
+                                        });
+                                        $http.post("/json/maps.json", angular.toJson(stctl.sortByKey(stctl.maplist, 'id')));
+                                    });
+                                });
+                            }
+                        }
+                    });
+                } else {
+                    mstore.find('maps.json').then(function (dbrec) {
+                        var maps = dbrec.data;
+                        stctl.maplist = dbrec.data;
+                        stctl.loadMap({id: 0, name: 'Default Map'});
+                    });
+                }
+            });
+        });
+    };
     dbsvc.syncResource = function ($scope, $http, mapid, url, stctl, GeoService) {
         console.log("syncResource " + mapid);
         $http.get(url).success(function (resdata, status, headers) {
@@ -21,7 +71,7 @@ TacMapServer.factory('DbService', function ($indexedDB) {
             }
             dbsvc.dB.openStore('Maps', function (mstore) {
                 mstore.upsert({
-                    name: mname, url: 'json/' + jname + '.json', data: jdata
+                    name: mname, url: 'json/' + jname + '.json', lastmod: mod, data: jdata
                 }).then(function () {
                     dbsvc.dB.openStore('Resources', function (store) {
                         store.getAllKeys().then(function (keys) {
@@ -53,7 +103,7 @@ TacMapServer.factory('DbService', function ($indexedDB) {
             console.log('Error getting resource');
         });
     };
-    dbsvc.updateDb = function (mapname, entityId, fieldname, value) {
+    dbsvc.updateEntityDb = function (mapname, entityId, fieldname, value) {
         console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
         dbsvc.dB.openStore("Maps", function (store) {
             store.find(mapname).then(function (map) {
@@ -70,12 +120,29 @@ TacMapServer.factory('DbService', function ($indexedDB) {
             });
         });
     };
+    dbsvc.updateDbFile = function (storename, recordname, data, url, $http) {
+        dbsvc.dB.openStore(storename, function (store) {
+            store.upsert({
+                name: recordname, data: data
+            }).then(function () {
+                if (typeof url !== 'undefined') {
+                    $http.put('/json/maps.json', data);
+                }
+            });
+        });
+    };
+    dbsvc.updateMapFile = function (mapname, data) {
+        dbsvc.dB.openStore('Maps', function (store) {
+            store.upsert({
+                name: mapname, data: data
+            });
+        });
+    };
     return dbsvc;
 });
 TacMapServer.factory('GeoService', function () {
     var geosvc = {
     };
-    geosvc.entities = [];
     geosvc.mapid = null;
     geosvc.sdatasources = [];
     geosvc.initGeodesy = function ($scope, mapid, mapdata) {
@@ -227,7 +294,7 @@ TacMapServer.factory('GeoService', function () {
             geosvc.addStoredWaypoints(entity);
         }
     };
-    geosvc.removeEntity= function (entityid){
+    geosvc.removeEntity = function (entityid) {
         geosvc.sdatasources[geosvc.mapid].entities.removeById(entityid);
     };
     return geosvc;

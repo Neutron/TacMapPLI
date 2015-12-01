@@ -1,5 +1,5 @@
-/* 
- * Copyright (C) 2015 jdn
+/** 
+ * Copyright (C) 2015 JD NEUSHUL
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,12 +13,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ **/
 /* global Cesium, angular, stctl */
 var databasename = "tacmapDb";
 var storestructure = [
     ['Resources', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['Maps', 'name', false, [['data', 'data', false]]],
+    ['Maps', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
     ['User', 'name', false, [['data', 'data', false]]]
 ];
 var viewer = new Cesium.Viewer('cesiumContainer', {

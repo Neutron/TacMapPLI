@@ -1,8 +1,8 @@
 
 <!DOCTYPE html>
 <!--
-/* 
- * Copyright (C) 2015 Major James Neushul, USMC
+/** 
+ * Copyright (C) 2015 JD NEUSHUL
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+ **/
 -->
 <html lang="en">
     <head>
@@ -30,15 +30,6 @@
                 <div class="maptitle">{{selmap.name}}</div>
                 <div class="accordion__container" data-ng-controller="menuCtrl">
                     <div class="accordion__tab">
-                        <div data-ng-model="tabone" class="accordion__tab-title"
-                             data-ng-click="openTab('tab one')">MAP VIEWS</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('tab one')">
-                            <select data-ng-options="map.name for map in stctl.maplist track by map.id" data-ng-change="stctl.loadMap(selmap)"
-                                    data-ng-model="selmap" >
-                            </select>
-                        </div>
-                    </div>
-                    <div class="accordion__tab">
                         <div class="accordion__tab-title" data-ng-click="openTab('tab two')"
                              >USER PROFILE</div>
                         <div class="accordion__tab-content" data-ng-show="isOpenTab('tab two')">
@@ -46,7 +37,7 @@
                         </div>
                     </div>
                     <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab three')">MAP VIEW</div>
+                        <div class="accordion__tab-title" data-ng-click="openTab('tab three')">MAPS</div>
                         <div class="accordion__tab-content" data-ng-show="isOpenTab('tab three')">
                             <div data-ng-include="stctl.planMaps"></div>
                         </div>

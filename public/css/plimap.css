@@ -224,7 +224,12 @@ option{
     font-weight:bold;
 }
 .accordion__tab-title{
-    background:#BEDFD5;
+    background:#E5F2FE;
+    padding:5px;
+    cursor:pointer;
+}
+.accordion__tab-subtitle{
+    background:lightcyan;
     padding:5px;
     cursor:pointer;
 }

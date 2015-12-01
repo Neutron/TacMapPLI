@@ -1,13 +1,30 @@
+/** 
+ * Copyright (C) 2015 JD NEUSHUL
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **/
 /* global resources, TacMapServer, Cesium, scene, angular, stctl, viewer */
 // ***** SERVER CONTROLLERS ******//
 TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoService, MsgService, DlgBx) {
     var stctl = this;
     stctl.maplist = [{
-            id: 0, name: 'Default Map'
+            id: 0, name: 'Default Map', url:'json/defaultmap.json'
         }];
     $scope.selmap = stctl.maplist[0];
     stctl.mapview = [];
     stctl.newnet = "";
+    stctl.map= [];
     stctl.newmap = [];
     stctl.currmap = [];
     stctl.networks = [];
@@ -61,17 +78,18 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                             $http.post("/json/" + newname.replace(' ', '') + '.json', map).success(function () {
                                 console.log("Saved " + newname + " to /json/" + newname.replace(' ', '') + ".json");
                                 stctl.maplist.push({
-                                    id: stctl.maplist.length - 1, name: newname.replace(' ', ''), url: "/json/" + newname.replace(' ', '') + ".json"
+                                    id: stctl.maplist.length, name: newname.replace(' ', ''), url: "/json/" + newname.replace(' ', '') + ".json"
                                 });
-                                DbService.dB.openStore('Resources', function (store) {
-                                    store.upsert({
-                                        name: "maps.json", url: "/json/maps.json", data: stctl.maplist
-                                    }).then(function () {
-                                        store.find("maps.json").then(function (st) {
-                                            $http.put('/json/maps.json', st.data);
-                                        });
-                                    });
-                                });
+                                DbService.updateDbFile('Resources','maps.json',stctl.maplist,"/json/maps.json",$http);
+//                                DbService.dB.openStore('Resources', function (store) {
+//                                    store.upsert({
+//                                        name: "maps.json", url: "/json/maps.json", data: stctl.maplist
+//                                    }).then(function () {
+//                                        store.find("maps.json").then(function (st) {
+//                                            $http.put('/json/maps.json', st.data);
+//                                        });
+//                                    });
+//                                });
                             });
                         });
                     });
@@ -86,7 +104,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
     stctl.getFile = function (savedmap) {
         console.log("Get File: " + savedmap.name + ", " + savedmap.url);
         $http.get(savedmap.url).success(function (sdata) {
-            DlgBx.prompt("Enter Save As Name or Overwrite", savedmap.map).then(function (newname) {
+            DlgBx.prompt("Enter Save As Name or Overwrite", savedmap.name).then(function (newname) {
                 if (newname === "Default Map") {
                     DlgBx.alert("You Can't' Overwrite the Default Map");
                 } else {
@@ -116,7 +134,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                                 name: newname, data: sdata
                             }).then(function () {
                                 stctl.maplist.push({
-                                    id: stctl.maplist.length - 1, name: newname
+                                    id: stctl.maplist.length, name: newname
                                 });
                                 stctl.currmap = {
                                     id: stctl.maplist.length - 1, name: newname
@@ -140,7 +158,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         DbService.dB.openStore("Maps", function (store) {
             store.find(currentmap).then(function (map) {
                 store.insert({
-                    name: newmapid, data: map.data
+                    name: newmapid, url:map.url, data: map.data
                 });
             });
         });
@@ -151,7 +169,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             store.find(mapid).then(function () {
                 store[ "delete"](mapid).then(function () {
                     store.insert({
-                        name: mapid, data: mapctl.map
+                        name: mapid, data: stctl.map
                     });
                 });
             });
@@ -161,35 +179,35 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         if ($scope.selmap.id === 0) {
             DlgBx.alert("Can't delete Default Map");
         } else {
-            DlgBx.confirm("Confirm deletion of Map: " + currentmap.value).then(function (yes) {
+            DlgBx.confirm("Confirm deletion of Map: " + currentmap.name).then(function (yes) {
                 console.log("Confirm response: " + $scope.selmap.id);
                 if (yes && $scope.selmap.id !== 0) {
-                    console.log("Delete from Idb: " + currentmap.value);
+                    console.log("Delete from Idb: " + currentmap.name);
                     DbService.dB.openStore("Maps", function (store) {
-                        store[ "delete"](currentmap.value);
+                        store[ "delete"](currentmap.name);
                     });
                     var na = [];
                     for (i = 0; i < stctl.maplist.length; i++) {
-                        if (stctl.maplist[i].value !== currentmap.value) {
+                        if (stctl.maplist[i].name !== currentmap.name) {
                             na.push(stctl.maplist[i]);
                         }
                     }
                     stctl.maplist = na;
-                    stctl.loadMap(stctl.maplist[na.length - 1]);
-                } else {
+                    stctl.loadMap(stctl.maplist[0]);
+                    DbService.updateDbFile('Resources','maps.json',stctl.maplist,"/json/maps.json",$http);
                 }
             });
         }
     };
     stctl.saveMap = function (currentmap) {
         console.log("saveMap");
-        DlgBx.prompt("Enter Save As Name or Overwrite", currentmap.value).then(function (newname) {
+        DlgBx.prompt("Enter Save As Name or Overwrite", currentmap.name).then(function (newname) {
             var overwrite = null;
             var overwriteid = null;
-            for (n = 0; n < stctl.maplist.length - 1; n++) {
-                if (newname === stctl.maplist[n].value) {
-                    overwrite = stctl.maplist[n].value;
-                    overwriteid = stctl.maplist[n].value;
+            for (n = 0; n < stctl.maplist.length; n++) {
+                if (newname === stctl.maplist[n].name) {
+                    overwrite = stctl.maplist[n].name;
+                    overwriteid = stctl.maplist[n].name;
                 }
             }
             if (overwrite !== null) {
@@ -207,10 +225,11 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
                 console.log("Save " + newname);
                 stctl.copyMap($scope.selmap.name, newname);
                 stctl.maplist.push({
-                    id: stctl.maplist.length - 1, name: newname, url: "/json/" + newname
+                    id: stctl.maplist.length, name: newname, url: "/json/" + newname
                 });
                 stctl.currmap = currentmap;
                 stctl.loadMap(stctl.maplist[stctl.maplist.length - 1]);
+                DbService.updateDbFile('Resources','maps.json',stctl.maplist,"/json/maps.json",$http);
             }
         });
     };
@@ -237,7 +256,7 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             });
             DbService.dB.openStore('Resources', function (store) {
                 store.upsert({
-                    name: "maps.json", url: resources[1], data: mapctl.maplist
+                    name: "maps.json", url: resources[1], data: stctl.maplist
                 }).then(function () {
                     $http.post("/json/maps.json", stctl.maplist).success(
                             function () {
@@ -278,29 +297,9 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
     };
     MsgService.socket.on('new connection', function (data) {
         console.log('new connection: ' + data.id);
-        $http.get('xml/maps.xml').success(function (resdata, status, headers) {
-            var maps = DbService.xj.xml_str2json(resdata);
-            for (i = 0; i < maps.Maps.Map.length; i++) {
-                var u = maps.Maps.Map[i]._url;
-                var n = maps.Maps.Map[i]._name;
-                if (u.substring(u.indexOf('.')) === '.xml') {
-                    DbService.syncResource($scope, $http, maps.Maps.Map[i]._id, maps.Maps.Map[i]._url, stctl, GeoService);
-                } else {
-                    $http.get(u).success(function (jsondata, status, headers) {
-                        DbService.dB.openStore('Maps', function (mstore) {
-                            console.log(n);
-                            mstore.upsert({
-                                name: n, url: u, data: jsondata
-                            });
-                            $http.post("/json/maps.json", angular.toJson(stctl.sortByKey(stctl.maplist, 'id')));
-                        });
-                    });
-                }
-            }
-        });
+        DbService.initMaps($scope, $http, stctl, GeoService);
     });
 });
-
 TacMapServer.controller('userCtl', function ($scope, DbService, MsgService) {
     var usrctl = this;
     usrctl.user = [];
@@ -440,7 +439,7 @@ TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgSe
     mapctl.setLocation = function (entity, lat, lng) {
         if (typeof entity._id !== 'undefined') {
             GeoService.sdatasources[$scope.selmap.name].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
-            DbService.updateDb($scope.selmap.name, entity._id, '_location', lat + "," + lng);
+            DbService.updateEntityDb($scope.selmap.name, entity._id, '_location', lat + "," + lng);
             mapctl.selectTrack(entity);
         } else {
             mapctl.addTrack(lat, lng);
@@ -469,7 +468,7 @@ TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgSe
                 mapctl.tracks.push(trck);
                 mapctl.trackselected = trck;
                 GeoService.addCesiumPoint(trck, 'BLUE');
-                DbService.updateDb($scope.selmap.name, trackname, '_location', lat + "," + lng);
+                DbService.updateEntityDb($scope.selmap.name, trackname, '_location', lat + "," + lng);
             }
         });
     };
@@ -578,28 +577,16 @@ TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, M
             text: "Unit " + data.socketid + " disconnected"
         });
     });
-    MsgService.socket.on('user joined', function (data) {
+    MsgService.socket.on('endpoint joined', function (data) {
         //console.log('Unit ' + data.userid + ' Joined Network: ' + data.netname);
         msgctl.messages.push({
-            text: 'Unit ' + data.userid + ' Joined Network: ' + data.netname
+            text: data.userid + ' Joined Network: ' + data.netname
         });
     });
-    MsgService.socket.on('user left', function (data) {
+    MsgService.socket.on('endpoint left', function (data) {
         console.log('Unit ' + data.userid + ' Left Network: ' + data.netname);
         msgctl.messages.push({
-            text: 'Unit ' + data.userid + ' Left Network: ' + data.netname
-        });
-    });
-    MsgService.socket.on('server joined', function (data) {
-        //console.log('Joined Network: ' + data.netname);
-        msgctl.messages.push({
-            text: 'Joined Network: ' + data.netname
-        });
-    });
-    MsgService.socket.on('server left', function (data) {
-        //console.log('Left Network: ' + data.netname);
-        msgctl.messages.push({
-            text: 'Left Network: ' + data.netname
+            text: data.userid + ' Left Network: ' + data.netname
         });
     });
     MsgService.socket.on("start map", function () {

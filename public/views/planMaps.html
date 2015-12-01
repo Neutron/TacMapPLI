@@ -1,30 +1,34 @@
 <!DOCTYPE html>
 <!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
+/** 
+ * Copyright (C) 2015 JD NEUSHUL
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **/
 -->
 <div>
-    <div>
-        <div class="bsect">
-            <div class="label">Maps</div>
-            <button class="smbtn" data-ng-click="stctl.deleteMap(selmap)">Delete</button>
-            <button class="smbtn" data-ng-click="stctl.saveMap(selmap)">Save</button>
-            <button class="smbtn" data-ng-click="stctl.importMap()">Import</button>
-            <button class="smbtn" data-ng-click="stctl.exportMap()">Export</button>
-        </div>
-        <div class="msect"><span class="txtbtn" data-ng-click="stctl.clearDb()">Reset Local Cache Database</span></div>
-        <div class="filelist" data-ng-show="stctl.import" data-ng-click="stctl.import = false">
-            <div data-ng-repeat="f in stctl.maplist">
-                <div class="filelisting">
-                    <span data-ng-click="stctl.getFile(f)">{{f.name}}</span>
-                </div>
+    <div data-ng-controller="mapCtl as mapctl">  
+        <!--        <select data-ng-options="map.name for map in stctl.maplist track by map.id" data-ng-change="stctl.loadMap(selmap)"
+                        data-ng-model="selmap" >
+                </select>-->
+        <div data-ng-repeat="m in stctl.maplist track by m.id">
+            <div class="filelisting">
+                <span data-ng-click="stctl.loadMap(m)">{{m.name}}</span>
             </div>
         </div>
-    </div>
-    <div data-ng-controller="mapCtl as mapctl">  
         <div class="accordion__tab">
-            <div class="accordion__tab-title" data-ng-click="openTab('tracks')">TRACKS</div>
+            <div class="accordion__tab-subtitle" data-ng-click="openTab('tracks')">TRACKS</div>
             <div class="accordion__tab-content" data-ng-show="isOpenTab('tracks')">
                 <div class="sect">
                     <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0"/>
@@ -45,7 +49,7 @@ and open the template in the editor.
             </div>
         </div>
         <div class="accordion__tab">
-            <div class="accordion__tab-title" data-ng-click="openTab('geofences')">GEOFENCES</div>
+            <div class="accordion__tab-subtitle" data-ng-click="openTab('geofences')">GEOFENCES</div>
             <div class="accordion__tab-content" data-ng-show="isOpenTab('geofences')">
                 <div class="sect">
                     <input data-ng-model="mapctl.editgeofencechecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editlocchecked = 0"/>
@@ -63,6 +67,25 @@ and open the template in the editor.
                          data-ng-class="{selected : mapctl.geofenceselected._id === f._id}">
                         <img src="" data-ng-src="img/bluedot.png" />
                         <div class="unitlabel">{{f._name}}</div> 
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion__tab">
+            <div class="accordion__tab-subtitle" data-ng-click="openTab('cache')">CACHE</div>
+            <div class="accordion__tab-content" data-ng-show="isOpenTab('cache')">
+                <div class="msect">
+                <button class="smbtn" data-ng-click="stctl.deleteMap(selmap)">Delete</button>
+                <button class="smbtn" data-ng-click="stctl.saveMap(selmap)">Save</button>
+                <button class="smbtn" data-ng-click="stctl.importMap()">Import</button>
+                <button class="smbtn" data-ng-click="stctl.exportMap()">Export</button>
+                </div>
+                <div class="msect"><span class="txtbtn" data-ng-click="stctl.clearDb()">Reset Local Cache Database</span></div>
+                <div class="filelist" data-ng-show="stctl.import" data-ng-click="stctl.import = false">
+                    <div data-ng-repeat="f in stctl.maplist">
+                        <div class="filelisting">
+                            <span data-ng-click="stctl.getFile(f)">{{f.name}}</span>
+                        </div>
                     </div>
                 </div>
             </div>
