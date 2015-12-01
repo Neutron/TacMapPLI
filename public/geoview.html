@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <!--
 /* 
@@ -24,8 +25,8 @@
         <link rel="stylesheet" href="css/plimap.css" />
     </head>
     <body>
-        <div id="infoCol" class="noselect" data-ng-app="TacMapServer" data-ng-controller="storeCtl as stctl">
-            <div>
+        <div id="infoCol" class="noselect" data-ng-app="TacMapServer">
+            <div data-ng-controller="storeCtl as stctl">
                 <div class="maptitle">{{selmap.name}}</div>
                 <div class="accordion__container" data-ng-controller="menuCtrl">
                     <div class="accordion__tab">
@@ -45,7 +46,7 @@
                         </div>
                     </div>
                     <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab three')">EDIT MAP VIEW</div>
+                        <div class="accordion__tab-title" data-ng-click="openTab('tab three')">MAP VIEW</div>
                         <div class="accordion__tab-content" data-ng-show="isOpenTab('tab three')">
                             <div data-ng-include="stctl.planMaps"></div>
                         </div>

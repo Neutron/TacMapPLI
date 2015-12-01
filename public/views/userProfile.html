@@ -5,43 +5,26 @@ To change this license header, choose License Headers in Project Properties.
 To change this template file, choose Tools | Templates
 and open the template in the editor.
 -->
-<div data-ng-controller="storeCtl as stctl">
+<div data-ng-controller="userCtl as usrctl">
     <div class="topspc">
-        <span>User Name:  {{stctl.user.name}}</span>
-        <input type="text"  data-ng-show="stctl.editprofilechecked" data-ng-model="stctl.user.name"/>
+        <span>User Name:  {{usrctl.user.name}}</span>
+        <input type="text"  data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.name"/>
     </div>
-<!--    <div>
-        <span>Email: {{stctl.user.email}}</span>
-        <input type="text" data-ng-show="stctl.editprofilechecked" data-ng-model="stctl.user.email"/>
-    </div>
-    <div>
-        <span>Phone: {{stctl.user.phone}}</span>
-        <input type="text" data-ng-show="stctl.editprofilechecked" data-ng-model="stctl.user.phone"/>
-    </div>-->
+
     <div class="topspc">
-        <span>Map View: {{stctl.user.mapview}}</span>
-        <input type="text" data-ng-show="stctl.editprofilechecked" data-ng-model="stctl.user.mapview"/>
-<!--        <div>
-            <span>Publish:</span>
-            <input data-ng-model="stctl.publishmap" data-ng-false-value="0" type="checkbox" data-ng-change="stctl.publishmap = 0"/>
-        </div>-->
+        <span>Map View: {{usrctl.user.mapview}}</span>
+        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.mapview"/>
+
     </div>
     <div class="topspc">
-        <span data-ng-model="stctl.user.network">Network: {{stctl.user.network}}</span>
-        <input type="text" data-ng-show="stctl.editprofilechecked" data-ng-model="stctl.user.network"/>
+        <span data-ng-model="usrctl.user.network">Network: {{usrctl.user.network}}</span>
+        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.network"/>
     </div>
-<!--    <div data-ng-show="stctl.networks">Subscribe To:</div>
-    <div data-ng-repeat="net in stctl.networks">
-        <div>{{net}}</div>
-    </div>
-    <div data-ng-show="stctl.networks">Publish To:</div>
-    <div data-ng-repeat="net in stctl.networks">
-        <div>{{net}}</div>
-    </div>-->
-    <div data-ng-show="stctl.editprofilechecked">
-        <div><span>Create Network: </span><input type="text" data-ng-model="stctl.newnet"/></div></div>
+
+    <div data-ng-show="usrctl.editprofilechecked">
+        <div><span>Create Network: </span><input type="text" data-ng-model="usrctl.newnet"/></div></div>
     <div style="margin-left:90px;">
         <span>Edit Profile: </span>
-        <input data-ng-model="stctl.editprofilechecked" data-ng-false-value="0" type="checkbox"/>
+        <input data-ng-model="usrctl.editprofilechecked" data-ng-false-value="0" type="checkbox"/>
     </div>
 </div>

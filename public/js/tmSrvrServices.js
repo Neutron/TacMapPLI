@@ -5,7 +5,7 @@ TacMapServer.factory('DbService', function ($indexedDB) {
     };
     dbsvc.xj = new X2JS();
     dbsvc.dB = $indexedDB;
-    dbsvc.map=[];
+    dbsvc.map = [];
     dbsvc.syncResource = function ($scope, $http, mapid, url, stctl, GeoService) {
         console.log("syncResource " + mapid);
         $http.get(url).success(function (resdata, status, headers) {
@@ -53,8 +53,8 @@ TacMapServer.factory('DbService', function ($indexedDB) {
             console.log('Error getting resource');
         });
     };
-    dbsvc.updateDb = function (mapname,entityId, fieldname, value) {
-        console.log('updateDb '+entityId+' map name:'+mapname+' fieldname:'+fieldname+' value:'+value);
+    dbsvc.updateDb = function (mapname, entityId, fieldname, value) {
+        console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
         dbsvc.dB.openStore("Maps", function (store) {
             store.find(mapname).then(function (map) {
                 dbsvc.map = map.data;
@@ -140,20 +140,18 @@ TacMapServer.factory('GeoService', function () {
         });
     };
     geosvc.addCesiumPolyline = function (poly) {
-        //console.log('addCesiumPolyline');
         var loc = poly._points;
-        //console.log(loc);
-        loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        if (!angular.isArray(loc)) {
+            loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        }
         //Cartesian wants long, lat
         geosvc.sdatasources[geosvc.mapid].entities.add({
             id: poly._id,
             name: poly._name,
             polyline: {
-                hierarchy: Cesium.Cartesian3.fromDegreesArray(loc.reverse()),
-                outline: true,
-                outlineColor: Cesium.Color[poly._color],
-                outlineWidth: 2,
-                fill: false
+                positions: Cesium.Cartesian3.fromDegreesArray(loc.reverse()),
+                width: 1,
+                material: Cesium.Color[poly._color]
             }
         });
     };
@@ -199,7 +197,7 @@ TacMapServer.factory('GeoService', function () {
                 style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                 outlineWidth: 2,
                 verticalOrigin: Cesium.VerticalOrigin.TOP,
-                pixelOffset: new Cesium.Cartesian2(0,15)
+                pixelOffset: new Cesium.Cartesian2(0, 15)
             }
         });
         if (entity.polypoints) {
@@ -229,6 +227,9 @@ TacMapServer.factory('GeoService', function () {
             geosvc.addStoredWaypoints(entity);
         }
     };
+    geosvc.removeEntity= function (entityid){
+        geosvc.sdatasources[geosvc.mapid].entities.removeById(entityid);
+    };
     return geosvc;
 });
 TacMapServer.factory('MsgService', function () {
@@ -245,6 +246,9 @@ TacMapServer.factory('MsgService', function () {
         msgsvc.socket.emit('set map', {
             mapid: name, mapdata: mapdata
         });
+    };
+    msgsvc.joinUser = function () {
+
     };
     msgsvc.publishMsg = function (endpointid, mapviewid, networkid, msgtype, msg) {
         var message = msg;
@@ -275,14 +279,12 @@ TacMapServer.factory('MsgService', function () {
             });
         }
     };
-    msgsvc.publishEntity = function (endpointid, mapviewid, networkid, entity) {
+    msgsvc.publishEntity = function (entity) {
         var message = msg;
         console.log("sendMessage");
         if (message && msgsvc.connected) {
             // tell server to execute 'new message' and send along one parameter
-            msgsvc.socket.emit('publish msg', {
-                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'entity', entity: entity
-            });
+            msgsvc.socket.emit('publish msg', entity);
         }
     };
     msgsvc.connectServer = function (data, sname) {

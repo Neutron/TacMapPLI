@@ -4,8 +4,8 @@ To change this license header, choose License Headers in Project Properties.
 To change this template file, choose Tools | Templates
 and open the template in the editor.
 -->
-<div class="units">
-    <div data-ng-controller="storeCtl as stctl">
+<div>
+    <div>
         <div class="bsect">
             <div class="label">Maps</div>
             <button class="smbtn" data-ng-click="stctl.deleteMap(selmap)">Delete</button>
@@ -22,42 +22,48 @@ and open the template in the editor.
             </div>
         </div>
     </div>
-    <div data-ng-controller="mapCtl as mapctl">
-        <div class="sect">
-            <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0"/>
-            <span>Set Locations</span>
-        </div>
-        <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
-        <div class="sect">
-            <input data-ng-model="mapctl.editgeofencechecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editlocchecked = 0"/>
-            <span>Edit GeoFence</span>
-            <span class="smbtngrp" data-ng-show="mapctl.editgeofencechecked">
-                <button class="smbtn" data-ng-click="mapctl.removeLastPp()">del pt</button>
-                <button class="smbtn" data-ng-click="mapctl.removeAllPp()">del all</button>
-            </span>
-            <div class="msect" data-ng-show="mapctl.editgeofencechecked">Right Click to Set Points</div>
-        </div>
-        <div class="sect">
-            <div class="rptsel">TRACKS</div>
-            <div data-ng-repeat="t in mctl.tracks">
-                <div class="unitlisting" data-ng-model="mctl.trackselected"
-                     data-ng-show="mctl.showTrack(t)"
-                     data-ng-click="mctl.selectTrack(t, true)"
-                     data-ng-class="{selected : mctl.trackselected._id === t._id}">
-                    <img src="" data-ng-src="img/bluedot.png" />
-                    <div class="unitlabel">{{t._name}}</div> 
+    <div data-ng-controller="mapCtl as mapctl">  
+        <div class="accordion__tab">
+            <div class="accordion__tab-title" data-ng-click="openTab('tracks')">TRACKS</div>
+            <div class="accordion__tab-content" data-ng-show="isOpenTab('tracks')">
+                <div class="sect">
+                    <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0"/>
+                    <span>Set Locations</span>
+                </div>
+                <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>       
+                <div class="sect">
+                    <div data-ng-repeat="t in mapctl.tracks">
+                        <div class="unitlisting" data-ng-model="mapctl.trackselected"
+                             data-ng-show="mapctl.showTrack(t)"
+                             data-ng-click="mapctl.selectTrack(t, true)"
+                             data-ng-class="{selected : mapctl.trackselected._id === t._id}">
+                            <img src="" data-ng-src="img/bluedot.png" />
+                            <div class="unitlabel">{{t._name}}</div> 
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="sect">
-            <div class="rptsel">GEO FENCES</div>
-            <div data-ng-repeat="f in mctl.geofences">
-                <div class="unitlisting" data-ng-model="mctl.geofenceselected"
-                     data-ng-show="mctl.showGeoFence(f)"
-                     data-ng-click="mctl.selectGeoFence(f, true)"
-                     data-ng-class="{selected : mctl.geofenceselected._id === f._id}">
-                    <img src="" data-ng-src="img/bluedot.png" />
-                    <div class="unitlabel">{{f._name}}</div> 
+        <div class="accordion__tab">
+            <div class="accordion__tab-title" data-ng-click="openTab('geofences')">GEOFENCES</div>
+            <div class="accordion__tab-content" data-ng-show="isOpenTab('geofences')">
+                <div class="sect">
+                    <input data-ng-model="mapctl.editgeofencechecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editlocchecked = 0"/>
+                    <span>Edit GeoFence</span>
+                    <span class="smbtngrp" data-ng-show="mapctl.editgeofencechecked">
+                        <button class="smbtn" data-ng-click="mapctl.removeGeoFencePoint()">del pt</button>
+                        <button class="smbtn" data-ng-click="mapctl.removeAllGeoFencePoints()">del all</button>
+                    </span>
+                    <div class="msect" data-ng-show="mapctl.editgeofencechecked">Right Click to Set Points</div>
+                </div>
+                <div data-ng-repeat="f in mapctl.geofences">
+                    <div class="unitlisting" data-ng-model="mapctl.geofenceselected"
+                         data-ng-show="mapctl.showGeoFence(f)"
+                         data-ng-click="mapctl.selectGeoFence(f, true)"
+                         data-ng-class="{selected : mapctl.geofenceselected._id === f._id}">
+                        <img src="" data-ng-src="img/bluedot.png" />
+                        <div class="unitlabel">{{f._name}}</div> 
+                    </div>
                 </div>
             </div>
         </div>
