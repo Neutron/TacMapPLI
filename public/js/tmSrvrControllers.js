@@ -295,18 +295,14 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             });
         });
     };
-    MsgService.socket.on('new connection', function (data) {
-        console.log('new connection: ' + data.id);
+    MsgService.socket.on('connection', function (data) {
+        //console.log('new connection: ' + data.id);
         DbService.initMaps($scope, $http, stctl, GeoService);
     });
 });
 TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, DlgBx) {
     var usrctl = this;
-//    $scope.user = [];
-//    $scope.user.id = $scope.socketID;
-//    $scope.user.name = 'User';
-//    $scope.user.mapview = $scope.user.name + '-Map';
-//    $scope.user.network = $scope.user.name + '-Net';
+    usrctl.user = [];
     usrctl.usernames = [];
     usrctl.editprofile = false;
     usrctl.saveUserData = function () {
@@ -332,22 +328,25 @@ TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, DlgB
     MsgService.socket.on('connection', function (data) {
         $scope.socketID = data.socketid;
         console.log('connection ' + $scope.socketID);
+        usrctl.registerUser(data);
         DbService.getUsers(function (ulist) {
-            usrctl.usernames=ulist;
-            usrctl.registerUser(data,ulist);
+            usrctl.usernames = ulist;
         });
     });
-    usrctl.registerUser = function (data,ulist) {
-        DlgBx.prompt("Enter User Name: ", '').then(function (uname) {
-            if (ulist.indexOf(uname) === -1) {
-                DbService.initUser($scope, uname, function (usr) {
-                    MsgService.connectEndpoint(data, $scope.selmap.name, usr);
-                });
-            } else {
-                DlgBx.alert("Name In Use").then(function () {
-                    usrctl.registerUser(data,ulist);
-                });
-            }
+    usrctl.registerUser = function (data) {
+        DlgBx.prompt("Enter User Name: ", data.socketid).then(function (uname) {
+           // if (ulist.indexOf(uname) === -1) {
+           var user = {};
+            user.id = $scope.socketID;
+            user.name = uname;
+            user.mapview = uname + '-Map';
+            user.network = uname + '-Net';
+            usrctl.user=user;
+//            } else {
+//                DlgBx.alert("Name In Use").then(function () {
+//                    usrctl.registerUser(data,ulist);
+//                });
+//            }
         });
     };
 });
@@ -582,6 +581,14 @@ TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, M
             user: uid, to: sentto, time: new Date(), position: [lat, lon], network: net
         });
     };
+    
+    MsgService.socket.on('update connections', function (data){
+        console.log(data);
+        DbService.updateConnection('endpoints',data.endpoints);
+        DbService.updateConnection('networks',data.networks);
+        DbService.updateConnection('mapviews',data.mapviews);
+    });
+    
     MsgService.socket.on('error', console.error.bind(console));
     MsgService.socket.on('message', console.log.bind(console));
     MsgService.socket.on('msg sent', function (data) {
@@ -608,14 +615,7 @@ TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, M
             text: data.userid + ' Left Network: ' + data.netname
         });
     });
-    MsgService.socket.on("start map", function () {
-        msgctl.running = true;
-        $scope.$apply();
-    });
-    MsgService.socket.on("stop map", function () {
-        msgctl.running = false;
-        $scope.$apply();
-    });
+    
     MsgService.socket.on("set time", function (data) {
         msgctl.time = data.time;
         $scope.$apply();

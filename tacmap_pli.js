@@ -100,14 +100,19 @@ io.on('connection', function (socket) {
 
 var socketOps = function (socket) {
 
-    // Use socket to communicate with an endpoint, sending it it's own id
+    // Use socket to communicate with an endpoint, sending it it's own id and current data resource ids.
     socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
 
     socket.on('initial connection', function (data) {
         console.log("initial connection: ");
         console.log(data);
-        endpoints.push(data.endpoint);
-        io.emit('new connection',data.endpoint);
+        endpoints.push({id:data.endpoint.id,endpoint:data.endpoint});
+        networks.push({id:data.endpoint.id,network:data.endpoint.network});
+        mapviews.push({id:data.endpoint.id,mapview:data.endpoint.mapview});
+        console.log(endpoints);
+        console.log(networks);
+        console.log(mapviews);
+        io.emit('update connections', {endpoints:endpoints,networks:networks,mapviews:mapviews});
     });
 
     // Add endpoint to a network on a mapview.
@@ -118,8 +123,14 @@ var socketOps = function (socket) {
     });
 
     socket.on('disconnect', function () {
-        var i = endpoints.indexOf(socket.id);
+        var e=endpoints.indexOf(socket.id);
+        endpoints.splice(e,1);
+        var n=networks.indexOf(socket.id);
+        networks.splice(n,1);
+        var m=mapviews.indexOf(socket.id);
+//        mapviews.splice(m,1);
         console.log(socket.id + " disconnected");
+        io.emit('update connections', {endpoints:endpoints,networks:networks,mapviews:mapviews});
     });
 
     // Initialize a mapview to display a specific set of networks and entities

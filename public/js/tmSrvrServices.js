@@ -157,6 +157,11 @@ TacMapServer.factory('DbService', function ($indexedDB, $q) {
             });
         });
     };
+    dbsvc.updateConnection=function(listname,newdata){
+         dbsvc.dB.openStore('User', function (mstore) {
+             mstore.upsert({name:listname,data:newdata});
+         });
+    };
     return dbsvc;
 });
 TacMapServer.factory('GeoService', function () {
