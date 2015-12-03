@@ -105,34 +105,32 @@ var socketOps = function (socket) {
 
     socket.on('initial connection', function (data) {
         console.log("initial connection: ");
-        console.log(data);
-        endpoints.push({id:data.endpoint.id,endpoint:data.endpoint});
-        networks.push({id:data.endpoint.id,network:data.endpoint.network});
-        mapviews.push({id:data.endpoint.id,mapview:data.endpoint.mapview});
-        console.log(endpoints);
-        console.log(networks);
-        console.log(mapviews);
-        io.emit('update connections', {endpoints:endpoints,networks:networks,mapviews:mapviews});
+        //console.log(data);
+        endpoints.push({id: data.endpoint.id, endpoint: data.endpoint});
+        networks.push({id: data.endpoint.id, network: data.endpoint.network});
+        mapviews.push({id: data.endpoint.id, mapview: data.endpoint.mapview});
+        //console.log(endpoints);
+        //console.log(networks);
+        //console.log(mapviews);
+        io.emit('update connections', {endpoints: endpoints, networks: networks, mapviews: mapviews});
     });
-
     // Add endpoint to a network on a mapview.
     socket.on('endpoint connected', function (data) {
         console.log("endpoint connect: " + data.endpointid);
         endpoints[data.mapviewid][data.netname][data.endpointid] = data.endpointinfo;
         mapio[data.mapviewid].to(data.netname).emit('endpoints connected', {endpoints: endpoints[data.mapviewid][data.netname]});
     });
-
+    //
     socket.on('disconnect', function () {
-        var e=endpoints.indexOf(socket.id);
-        endpoints.splice(e,1);
-        var n=networks.indexOf(socket.id);
-        networks.splice(n,1);
-        var m=mapviews.indexOf(socket.id);
-//        mapviews.splice(m,1);
+        var e = endpoints.indexOf(socket.id);
+        endpoints.splice(e, 1);
+        var n = networks.indexOf(socket.id);
+        networks.splice(n, 1);
+        var m = mapviews.indexOf(socket.id);
+        mapviews.splice(m,1);
         console.log(socket.id + " disconnected");
-        io.emit('update connections', {endpoints:endpoints,networks:networks,mapviews:mapviews});
+        io.emit('update connections', {endpoints: endpoints, networks: networks, mapviews: mapviews});
     });
-
     // Initialize a mapview to display a specific set of networks and entities
     // Provides initial mapview area and view information.  A mapview has networks and networks have endpoints
     socket.on('init mapview', function (data) {
@@ -181,7 +179,15 @@ var socketOps = function (socket) {
         console.log('send msg from ' + data.endpointid + ' on ' + data.mapviewid + ' to ' + data.net);
         mapio[data.mapviewid].to(data.netname).emit('msg sent', data);
     });
-
+    //
+    socket.on('update mapview', function (data) {
+         console.log('update mapview');
+         //if(typeof data.netname!=='undefined'){
+         io.emit('mapview update', {viewname:data.viewname,viewdata:data.viewdata});
+//     }else{
+//         
+//     }
+    });
     // Publish time information to a network on a mapview.
     socket.on('mapview time', function (data) {
         io.emit('set mapview time', data);

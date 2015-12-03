@@ -16,7 +16,7 @@
  **/
 /* global TacMapServer, TacMapUnit, viewer, Cesium, DbService, angular */
 // ***** SERVER SERVICES ******//
-TacMapServer.factory('DbService', function ($indexedDB, $q) {
+TacMapServer.factory('DbService', function ($indexedDB) {
     var dbsvc = {
     };
     dbsvc.xj = new X2JS();
@@ -126,7 +126,7 @@ TacMapServer.factory('DbService', function ($indexedDB, $q) {
                 name: recordname, data: data
             }).then(function () {
                 if (typeof url !== 'undefined') {
-                    $http.put('/json/maps.json', data);
+                    $http.put(url, data);
                 }
             });
         });
@@ -138,29 +138,50 @@ TacMapServer.factory('DbService', function ($indexedDB, $q) {
             });
         });
     };
-    dbsvc.getUsers = function (callback) {
-        dbsvc.dB.openStore('User', function (mstore) {
-            mstore.getAllKeys().then(function (keys) {
-                callback(keys);
+    dbsvc.getRecord = function (storename, recordname, callback) {
+        dbsvc.dB.openStore(storename, function (mstore) {
+            if (dbsvc.hasRecord(mstore, recordname)) {
+                mstore.find().then(function (rec) {
+                    callback(rec);
+                });
+            } else {
+                callback(null);
+            }
+        });
+    };
+    dbsvc.updateRecord = function (storename, recordname, recdata, callback) {
+        dbsvc.dB.openStore(storename, function (mstore) {
+            mstore.upsert({
+                name: recordname, data: recdata
+            }).then(function () {
+                if (typeof callback !== 'undefined') {
+                    callback();
+                }
             });
         });
     };
-    dbsvc.initUser = function ($scope, uname, callback) {
-        dbsvc.dB.openStore('User', function (mstore) {
-            var user = {};
-            user.id = $scope.socketID;
-            user.name = uname;
-            user.mapview = uname + '-Map';
-            user.network = uname + '-Net';
-            mstore.upsert({name: uname, data: user}).then(function () {
-                callback(user);
+    dbsvc.deleteRecord = function (storename, recordname, callback) {
+        dbsvc.dB.openStore(storename, function (mstore) {
+            mstore.delete(recordname).then(function () {
+                if (typeof callback !== 'undefined') {
+                    callback();
+                }
             });
         });
     };
-    dbsvc.updateConnection=function(listname,newdata){
-         dbsvc.dB.openStore('User', function (mstore) {
-             mstore.upsert({name:listname,data:newdata});
-         });
+    dbsvc.hasRecord = function (dbstore, recname) {
+        dbstore.getAllKeys().then(function (keys) {
+            if (keys.indexOf(recname) === -1) {
+                return false;
+            } else {
+                return true;
+            }
+        });
+    };
+    dbsvc.updateConnection = function (listname, newdata) {
+        dbsvc.dB.openStore('User', function (mstore) {
+            mstore.upsert({name: listname, data: newdata});
+        });
     };
     return dbsvc;
 });
@@ -321,6 +342,35 @@ TacMapServer.factory('GeoService', function () {
     geosvc.removeEntity = function (entityid) {
         geosvc.sdatasources[geosvc.mapid].entities.removeById(entityid);
     };
+    geosvc.initViewListener = function (viewname, MsgService, network) {
+        viewer.scene.screenSpaceCameraController.inertiaSpin = 0;
+        viewer.scene.screenSpaceCameraController.inertiaTranslate = 0;
+        viewer.scene.screenSpaceCameraController.inertiaZoom = 0;
+        viewer.scene.camera.moveEnd.addEventListener(function () {
+            // Publish view when the camera stops moving
+            var vw = {
+                position: viewer.scene.camera.position.clone,
+                direction: viewer.scene.camera.direction.clone,
+                up: viewer.scene.camera.up.clone,
+                right: viewer.scene.camera.right.clone,
+                transform: viewer.scene.camera.transform
+                        //frustum: geosvc.camera.frustum.clone()
+            };
+            console.log(vw);
+            MsgService.publishView(viewname, vw, network);
+        });
+    };
+    geosvc.stopViewListener = function () {
+        viewer.scene.camera.moveEnd.destroy();
+    };
+    geosvc.setView = function (vwdata) {
+        viewer.scene.camera.position = vwdata.position;
+        viewer.scene.camera.direction = vwdata.direction;
+        viewer.scene.camera.up = vwdata.up;
+        viewer.scene.camera.right = vwdata.right;
+        viewer.scene.camera.transform = vwdata.transform;
+        //viewer.scene.camera.frustum = vwdata.frustum;
+    };
     return geosvc;
 });
 TacMapServer.factory('MsgService', function () {
@@ -338,8 +388,30 @@ TacMapServer.factory('MsgService', function () {
             socketid: socketid, mapviewid: mapname, mapviewdata: mapdata
         });
     };
-    msgsvc.joinUser = function () {
-
+    msgsvc.joinNet = function (netname) {
+        msgsvc.socket = io('/' + netname);
+    };
+    msgsvc.publish = function (pubmsg, data, networkid) {
+        console.log("Publish " + pubmsg + " to " + networkid);
+        if (typeof networkid !== 'undefined') {
+            //publish to net
+            msgsvc.socket('/' + networkid).emit(pubmsg, data);
+        } else {
+            //publish to all
+            msgsvc.socket.emit(pubmsg, data);
+        }
+    };
+    msgsvc.publishView = function (viewname, vwdata, network) {
+        console.log("Update View to " + network);
+        msgsvc.socket.emit('update mapview', {viewname: viewname, viewdata: vwdata});
+//        if (typeof network !== 'undefined') {
+//            //publish to net
+//            msgsvc.socket = io('/' + network);
+//            msgsvc.socket.emit('update view', {viewname:viewname,viewdata:vwdata});
+//        } else {
+//            //publish to all
+//            msgsvc.socket.emit('update view', {viewname:viewname,viewdata:vwdata});
+//        }
     };
     msgsvc.publishMsg = function (endpointid, mapviewid, networkid, msgtype, msg) {
         var message = msg;
@@ -347,26 +419,6 @@ TacMapServer.factory('MsgService', function () {
         if (message && msgsvc.connected) {
             msgsvc.socket.emit('publish msg', {
                 endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'message', message: msg
-            });
-        }
-    };
-    msgsvc.publishView = function (endpointid, mapviewid, networkid, vwdata) {
-        var message = msg;
-        console.log("sendMessage");
-        if (message && msgsvc.connected) {
-            // tell server to execute 'new message' and send along one parameter
-            msgsvc.socket.emit('publish msg', {
-                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'view', mapview: vwdata
-            });
-        }
-    };
-    msgsvc.publishLocation = function (endpointid, mapviewid, networkid, location) {
-        var message = msg;
-        console.log("sendMessage");
-        if (message && msgsvc.connected) {
-            // tell server to execute 'new message' and send along one parameter
-            msgsvc.socket.emit('publish msg', {
-                endpointid: endpointid, mapviewid: mapviewid, networkid: networkid, type: 'location', location: location
             });
         }
     };

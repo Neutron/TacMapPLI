@@ -27,39 +27,49 @@
     <body>
         <div id="infoCol" class="noselect" data-ng-app="TacMapServer">
             <div data-ng-controller="storeCtl as stctl">
-                <div class="maptitle">{{selmap.name}}</div>
-                <div class="accordion__container" data-ng-controller="menuCtrl">
-                    <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab two')"
-                             >USER PROFILE</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('tab two')">
-                            <div data-ng-include="stctl.userProfile"></div>
+                <div data-ng-controller="userCtl as usrctl">
+                    <div class="maptitle">{{selmap.name}}</div>
+                    <div class="accordion__container" data-ng-controller="menuCtrl">
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="openTab('user')">USER PROFILE</div>
+                            <div class="accordion__tab-content" data-ng-show="isOpenTab('user')">
+                                <div data-ng-include="stctl.userProfile"></div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="openTab('maps')">LOCAL MAPS</div>
+                            <div class="accordion__tab-content" data-ng-show="isOpenTab('maps')">
+                                <div data-ng-include="stctl.planMaps"></div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="openTab('nets')">NETWORKS</div>
+                            <div class="accordion__tab-content" data-ng-show="isOpenTab('nets')">
+                                <div data-ng-repeat="n in usrctl.networks">
+                                    <div class="msglisting">
+                                        <span>{{n.network}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="openTab('views')">VIEWS</div>
+                            <div class="accordion__tab-content" data-ng-show="isOpenTab('views')">
+                                <div data-ng-repeat="m in usrctl.mapviews">
+                                    <div class="msglisting">
+                                        <span>{{m.mapview}}</span>
+                                    </div>
+                                </div>
+                                <div style="margin-left:90px;">
+                                    <span>Share View: </span>
+                                    <input data-ng-model="usrctl.sharevw" data-ng-change="usrctl.shareView()" data-ng-false-value="0" type="checkbox"/>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab three')">MAPS</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('tab three')">
-                            <div data-ng-include="stctl.planMaps"></div>
-                        </div>
-                    </div>
-                    <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab four')"
-                             >MESSAGE LOG</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('tab four')">
-                            <div data-ng-include="stctl.msgLog"></div>
-                        </div>
-                    </div>
-                    <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab four')"
-                             >NETWORKS</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('tab four')">
-                            <div data-ng-include="stctl.msgLog"></div>
-                        </div>
-                    </div>
-                    <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('tab four')"
-                             >VIEWS</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('tab four')">
+                        <div class="accordion__tab-title" data-ng-click="openTab('msgs')">MESSAGE LOG</div>
+                        <div class="accordion__tab-content" data-ng-show="isOpenTab('msgs')">
                             <div data-ng-include="stctl.msgLog"></div>
                         </div>
                     </div>
