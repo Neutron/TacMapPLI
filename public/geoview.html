@@ -43,16 +43,6 @@
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('nets')">NETWORKS</div>
-                            <div class="accordion__tab-content" data-ng-show="isOpenTab('nets')">
-                                <div data-ng-repeat="n in usrctl.networks">
-                                    <div class="msglisting">
-                                        <span>{{n.network}}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion__tab">
                             <div class="accordion__tab-title" data-ng-click="openTab('views')">VIEWS</div>
                             <div class="accordion__tab-content" data-ng-show="isOpenTab('views')">
                                 <div data-ng-repeat="m in usrctl.mapviews">
@@ -66,26 +56,34 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="accordion__tab">
-                        <div class="accordion__tab-title" data-ng-click="openTab('msgs')">MESSAGE LOG</div>
-                        <div class="accordion__tab-content" data-ng-show="isOpenTab('msgs')">
-                            <div data-ng-include="stctl.msgLog"></div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="openTab('nets')">NETWORKS</div>
+                            <div class="accordion__tab-content" data-ng-show="isOpenTab('nets')">
+                                <div ng-repeat="n in usrctl.networks">
+                                    <input type="checkbox" data-ng-model="usrctl.netsel[n.network]" data-ng-change="usrctl.joinNet(n.network)">{{n.network}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="openTab('msgs')">MESSAGE LOG</div>
+                            <div class="accordion__tab-content" data-ng-show="isOpenTab('msgs')">
+                                <div data-ng-include="stctl.msgLog"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div id="cesiumContainer"></div>
-        <script src='/socket.io/socket.io.js'></script>
-        <script src="js/lib/Cesium/Cesium.js"></script>
-        <script src="js/lib/xml2json.min.js"></script>
-        <script src="js/lib/angular/angular.min.js"></script>
-        <script src="js/lib/compression/lz-string-1.3.3-min.js"></script>
-        <script src="js/lib/compression/base64-string-v1.1.0.js"></script>
-        <script src="js/lib/indexdb/angular-indexed-db.min.js"></script>
-        <script src="js/tacmapServer.js"></script>
-        <script src="js/tmSrvrServices.js"></script>
-        <script src="js/tmSrvrControllers.js"></script>
-    </body>
+    <div id="cesiumContainer"></div>
+    <script src='/socket.io/socket.io.js'></script>
+    <script src="js/lib/Cesium/Cesium.js"></script>
+    <script src="js/lib/xml2json.min.js"></script>
+    <script src="js/lib/angular/angular.min.js"></script>
+    <script src="js/lib/compression/lz-string-1.3.3-min.js"></script>
+    <script src="js/lib/compression/base64-string-v1.1.0.js"></script>
+    <script src="js/lib/indexdb/angular-indexed-db.min.js"></script>
+    <script src="js/tacmapServer.js"></script>
+    <script src="js/tmSrvrServices.js"></script>
+    <script src="js/tmSrvrControllers.js"></script>
+</body>
 </html>

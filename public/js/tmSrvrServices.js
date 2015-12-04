@@ -342,7 +342,16 @@ TacMapServer.factory('GeoService', function () {
     geosvc.removeEntity = function (entityid) {
         geosvc.sdatasources[geosvc.mapid].entities.removeById(entityid);
     };
-    geosvc.initViewListener = function (viewname, MsgService, network) {
+    geosvc.viewData=function(){
+         return({
+                position: viewer.scene.camera.position.clone,
+                direction: viewer.scene.camera.direction.clone,
+                up: viewer.scene.camera.up.clone,
+                right: viewer.scene.camera.right.clone,
+                transform: viewer.scene.camera.transform
+            });
+    };
+    geosvc.initViewListener = function (userid,viewname,MsgService) {
         viewer.scene.screenSpaceCameraController.inertiaSpin = 0;
         viewer.scene.screenSpaceCameraController.inertiaTranslate = 0;
         viewer.scene.screenSpaceCameraController.inertiaZoom = 0;
@@ -356,8 +365,8 @@ TacMapServer.factory('GeoService', function () {
                 transform: viewer.scene.camera.transform
                         //frustum: geosvc.camera.frustum.clone()
             };
-            console.log(vw);
-            MsgService.publishView(viewname, vw, network);
+           // console.log(vw);
+            MsgService.publishView(userid,viewname, vw);
         });
     };
     geosvc.stopViewListener = function () {
@@ -381,37 +390,28 @@ TacMapServer.factory('MsgService', function () {
     msgsvc.sending = false;
     msgsvc.lastSendingTime = 0;
     msgsvc.users = [];
-    msgsvc.socket = io();
+    //msgsvc.socket = io();
     // Sends a message
-    msgsvc.setMap = function (socketid, mapname, mapdata) {
-        msgsvc.socket.emit('init mapview', {
-            socketid: socketid, mapviewid: mapname, mapviewdata: mapdata
-        });
-    };
     msgsvc.joinNet = function (netname) {
-        msgsvc.socket = io('/' + netname);
+        msgsvc.socket.join(netname);
     };
-    msgsvc.publish = function (pubmsg, data, networkid) {
+    msgsvc.leaveNet = function (netname) {
+        msgsvc.socket.leave(netname);
+    };
+    msgsvc.publish = function (pubmsg, data,networkid) {
         console.log("Publish " + pubmsg + " to " + networkid);
         if (typeof networkid !== 'undefined') {
             //publish to net
-            msgsvc.socket('/' + networkid).emit(pubmsg, data);
+            msgsvc.socket.emit(pubmsg, data);
         } else {
             //publish to all
             msgsvc.socket.emit(pubmsg, data);
         }
     };
-    msgsvc.publishView = function (viewname, vwdata, network) {
-        console.log("Update View to " + network);
-        msgsvc.socket.emit('update mapview', {viewname: viewname, viewdata: vwdata});
-//        if (typeof network !== 'undefined') {
-//            //publish to net
-//            msgsvc.socket = io('/' + network);
-//            msgsvc.socket.emit('update view', {viewname:viewname,viewdata:vwdata});
-//        } else {
-//            //publish to all
-//            msgsvc.socket.emit('update view', {viewname:viewname,viewdata:vwdata});
-//        }
+    msgsvc.publishView = function (userid, mapview, vwdata) {
+        console.log("Update " + mapview);
+            msgsvc.socket = io('/' + mapview);
+            msgsvc.socket.emit('update view', {userid:userid,viewdata:vwdata});
     };
     msgsvc.publishMsg = function (endpointid, mapviewid, networkid, msgtype, msg) {
         var message = msg;

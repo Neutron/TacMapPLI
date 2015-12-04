@@ -80,12 +80,12 @@ app.post('/entity/*'), function (req, res) {
 //The following code implements a peer map service that uses SockeIO namespaces
 //to publish and subscribe to position reporting and other data.
 
-//mapviewservers is a collection of map scenarios.  These can be persisted on the server or
-//in broswers in order to allow sharing from different devices or browsers.
-var mapviews = [];
 //mapio is a collection of socketIO namespaces.  These are created from browsers and used
 //to segregate map scenarios.
 var mapio = [];
+//mapviewservers is a collection of map scenarios.  These can be persisted on the server or
+//in broswers in order to allow sharing from different devices or browsers.
+var mapviews = [];
 //networks is a collection of socketIO channels.  Endpoints are added and removed from channels.
 var networks = [];
 //endpoints is a collection of connected clients.  Information about endpoints can be persisted
@@ -102,94 +102,78 @@ var socketOps = function (socket) {
 
     // Use socket to communicate with an endpoint, sending it it's own id and current data resource ids.
     socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
-
+    // Initial connection.  Create namespace and room for each endpoint.
     socket.on('initial connection', function (data) {
         console.log("initial connection: ");
-        //console.log(data);
         endpoints.push({id: data.endpoint.id, endpoint: data.endpoint});
         networks.push({id: data.endpoint.id, network: data.endpoint.network});
         mapviews.push({id: data.endpoint.id, mapview: data.endpoint.mapview});
-        //console.log(endpoints);
-        //console.log(networks);
-        //console.log(mapviews);
+        //Set up socket namespace corresponding to mapview. Map vies correspond to socketIO namespaces.
+        mapio[data.mapview.id] = io.of('/' + data.endpoint.mapview.id);
+        //Join connectoin to own network.  Networks correspond to socketIO rooms.
+        mapio[data.mapview.id].join(data.endpoint.network);
+        //Update all sockets with names of endpoints, maps and rooms.
         io.emit('update connections', {endpoints: endpoints, networks: networks, mapviews: mapviews});
     });
-    // Add endpoint to a network on a mapview.
-    socket.on('endpoint connected', function (data) {
-        console.log("endpoint connect: " + data.endpointid);
-        endpoints[data.mapviewid][data.netname][data.endpointid] = data.endpointinfo;
-        mapio[data.mapviewid].to(data.netname).emit('endpoints connected', {endpoints: endpoints[data.mapviewid][data.netname]});
-    });
-    //
+    // Disconnect endpoint.  Remove from all lists
     socket.on('disconnect', function () {
         var e = endpoints.indexOf(socket.id);
         endpoints.splice(e, 1);
         var n = networks.indexOf(socket.id);
         networks.splice(n, 1);
         var m = mapviews.indexOf(socket.id);
-        mapviews.splice(m,1);
+        mapviews.splice(m, 1);
         console.log(socket.id + " disconnected");
         io.emit('update connections', {endpoints: endpoints, networks: networks, mapviews: mapviews});
     });
-    // Initialize a mapview to display a specific set of networks and entities
-    // Provides initial mapview area and view information.  A mapview has networks and networks have endpoints
-    socket.on('init mapview', function (data) {
-        console.log("MapView connect to socket: " + data.socketid + ", mapview:" + data.mapviewid);
-        mapviews[data.mapviewid] = {mapview: data.socketid, mapviewid: data.mapviewid, data: data.mapviewdata};
-        mapio[data.mapviewid] = io.of('/' + data.mapviewid);
-        mapio[data.mapviewid].emit('init server', mapviews[data.mapviewid]);
-        mapio[data.mapviewid].on('connection', socketOps);
+    // Join a network.
+    socket.on('join network', function (data) {
+        mapio[data.mapview.id].join(data.network);
+
     });
-    // Initialize a network as a socketIO room
-    socket.on('create network', function (data) {
-        console.log("Network created: " + data.netname + " on " + data.mapviewid);
-        networks[data.mapviewid] = [];
-        networks[data.mapviewid][data.netname] = data.netinfo;
-        endpoints[data.mapviewid] = [];
-        endpoints[data.mapviewid][data.netname] = [];
-        mapio[data.mapviewid].emit('network created', {networks: networks[data.mapviewid]});
+    // Leave a network.
+    socket.on('leave network', function (data) {
+        mapio[data.mapview.id].leave(data.network);
     });
-    // Remove a network as a socketIO room
-    socket.on('close network', function (data) {
-        console.log("Close Network: " + data.netname + " on " + data.mapviewid);
-        mapio[data.mapviewid].leave(data.netname);
-        networks[data.mapviewid].remove(networks[data.mapviewid][data.netname]);
-        endpoints[data.mapviewid][data.netname].remove(endpoints[data.mapviewid][data.netname][data.endpointid]);
-        mapio[data.mapviewid].emit('network closed', {network: data.netname, networks: networks[data.mapviewid]});
-    });
-    // Join endpoint to a network on a mapview.
-    socket.on('endpoint join', function (data) {
-        console.log(data.endpointid + ' joined ' + data.netname);
-        mapio[data.mapviewid].join(data.netname);
-        endpoints[data.mapviewid][data.netname][data.endpointid] = data.endpointinfo;
-        mapio[data.mapviewid].to(data.netname).emit('endpoint joined', {endpoints: endpoints[data.mapviewid][data.netname]});
-    });
-    // Disconnect endpoint from a network on a mapview.
-    socket.on('endpoint leave', function (data) {
-        console.log(data.userid + ' left ' + data.netname + ' on ' + data.mapviewid);
-        endpoints[data.mapviewid][data.netname].remove(endpoints[data.mapviewid][data.netname][data.endpointid]);
-        mapio[data.mapviewid].leave(data.netname);
-        mapio[data.mapviewid].to(data.netname).emit('endpoint left', {endpointid: data.endpointid, endpoints: endpoints[data.mapviewid][data.netname]});
-    });
-    // Publish a message to a network on a mapview.  These will be processed client side using
-    // data.msg.type and data.msg.content information
-    // data.type can be: entity, location, mapview, and message.  
-    // Information is stored in data.entity, data.location, data.mapview, data.message
+    //Relay message to one or all netowrks
     socket.on('publish msg', function (data) {
-        console.log('send msg from ' + data.endpointid + ' on ' + data.mapviewid + ' to ' + data.net);
-        mapio[data.mapviewid].to(data.netname).emit('msg sent', data);
+        if (typeof data.network !== 'undefined') {
+            mapio[data.mapview.id].to(data.netname).emit(data.msg, data.payload);
+        } else {
+            mapio[data.mapview.id].emit(data.msg, data.payload);
+        }
     });
-    //
+    //Relay message to one or all netowrks
+    socket.on('publish msg to all', function (data) {
+        io.emit(data.msg, data.payload);
+    });
+    // Publish a mapview
+    socket.on('create mapview', function (data) {
+        mapviews.push({id: data.id, mapview: data.mapview});
+        //set up socket namespace corresponding to new mapview
+        mapio[data.mapview.id] = io.of('/' + data.mapview.id);
+        io.emit('mapview update', {mapviews: mapviews});
+    });
+    // Remove a mapview
+    socket.on('remove mapview', function (data) {
+        var n = mapviews.indexOf(data.id);
+        mapviews.splice(n, 1);
+        io.emit('mapview update', {mapviews: mapviews});
+    });
+    // Update a mapview
     socket.on('update mapview', function (data) {
-         console.log('update mapview');
-         //if(typeof data.netname!=='undefined'){
-         io.emit('mapview update', {viewname:data.viewname,viewdata:data.viewdata});
-//     }else{
-//         
-//     }
+        mapviews[data.id].mapview = data.mapview;
+        io.emit('mapview update', {mapviews: mapviews});
     });
-    // Publish time information to a network on a mapview.
-    socket.on('mapview time', function (data) {
-        io.emit('set mapview time', data);
+    // Create a network as a socketIO room
+    socket.on('create network', function (data) {
+        networks.push({id: data.network.id, network: data.network.name});
+        io.emit('update networks', {networks: networks});
+    });
+    // Remove a network 
+    socket.on('remove network', function (data) {
+        var n = networks.indexOf(data.id);
+        networks.splice(n, 1);
+        io.emit('update networks', {networks: networks});
     });
 };

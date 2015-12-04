@@ -277,29 +277,47 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
 TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, GeoService, DlgBx) {
     var usrctl = this;
     usrctl.user = [];
+    usrctl.netsel = [];
     usrctl.usernames = [];
     usrctl.usernets = [];
     usrctl.networks = [];
     usrctl.mapviews = [];
     usrctl.usertracks = [];
     usrctl.editprofile = false;
+    usrctl.currentview = [];
     usrctl.sharevw = 0;
-    MsgService.socket.on('connection', function (data) {
-        $scope.socketID = data.socketid;
-        console.log('connection ' + $scope.socketID);
-        usrctl.registerUser(data);
-    });
     usrctl.registerUser = function (data) {
         DlgBx.prompt("Enter User Name: ", data.socketid).then(function (uname) {
             var user = {endpoint: {}};
             user.endpoint.id = $scope.socketID;
             user.endpoint.name = uname;
-            user.endpoint.mapview = uname + '-Map';
             user.endpoint.network = uname + '-Net';
+            user.endpoint.mapview.id = uname + '-Map';
+            user.endpoint.mapview.viewdata=GeoService.viewData();
             usrctl.user = user;
+            MsgService.socket = io('/' + mapview.id);
             MsgService.publish('initial connection', user);
         });
     };
+    usrctl.joinNet = function (val) {
+        if (usrctl.netsel[val]) {
+            MsgService.joinNet(val);
+        } else {
+            MsgService.leaveNet(val);
+        }
+    };
+    usrctl.shareView = function () {
+        if (usrctl.sharevw) {
+            GeoService.initViewListener(usrctl.user.endpoint.id, usrctl.user.endpoint.mapview, MsgService);
+        } else {
+            GeoService.stopViewListener();
+        }
+    };
+    MsgService.socket.on('connection', function (data) {
+        $scope.socketID = data.socketid;
+        console.log('connection ' + $scope.socketID);
+        usrctl.registerUser(data);
+    });
     MsgService.socket.on('update connections', function (data) {
         console.log('update connections');
         //console.log(data);
@@ -311,15 +329,13 @@ TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, GeoS
     });
     MsgService.socket.on('mapview update', function (data) {
         console.log('mapview update');
-        GeoService.setView($scope, data.viewdata);
-    });
-    usrctl.shareView = function () {
-        if (usrctl.sharevw) {
-            GeoService.initViewListener($scope, usrctl.user.endpoint.mapview, MsgService, usrctl.user.endpoint.network);
-        } else {
-            GeoService.stopViewListener();
+        usrctl.mapviews = data.mapviews;
+        for (m in usrctl.mapviews) {
+            if (usrctl.mapviews[m] === usrctl.user.mapview) {
+                GeoService.setView(data.viewdata);
+            }
         }
-    };
+    });
 });
 TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgService, DlgBx) {
     var mapctl = this;
@@ -576,17 +592,6 @@ TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, M
             text: data.userid + ' Left Network: ' + data.netname
         });
     });
-    //
-    msgctl.timeCalc = function (timeobj) {
-        var day = timeobj.Day;
-        var hr = timeobj.HourTime;
-        var min = timeobj.MinuteTime;
-        var sec = timeobj.SecondTime;
-        var month = timeobj.MonthNumeric;
-        var yr = timeobj.Year4Digit;
-        var d = new Date(yr, month, day, hr, min, sec);
-        return d.getTime();
-    };
 });
 TacMapServer.controller('menuCtrl', function ($scope) {
     //initiate an array to hold all active tabs
