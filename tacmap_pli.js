@@ -128,14 +128,13 @@ var socketOps = function (socket) {
     });
     // Join a network.
     socket.on('join network', function (data) {
-        mapio[data.mapview.id].join(data.network);
-
+        mapio[data.mapviewid].join(data.network);
     });
     // Leave a network.
     socket.on('leave network', function (data) {
-        mapio[data.mapview.id].leave(data.network);
+        mapio[data.mapviewid].leave(data.network);
     });
-    //Relay message to one or all netowrks
+    //Relay message to one or all networks
     socket.on('publish msg', function (data) {
         if (typeof data.network !== 'undefined') {
             mapio[data.mapview.id].to(data.netname).emit(data.msg, data.payload);
@@ -143,7 +142,7 @@ var socketOps = function (socket) {
             mapio[data.mapview.id].emit(data.msg, data.payload);
         }
     });
-    //Relay message to one or all netowrks
+    //Relay message to one or all networks
     socket.on('publish msg to all', function (data) {
         io.emit(data.msg, data.payload);
     });

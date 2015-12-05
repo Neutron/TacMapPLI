@@ -301,7 +301,7 @@ TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, GeoS
     };
     usrctl.joinNet = function (val) {
         if (usrctl.netsel[val]) {
-            MsgService.joinNet(val);
+            MsgService.joinNet(usrctl.endpoint.mapview.id,val);
         } else {
             MsgService.leaveNet(val);
         }
@@ -327,6 +327,7 @@ TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, GeoS
         usrctl.networks = data.networks;
         usrctl.mapviews = data.mapviews;
     });
+ 
     MsgService.socket.on('mapview update', function (data) {
         console.log('mapview update');
         usrctl.mapviews = data.mapviews;
