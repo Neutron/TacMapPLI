@@ -18,8 +18,8 @@
 var databasename = "tacmapDb";
 var storestructure = [
     ['Resources', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['Maps', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['User', 'name', false, [['data', 'data', false]]]
+    ['Maps', 'name', true, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
+    ['User', 'name', true, [['id', 'id', true], ['data', 'data', false]]]
 ];
 var viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
@@ -56,8 +56,8 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
 });
 var scene = viewer.scene;
 var xj = new X2JS();
-var TacMapServer = angular.module('TacMapServer', ['indexedDB']);
-TacMapServer.config(function ($indexedDBProvider) {
+var TacMap = angular.module('TacMap', ['indexedDB']);
+TacMap.config(function ($indexedDBProvider) {
     $indexedDBProvider.connection(databasename).upgradeDatabase(1, function (event, db, tx) {
         console.log("initDb");
         for (i = 0; i < storestructure.length; i++) {

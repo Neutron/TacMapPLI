@@ -20,22 +20,18 @@
 -->
 <div>
     <div class="topspc">
-        <span>User Name:  {{$scope.user.name}}</span>
-        <input type="text"  data-ng-show="usrctl.editprofilechecked" data-ng-model="$scope.user.name"/>
+        <span>User Name:  {{usrctl.user.endpoint.name}}</span>
+        <input type="text"  data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.endpoint.name"/>
     </div>
 
     <div class="topspc">
-        <span>Map View: {{$scope.user.mapview}}</span>
-        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="$scope.user.mapview"/>
-
+        <span>Map View: {{usrctl.user.endpoint.mapview}}</span>
+        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.endpoint.mapview"/>
     </div>
     <div class="topspc">
-        <span data-ng-model="$scope.user.network">Network: {{$scope.user.network}}</span>
-        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="$scope.user.network"/>
+        <span>Network: {{usrctl.user.endpoint.network}}</span>
+        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.endpoint.network"/>
     </div>
-
-    <div data-ng-show="usrctl.editprofilechecked">
-        <div><span>Create Network: </span><input type="text" data-ng-model="usrctl.newnet"/></div></div>
     <div style="margin-left:90px;">
         <span>Edit Profile: </span>
         <input data-ng-model="usrctl.editprofilechecked" data-ng-false-value="0" type="checkbox"/>

@@ -33,14 +33,14 @@ app.use(compression());
 
 //SOCKET IO
 var server = http.createServer(app);
-var io = require('socket.io').listen(server);
+var sio = require('socket.io').listen(server);
+sio.serveClient(true);
 var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8000;
 var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+
 server.listen(server_port, server_ip_address, function () {
     console.log('listening on ' + server_port);
 });
-//
-
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/public/geoview.html');
 });
@@ -69,110 +69,131 @@ app.put('/xml/*', function (req, res) {
         res.end();
     });
 });
-app.post('/entity/*'), function (req, res) {
+app.put('/entity/*'), function (req, res) {
     console.log("Post entity " + req.url);
     console.log(req.body);
     fs.writeFile(__dirname + '/public' + req.url, req.body, function () {
         res.end();
     });
 };
-
 //The following code implements a peer map service that uses SockeIO namespaces
 //to publish and subscribe to position reporting and other data.
-
-//mapio is a collection of socketIO namespaces.  These are created from browsers and used
-//to segregate map scenarios.
-var mapio = [];
 //mapviewservers is a collection of map scenarios.  These can be persisted on the server or
 //in broswers in order to allow sharing from different devices or browsers.
-var mapviews = [];
+var mapviews = {};
 //networks is a collection of socketIO channels.  Endpoints are added and removed from channels.
-var networks = [];
+var networks = {};
 //endpoints is a collection of connected clients.  Information about endpoints can be persisted
 //on the server or in broswers in order to allow sharing from different devices or browsers.
-var endpoints = [];
+var endpoints = {};
 
-
-io.on('connection', function (socket) {
-    endpoints[socket.id] = [];
-    socketOps(socket);
+sio.of('').on('connection', function (socket) {
+    socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
+    socket.on('joinNamespace', function (data, join_ns) {
+        console.log("join namespace: " + data.mapvwid);
+        sio.of('/' + data.mapvwid)
+                .on('connection', function (map_socket) {
+                    console.log('user connected to ' + data.mapvwid);
+                    socketOps(map_socket);
+                });
+        join_ns({namespace: data.mapvwid});
+    });
+    socket.on('initial connection', function (data) {
+        console.log("initial connection: " + data.endpoint.mapview);
+        endpoints[data.endpoint.id] = data.endpoint;
+        mapviews[data.endpoint.mapview] = data.endpoint.mapview;
+        networks[data.endpoint.mapview] = {};
+        networks[data.endpoint.mapview][data.endpoint.network] = data.endpoint.network;
+        //console.log(networks);
+        sio.emit('update endpoints', {endpoints: endpoints});
+        sio.emit('update networks', {networks: networks});
+        sio.emit('update mapviews', {mapviews: mapviews});
+    });
 });
 
 var socketOps = function (socket) {
-
-    // Use socket to communicate with an endpoint, sending it it's own id and current data resource ids.
-    socket.emit('connection', {message: 'Msg Socket Ready', socketid: socket.id});
-    // Initial connection.  Create namespace and room for each endpoint.
-    socket.on('initial connection', function (data) {
-        console.log("initial connection: ");
-        endpoints.push({id: data.endpoint.id, endpoint: data.endpoint});
-        networks.push({id: data.endpoint.id, network: data.endpoint.network});
-        mapviews.push({id: data.endpoint.id, mapview: data.endpoint.mapview});
-        //Set up socket namespace corresponding to mapview. Map vies correspond to socketIO namespaces.
-        mapio[data.mapview.id] = io.of('/' + data.endpoint.mapview.id);
-        //Join connectoin to own network.  Networks correspond to socketIO rooms.
-        mapio[data.mapview.id].join(data.endpoint.network);
-        //Update all sockets with names of endpoints, maps and rooms.
-        io.emit('update connections', {endpoints: endpoints, networks: networks, mapviews: mapviews});
-    });
     // Disconnect endpoint.  Remove from all lists
     socket.on('disconnect', function () {
-        var e = endpoints.indexOf(socket.id);
-        endpoints.splice(e, 1);
-        var n = networks.indexOf(socket.id);
-        networks.splice(n, 1);
-        var m = mapviews.indexOf(socket.id);
-        mapviews.splice(m, 1);
-        console.log(socket.id + " disconnected");
-        io.emit('update connections', {endpoints: endpoints, networks: networks, mapviews: mapviews});
+        console.log('disconnect ' + socket.id);
+        if (typeof endpoints[socket.id] !== 'undefined') {
+            if (typeof endpoints[socket.id].mapview !== 'undefined') {
+                var mvid = endpoints[socket.id].mapview;
+                if (sio.of('/' + mvid).sockets.length !== 1) {
+                    //console.log('delete ..');
+                    //console.log(mapviews[mvid]);
+                    delete(mapviews[mvid]);
+                    delete(networks[mvid]);
+                    delete(endpoints[socket.id]);
+                }
+                //console.log('delete ..');
+                //console.log(endpoints[socket.id]);
+                sio.emit('update endpoints', {endpoints: endpoints});
+                sio.emit('update networks', {networks: networks});
+                sio.emit('update mapviews', {mapviews: mapviews});
+            }else{
+                delete(endpoints[socket.id]);
+            }
+        }
+        if(sio.of('/').sockets.length === 0){
+           mapviews = {};
+           networks = {};
+           endpoints = {};
+        }
     });
     // Join a network.
     socket.on('join network', function (data) {
-        mapio[data.mapviewid].join(data.network);
+        sio.of('/' + data.mapvwid).join(data.network);
+
     });
     // Leave a network.
     socket.on('leave network', function (data) {
-        mapio[data.mapviewid].leave(data.network);
-    });
-    //Relay message to one or all networks
-    socket.on('publish msg', function (data) {
-        if (typeof data.network !== 'undefined') {
-            mapio[data.mapview.id].to(data.netname).emit(data.msg, data.payload);
-        } else {
-            mapio[data.mapview.id].emit(data.msg, data.payload);
+        sio.of('/' + data.mapvwid).leave(data.network);
+        for (var n in networks) {
+            if (networks[n].id === data.mapvwid && networks[n].network === data.network) {
+                networks.splice(n, 1);
+            }
         }
-    });
-    //Relay message to one or all networks
-    socket.on('publish msg to all', function (data) {
-        io.emit(data.msg, data.payload);
-    });
-    // Publish a mapview
-    socket.on('create mapview', function (data) {
-        mapviews.push({id: data.id, mapview: data.mapview});
-        //set up socket namespace corresponding to new mapview
-        mapio[data.mapview.id] = io.of('/' + data.mapview.id);
-        io.emit('mapview update', {mapviews: mapviews});
-    });
-    // Remove a mapview
-    socket.on('remove mapview', function (data) {
-        var n = mapviews.indexOf(data.id);
-        mapviews.splice(n, 1);
-        io.emit('mapview update', {mapviews: mapviews});
-    });
-    // Update a mapview
-    socket.on('update mapview', function (data) {
-        mapviews[data.id].mapview = data.mapview;
-        io.emit('mapview update', {mapviews: mapviews});
     });
     // Create a network as a socketIO room
     socket.on('create network', function (data) {
-        networks.push({id: data.network.id, network: data.network.name});
-        io.emit('update networks', {networks: networks});
+        console.log('create network');
+        networks[data.mapviewid][data.netname]=data.netname;
+        sio.emit('update networks', {networks: networks});
     });
     // Remove a network 
     socket.on('remove network', function (data) {
         var n = networks.indexOf(data.id);
         networks.splice(n, 1);
-        io.emit('update networks', {networks: networks});
+        sio.emit('update networks', {networks: networks});
+    });
+    //Relay message to one or all networks
+    socket.on('publish msg', function (data) {
+        if (typeof data.network !== 'undefined') {
+            sio.to(data.netname).emit(data.msg, data.payload);
+        } else {
+            sio.emit(data.msg, data.payload);
+        }
+    });
+    //Relay message to one or all networks
+    socket.on('publish msg to all', function (data) {
+        sio.emit(data.msg, data.payload);
+    });
+    // Publish a mapview
+    socket.on('create mapview', function (data) {
+        mapviews.push({id: data.id, mapview: data.mapview});
+        //set up socket namespace corresponding to new mapview
+        mapio[data.mapview.id] = sio.of('/' + data.mapview.id);
+        sio.emit('mapview update', {mapviews: mapviews});
+    });
+    // Remove a mapview
+    socket.on('remove mapview', function (data) {
+        var n = mapviews.indexOf(data.id);
+        mapviews.splice(n, 1);
+        sio.emit('mapview update', {mapviews: mapviews});
+    });
+    // Update a mapview
+    socket.on('update mapview', function (data) {
+        mapviews[data.id].mapview = data.mapview;
+        sio.emit('mapview update', {mapviews: mapviews});
     });
 };

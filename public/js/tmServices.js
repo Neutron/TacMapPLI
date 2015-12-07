@@ -14,95 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
-/* global TacMapServer, TacMapUnit, viewer, Cesium, DbService, angular */
+/* global TacMap, TacMapUnit, viewer, Cesium, DbService, angular, scktsvc, io, $indexedDB, $scope */
 // ***** SERVER SERVICES ******//
-TacMapServer.factory('DbService', function ($indexedDB) {
+TacMap.factory('DbService', function ($indexedDB) {
     var dbsvc = {
     };
     dbsvc.xj = new X2JS();
     dbsvc.dB = $indexedDB;
     dbsvc.map = [];
-    dbsvc.initMaps = function ($scope, $http, stctl, GeoService) {
-        dbsvc.dB.openStore('Resources', function (mstore) {
-            mstore.getAllKeys().then(function (keys) {
-                if (keys.indexOf('maps.json') === -1) {
-                    $http.get('xml/maps.xml').success(function (resdata, status, headers) {
-                        var maps = dbsvc.xj.xml_str2json(resdata);
-                        for (i = 0; i < maps.Maps.Map.length; i++) {
-                            var u = maps.Maps.Map[i]._url;
-                            var n = maps.Maps.Map[i]._name;
-                            if (u.substring(u.indexOf('.')) === '.xml') {
-                                dbsvc.syncResource($scope, $http, maps.Maps.Map[i]._id, maps.Maps.Map[i]._url, stctl, GeoService);
-                            } else {
-                                $http.get(u).success(function (jsondata, status, headers) {
-                                    var jsmod = headers()[ 'last-modified'];
-                                    dbsvc.dB.openStore('Maps', function (mstore) {
-                                        mstore.upsert({
-                                            name: n, url: u, lastmod: jsmod, data: jsondata
-                                        });
-                                        $http.post("/json/maps.json", angular.toJson(stctl.sortByKey(stctl.maplist, 'id')));
-                                    });
-                                });
-                            }
-                        }
-                    });
-                } else {
-                    mstore.find('maps.json').then(function (dbrec) {
-                        var maps = dbrec.data;
-                        stctl.maplist = dbrec.data;
-                        stctl.loadMap({id: 0, name: 'Default Map'});
-                    });
-                }
-            });
-        });
-    };
-    dbsvc.syncResource = function ($scope, $http, mapid, url, stctl, GeoService) {
-        //console.log("syncResource " + mapid);
-        $http.get(url).success(function (resdata, status, headers) {
-            var mod = headers()[ 'last-modified'];
-            var filename = url.substring(url.lastIndexOf('/') + 1);
-            var jdata = dbsvc.xj.xml_str2json(resdata);
-            var mname = jdata.Map._name;
-            var jname = mname.replace(' ', '').toLowerCase();
-            if (mname !== 'Default Map') {
-                stctl.maplist.push({
-                    id: mapid, name: mname, url: 'json/' + jname + '.json'
-                });
-            }
-            dbsvc.dB.openStore('Maps', function (mstore) {
-                mstore.upsert({
-                    name: mname, url: 'json/' + jname + '.json', lastmod: mod, data: jdata
-                }).then(function () {
-                    dbsvc.dB.openStore('Resources', function (store) {
-                        store.getAllKeys().then(function (keys) {
-                            if (keys.indexOf(filename) === -1) {
-                                store.upsert({
-                                    name: filename, url: url, lastmod: mod, data: resdata
-                                });
-                            } else {
-                                store.find(filename).then(function (dbrec) {
-                                    if (dbrec.lastmod !== mod) {
-                                        console.log('upsert ' + filename);
-                                        store.upsert({
-                                            name: filename, url: url, lastmod: mod, data: resdata
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                        if (filename === 'DefaultMap.xml') {
-                            //console.log('init geo');
-                            stctl.map = jdata;
-                            GeoService.initGeodesy($scope, jdata.Map._name, jdata);
-                        }
-                        ;
-                    });
-                });
-            });
-        }).error(function () {
-            console.log('Error getting resource');
-        });
-    };
     dbsvc.updateEntityDb = function (mapname, entityId, fieldname, value) {
         console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
         dbsvc.dB.openStore("Maps", function (store) {
@@ -185,12 +104,12 @@ TacMapServer.factory('DbService', function ($indexedDB) {
     };
     return dbsvc;
 });
-TacMapServer.factory('GeoService', function () {
+TacMap.factory('GeoService', function () {
     var geosvc = {
     };
     geosvc.mapid = null;
     geosvc.sdatasources = [];
-    geosvc.initGeodesy = function ($scope, mapid, mapdata) {
+    geosvc.initGeodesy = function (mapid, mapdata, callback) {
         console.log("initGeodesy " + mapid);
         geosvc.mapid = mapid;
         geosvc.sdatasources[geosvc.mapid] = new Cesium.CustomDataSource(geosvc.mapid);
@@ -199,7 +118,10 @@ TacMapServer.factory('GeoService', function () {
         geosvc.addEntities(mapdata.Map.Entities.Entity);
         geosvc.addTracks(mapdata.Map.Tracks.Track);
         geosvc.addGeoFences(mapdata.Map.GeoFences.GeoFence);
-        viewer.zoomTo(geosvc.sdatasources[geosvc.mapid].entities.getById("Default"));
+        viewer.zoomTo(geosvc.sdatasources[geosvc.mapid].entities.getById("Default")).then(function () {
+            console.log('map ready');
+            callback();
+        });
     };
     geosvc.addEntities = function (entities) {
         //console.log('addEntities ' + entities.length);
@@ -342,16 +264,7 @@ TacMapServer.factory('GeoService', function () {
     geosvc.removeEntity = function (entityid) {
         geosvc.sdatasources[geosvc.mapid].entities.removeById(entityid);
     };
-    geosvc.viewData = function () {
-        return({
-            position: viewer.scene.camera.position.clone,
-            direction: viewer.scene.camera.direction.clone,
-            up: viewer.scene.camera.up.clone,
-            right: viewer.scene.camera.right.clone,
-            transform: viewer.scene.camera.transform
-        });
-    };
-    geosvc.initViewListener = function (userid, viewname, MsgService) {
+    geosvc.initViewListener = function (userid, viewname, SocketService) {
         viewer.scene.screenSpaceCameraController.inertiaSpin = 0;
         viewer.scene.screenSpaceCameraController.inertiaTranslate = 0;
         viewer.scene.screenSpaceCameraController.inertiaZoom = 0;
@@ -366,11 +279,20 @@ TacMapServer.factory('GeoService', function () {
                         //frustum: geosvc.camera.frustum.clone()
             };
             // console.log(vw);
-            MsgService.publishView(userid, viewname, vw);
+            SocketService.publishView(userid, viewname, vw);
         });
     };
     geosvc.stopViewListener = function () {
         viewer.scene.camera.moveEnd.destroy();
+    };
+    geosvc.getView = function () {
+        return({
+            position: viewer.scene.camera.position.clone,
+            direction: viewer.scene.camera.direction.clone,
+            up: viewer.scene.camera.up.clone,
+            right: viewer.scene.camera.right.clone,
+            transform: viewer.scene.camera.transform.clone
+        });
     };
     geosvc.setView = function (vwdata) {
         viewer.scene.camera.position = vwdata.position;
@@ -382,69 +304,90 @@ TacMapServer.factory('GeoService', function () {
     };
     return geosvc;
 });
-TacMapServer.factory('MsgService', function () {
-    var msgsvc = {
+TacMap.factory('SocketService', function () {
+    var scktsvc = {
     };
-    msgsvc.serverid;
-    msgsvc.mapid;
-    msgsvc.sending = false;
-    msgsvc.lastSendingTime = 0;
-    msgsvc.users = [];
-    msgsvc.socket = io();
-    // Sends a message
-    msgsvc.joinNet = function (id, netname) {
-        msgsvc.socket.join(netname);
-        msgsvc.socket.emit('join network', {mapviewid: id, network: netname});
+    scktsvc.serverid;
+    scktsvc.mapid;
+    scktsvc.socket = io.connect(window.location.host);
+    scktsvc.map_socket;
+    scktsvc.initMapView = function (mapview, user) {
+        console.log('initMapView ' + mapview);
+        scktsvc.socket.emit('joinNamespace', {mapvwid: mapview}, function (data) {
+            console.log('join namespace ' + data.namespace);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
+            scktsvc.map_socket.on('connect', function () {
+                console.log('joined namespace ' + data.namespace);
+                scktsvc.socket.emit('initial connection', user);
+            });
+        });
     };
-    msgsvc.leaveNet = function (id, netname) {
-        msgsvc.socket.leave(netname);
-        msgsvc.socket.emit('leave network', {mapviewid: id, network: netname});
+    scktsvc.setMapView = function (mapview, user) {
+        console.log('setMapView ' + mapview);
+        scktsvc.socket.emit('joinNamespace', {mapvwid: mapview}, function (data) {
+            console.log('join namespace ' + data.namespace);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
+            scktsvc.map_socket.on('connect', function () {
+                console.log('joined namespace ' + data.namespace);
+                //scktsvc.map_socket.emit('initial connection', user);
+            });
+        });
+    };
+    scktsvc.createNet = function (mapviewid, netname) {
+        console.log('createNet '+mapviewid+": "+netname);
+        scktsvc.map_socket.emit('create network', {mapviewid: mapviewid, netname: netname});
+    };
+    scktsvc.joinNet = function (id, netname) {
+        scktsvc.socket.join(netname);
+        scktsvc.socket.emit('join network', {mapviewid: id, network: netname});
+    };
+    scktsvc.leaveNet = function (id, netname) {
+        scktsvc.socket.leave(netname);
+        scktsvc.socket.emit('leave network', {mapviewid: id, network: netname});
     };
     //This published provided socket message from client
-    msgsvc.publish = function (pubmsg, data, networkid) {
+    scktsvc.publish = function (pubmsg, data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            msgsvc.socket.to(networkid).emit(pubmsg, data);
+            scktsvc.socket.to(networkid).emit(pubmsg, data);
         } else {
-            //publish to all
-            msgsvc.socket.emit(pubmsg, data);
+            //publish to all             scktsvc.socket.emit(pubmsg, data);
         }
     };
     //This provide socket message to be published from server
-    msgsvc.publishMsg = function (pubmsg, data, networkid) {
+    scktsvc.publishMsg = function (pubmsg, data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            msgsvc.socket.to(networkid).emit('publish msg', {msg: pubmsg, payload: data});
+            scktsvc.socket.to(networkid).emit('publish msg', {msg: pubmsg, payload: data});
         } else {
             //publish to all
-            msgsvc.socket.emit('publish msg to all', {msg: pubmsg, payload: data});
+            scktsvc.socket.emit('publish msg to all', {msg: pubmsg, payload: data});
         }
     };
     // Create a mapview that other nodes can 
-    msgsvc.createMapView = function (data, networkid) {
+    scktsvc.createMapView = function (data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            msgsvc.socket.to(networkid).emit('create mapview', data);
+            scktsvc.socket.to(networkid).emit('create mapview', data);
         } else {
-            //publish to all
-            msgsvc.socket.emit('create mapview', data);
+//publish to all
+            scktsvc.socket.emit('create mapview', data);
         }
     };
-
-    msgsvc.publishView = function (userid, mapview, vwdata) {
-        msgsvc.socket = io('/' + mapview);
-        msgsvc.socket.emit('update view', {userid: userid, viewdata: vwdata});
+    scktsvc.publishView = function (userid, mapview, vwdata) {
+        scktsvc.socket = io('/' + mapview);
+        scktsvc.socket.emit('update view', {userid: userid, viewdata: vwdata});
     };
-    msgsvc.disconnectEndpoint = function (data) {
+    scktsvc.disconnectEndpoint = function (data) {
         console.log("Server Disconnected " + data.socketid);
-        msgsvc.connected = false;
-        msgsvc.socket.emit('server disconnected', {
-            message: 'server', socketid: data.socketid, map: msgsvc.mapid
+        scktsvc.connected = false;
+        scktsvc.socket.emit('server disconnected', {
+            message: 'server', socketid: data.socketid, map: scktsvc.mapid
         });
     };
-    return msgsvc;
+    return scktsvc;
 });
-TacMapServer.factory('DlgBx', function ($window, $q) {
+TacMap.factory('DlgBx', function ($window, $q) {
     var dlg = {
     };
     dlg.alert = function alert(message) {
@@ -455,7 +398,7 @@ TacMapServer.factory('DlgBx', function ($window, $q) {
     };
     dlg.prompt = function prompt(message, defaultValue) {
         var defer = $q.defer();
-        // The native prompt will return null or a string.
+// The native prompt will return null or a string.
         var response = $window.prompt(message, defaultValue);
         if (response === null) {
             defer.reject();

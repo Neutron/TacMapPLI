@@ -14,9 +14,93 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
-/* global resources, TacMapServer, Cesium, scene, angular, stctl, viewer, usrctl */
-// ***** SERVER CONTROLLERS ******//
-TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoService, MsgService, DlgBx) {
+/* global resources, TacMap, Cesium, scene, angular, stctl, viewer, usrctl,$scope,DbService, SocketService, GeoService, DlgBx */
+// ***** CONTROLLERS ******//
+
+TacMap.controller('userCtl', function ($scope, DbService, SocketService, GeoService, DlgBx) {
+    var usrctl = this;
+    usrctl.user = [];
+    usrctl.netsel = [];
+    usrctl.usernames = [];
+    usrctl.networks = {};
+    usrctl.mapviews = {};
+    usrctl.mselected = {};
+    usrctl.usertracks = [];
+    usrctl.editprofile = false;
+    usrctl.currentview = [];
+    usrctl.sharevw = 0;
+    usrctl.nettxt="";
+    usrctl.addNet= function () {
+        SocketService.createNet(usrctl.mselected,usrctl.nettxt);
+        usrctl.nettxt="";
+    };
+    usrctl.registerUser = function (data) {
+        DlgBx.prompt("Enter User Name: ", data.socketid).then(function (uname) {
+            var user = {endpoint: {}};
+            user.endpoint.id = $scope.socketID;
+            user.endpoint.name = uname;
+            user.endpoint.network = uname + '-Net';
+            user.endpoint.mapview = uname + '-Map';
+            usrctl.user = user;
+            console.log('User registered');
+            //console.log(user.endpoint.mapview.viewdata);
+            //Initialize namespace for current mapview.
+            usrctl.mselected = usrctl.user.endpoint.mapview;
+            SocketService.initMapView(usrctl.user.endpoint.mapview, usrctl.user);
+        });
+    };
+    usrctl.selMapVw = function (m) {
+        console.log(m + " selected");
+        usrctl.mselected = m;
+        SocketService.setMapView(m);
+    };
+    usrctl.mapSelected = function (m) {
+        return usrctl.mselected === m;
+    };
+    usrctl.netsSelected = function (){
+        var msel=usrctl.mselected;
+        return usrctl.networks[msel];
+    };
+    usrctl.joinNet = function (val) {
+        if (usrctl.netsel[val]) {
+            SocketService.joinNet(usrctl.endpoint.mapview.id, val);
+        } else {
+            SocketService.leaveNet(val);
+        }
+    };
+    usrctl.shareView = function () {
+        if (usrctl.sharevw) {
+            SocketService.mapsocket = io('/' + usrctl.user.endpoint.mapview.id);
+            //GeoService.initViewListener(usrctl.user.endpoint.id, usrctl.user.endpoint.mapview, SocketService);
+        } else {
+            //GeoService.stopViewListener();
+        }
+    };
+    SocketService.socket.on('connection', function (data) {
+        $scope.socketID = data.socketid;
+        console.log('map connect ' + $scope.socketID);
+        usrctl.registerUser(data);
+    });
+    SocketService.socket.on('update endpoints', function (data) {
+        //console.log('update endpoints');
+        usrctl.endpoints = data.endpoints;
+        //console.log(usrctl.endpoints);
+        DbService.updateRecord('User', 'endpoints', data.endpoints);
+    });
+    SocketService.socket.on('update mapviews', function (data) {
+        //console.log('update mapviews');
+        usrctl.mapviews = data.mapviews;
+        //console.log(usrctl.mapviews);
+        DbService.updateRecord('User', 'mapviews', data.mapviews);
+    });
+    SocketService.socket.on('update networks', function (data) {
+        //console.log('update networks');
+        usrctl.networks = data.networks;
+        console.log(usrctl.networks);
+        DbService.updateRecord('User', 'networks', data.networks);
+    });
+});
+TacMap.controller('storeCtl', function ($scope, $http, DbService, GeoService, SocketService, DlgBx) {
     var stctl = this;
     stctl.maplist = [{
             id: 0, name: 'Default Map', url: 'json/defaultmap.json'
@@ -229,12 +313,12 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
         //console.log("Current Map:" + stctl.currmap.value);
         $scope.netselected = [];
         viewer.dataSources.remove(GeoService.sdatasources[$scope.selmap.name]);
-        console.log();
         DbService.dB.openStore("Maps", function (store) {
             store.find(nextmap.name).then(function (sc) {
-                GeoService.initGeodesy($scope, nextmap.name, sc.data);
-                stctl.currmap = nextmap;
-                MsgService.setMap(nextmap.name, sc.data);
+                if (typeof sc.data !== 'undefined') {
+                    GeoService.initGeodesy(nextmap.name, sc.data);
+                    stctl.currmap = nextmap;
+                }
             });
         });
         $scope.selmap = nextmap;
@@ -262,6 +346,86 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             console.log("Saved " + map + " to /json/" + filename + ".json");
         });
     };
+    stctl.initMaps = function () {
+        DbService.dB.openStore('Resources', function (mstore) {
+            mstore.getAllKeys().then(function (keys) {
+                if (keys.indexOf('maps.json') === -1) {
+                    $http.get('xml/maps.xml').success(function (resdata, status, headers) {
+                        var maps = DbService.xj.xml_str2json(resdata);
+                        for (i = 0; i < maps.Maps.Map.length; i++) {
+                            var u = maps.Maps.Map[i]._url;
+                            var n = maps.Maps.Map[i]._name;
+                            if (u.substring(u.indexOf('.')) === '.xml') {
+                                stctl.syncResource(maps.Maps.Map[i]._id, maps.Maps.Map[i]._url, stctl, GeoService);
+                            } else {
+                                $http.get(u).success(function (jsondata, status, headers) {
+                                    var jsmod = headers()[ 'last-modified'];
+                                    stctl.dB.openStore('Maps', function (mstore) {
+                                        mstore.upsert({
+                                            name: n, url: u, lastmod: jsmod, data: jsondata
+                                        });
+                                        $http.post("/json/maps.json", angular.toJson(stctl.sortByKey(stctl.maplist, 'id')));
+                                    });
+                                });
+                            }
+                        }
+                    });
+                } else {
+                    mstore.find('maps.json').then(function (dbrec) {
+                        stctl.maplist = dbrec.data;
+                        stctl.loadMap({id: 0, name: 'Default Map'});
+                    });
+                }
+            });
+        });
+    };
+    stctl.syncResource = function (mapid, url) {
+        //console.log("syncResource " + mapid);
+        $http.get(url).success(function (resdata, status, headers) {
+            var mod = headers()[ 'last-modified'];
+            var filename = url.substring(url.lastIndexOf('/') + 1);
+            var jdata = DbService.xj.xml_str2json(resdata);
+            var mname = jdata.Map._name;
+            var jname = mname.replace(' ', '').toLowerCase();
+            if (mname !== 'Default Map') {
+                stctl.maplist.push({
+                    id: mapid, name: mname, url: 'json/' + jname + '.json'
+                });
+            }
+            DbService.dB.openStore('Maps', function (mstore) {
+                mstore.upsert({
+                    name: mname, url: 'json/' + jname + '.json', lastmod: mod, data: jdata
+                }).then(function () {
+                    DbService.dB.openStore('Resources', function (store) {
+                        store.getAllKeys().then(function (keys) {
+                            if (keys.indexOf(filename) === -1) {
+                                store.upsert({
+                                    name: filename, url: url, lastmod: mod, data: resdata
+                                });
+                            } else {
+                                store.find(filename).then(function (dbrec) {
+                                    if (dbrec.lastmod !== mod) {
+                                        console.log('upsert ' + filename);
+                                        store.upsert({
+                                            name: filename, url: url, lastmod: mod, data: resdata
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                        if (filename === 'DefaultMap.xml') {
+                            //console.log('init geo');
+                            stctl.map = jdata;
+                            GeoService.initGeodesy(jdata.Map._name, jdata);
+                        }
+                        ;
+                    });
+                });
+            });
+        }).error(function () {
+            console.log('Error getting resource');
+        });
+    };
     stctl.sortByKey = function (array, key) {
         return array.sort(function (a, b) {
             var x = a[key];
@@ -269,76 +433,11 @@ TacMapServer.controller('storeCtl', function ($scope, $http, DbService, GeoServi
             return ((x < y) ? -1 : ((x > y) ? 1 : 0));
         });
     };
-    MsgService.socket.on('connection', function (data) {
-        console.log('new connection: ' + data.id);
-        DbService.initMaps($scope, $http, stctl, GeoService);
+    SocketService.socket.on('connection', function () {
+        stctl.initMaps();
     });
 });
-TacMapServer.controller('userCtl', function ($scope, DbService, MsgService, GeoService, DlgBx) {
-    var usrctl = this;
-    usrctl.user = [];
-    usrctl.netsel = [];
-    usrctl.usernames = [];
-    usrctl.usernets = [];
-    usrctl.networks = [];
-    usrctl.mapviews = [];
-    usrctl.usertracks = [];
-    usrctl.editprofile = false;
-    usrctl.currentview = [];
-    usrctl.sharevw = 0;
-    usrctl.registerUser = function (data) {
-        DlgBx.prompt("Enter User Name: ", data.socketid).then(function (uname) {
-            var user = {endpoint: {}};
-            user.endpoint.id = $scope.socketID;
-            user.endpoint.name = uname;
-            user.endpoint.network = uname + '-Net';
-            user.endpoint.mapview.id = uname + '-Map';
-            user.endpoint.mapview.viewdata=GeoService.viewData();
-            usrctl.user = user;
-            MsgService.socket = io('/' + mapview.id);
-            MsgService.publish('initial connection', user);
-        });
-    };
-    usrctl.joinNet = function (val) {
-        if (usrctl.netsel[val]) {
-            MsgService.joinNet(usrctl.endpoint.mapview.id,val);
-        } else {
-            MsgService.leaveNet(val);
-        }
-    };
-    usrctl.shareView = function () {
-        if (usrctl.sharevw) {
-            GeoService.initViewListener(usrctl.user.endpoint.id, usrctl.user.endpoint.mapview, MsgService);
-        } else {
-            GeoService.stopViewListener();
-        }
-    };
-    MsgService.socket.on('connection', function (data) {
-        $scope.socketID = data.socketid;
-        console.log('connection ' + $scope.socketID);
-        usrctl.registerUser(data);
-    });
-    MsgService.socket.on('update connections', function (data) {
-        console.log('update connections');
-        //console.log(data);
-        DbService.updateRecord('User', 'endpoints', data.endpoints);
-        DbService.updateRecord('User', 'networks', data.networks);
-        DbService.updateRecord('User', 'mapviews', data.mapviews);
-        usrctl.networks = data.networks;
-        usrctl.mapviews = data.mapviews;
-    });
- 
-    MsgService.socket.on('mapview update', function (data) {
-        console.log('mapview update');
-        usrctl.mapviews = data.mapviews;
-        for (m in usrctl.mapviews) {
-            if (usrctl.mapviews[m] === usrctl.user.mapview) {
-                GeoService.setView(data.viewdata);
-            }
-        }
-    });
-});
-TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgService, DlgBx) {
+TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketService, DlgBx) {
     var mapctl = this;
     var ellipsoid = scene.globe.ellipsoid;
     mapctl.trackselected = null;
@@ -347,13 +446,11 @@ TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgSe
     mapctl.editgeofencechecked = false;
     mapctl.editlocchecked = false;
     mapctl.import = false;
-    //
     mapctl.maps = [];
     mapctl.entities = [];
     mapctl.tracks = [];
     mapctl.geofences = [];
     mapctl.loc = [];
-    //
     mapctl.lftClickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
     mapctl.lftClickHandler.setInputAction(function (mouse) {
         var pickedObject = scene.pick(mouse.position);
@@ -546,19 +643,19 @@ TacMapServer.controller('mapCtl', function ($scope, DbService, GeoService, MsgSe
         mapctl.showPP = true;
         GeoService.showTrace(track);
     };
-    MsgService.socket.on('track connected', function (data) {
+    SocketService.socket.on('track connected', function (data) {
         console.log("Unit connected " + data.id);
-        MsgService.setMap($scope.selmap.name, mapctl.map);
+        SocketService.setMap($scope.selmap.name, mapctl.map);
         //msgctl.messages.push({text: "Unit " + data.socketid + " connected"});
     });
 });
-TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, MsgService) {
+TacMap.controller('messageCtl', function ($scope, DbService, GeoService, SocketService) {
     var msgctl = this;
     msgctl.messages = [];
     msgctl.tracks = [];
     msgctl.sendReport = function (msgobj) {
         //default ui
-        MsgService.sendMessage(msgobj, msgobj.network);
+        SocketService.sendMessage(msgobj, msgobj.network);
     };
     msgctl.moveUnit = function (uid, sentto, net, lat, lon) {
         console.log("moveUnit: " + uid);
@@ -567,34 +664,8 @@ TacMapServer.controller('messageCtl', function ($scope, DbService, GeoService, M
             user: uid, to: sentto, time: new Date(), position: [lat, lon], network: net
         });
     };
-    MsgService.socket.on('error', console.error.bind(console));
-    MsgService.socket.on('message', console.log.bind(console));
-    MsgService.socket.on('msg sent', function (data) {
-        msgctl.messages.push({
-            text: "POSREP " + data.net + " " + data.message.user
-        });
-        GeoService.sdatasources[$scope.selmap.name].entities.getById(data.message.user).position = Cesium.Cartesian3.fromDegrees(data.message.position[1], data.message.position[0]);
-    });
-    MsgService.socket.on('user disconnected', function (data) {
-        console.log("Unit disconnected " + data.socketid);
-        msgctl.messages.push({
-            text: "Unit " + data.socketid + " disconnected"
-        });
-    });
-    MsgService.socket.on('endpoint joined', function (data) {
-        //console.log('Unit ' + data.userid + ' Joined Network: ' + data.netname);
-        msgctl.messages.push({
-            text: data.userid + ' Joined Network: ' + data.netname
-        });
-    });
-    MsgService.socket.on('endpoint left', function (data) {
-        console.log('Unit ' + data.userid + ' Left Network: ' + data.netname);
-        msgctl.messages.push({
-            text: data.userid + ' Left Network: ' + data.netname
-        });
-    });
 });
-TacMapServer.controller('menuCtrl', function ($scope) {
+TacMap.controller('menuCtrl', function ($scope) {
     //initiate an array to hold all active tabs
     $scope.activeTabs = [];
     //check if the tab is active

@@ -262,3 +262,19 @@ option{
 .smbtngrp{
    margin-left:2px; 
 }
+.maplist{
+    cursor: pointer;
+    height:18px;
+    padding-top:4px;
+    padding-left:2px;
+    border:solid thin darkgrey;
+}
+.netlist{
+    height:18px;
+    padding-top:4px;
+    padding-left:2px;
+    padding-bottom:2px;
+}
+.newnet{
+    width:140px;
+}
