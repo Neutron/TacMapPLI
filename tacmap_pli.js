@@ -23,14 +23,11 @@ var request = require('request');
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var cesium = require('./geoserver/cesiumserver');
-//
 var http = require('http');
-
 var app = express();
 app.use(bodyParser.json());
 app.use(express.static(__dirname + '/public'));
 app.use(compression());
-
 //SOCKET IO
 var server = http.createServer(app);
 var sio = require('socket.io').listen(server);
@@ -162,8 +159,12 @@ var socketOps = function (socket) {
     });
     // Remove a network 
     socket.on('remove network', function (data) {
-        var n = networks.indexOf(data.id);
-        networks.splice(n, 1);
+        delete networks[data.mapviewid][data.netname];
+        sio.emit('update networks', {networks: networks});
+    });
+       // Update a mapview
+    socket.on('update network', function (data) {
+        networks[data.mapviewid][data.netname]=data.netname;
         sio.emit('update networks', {networks: networks});
     });
     //Relay message to one or all networks
@@ -180,20 +181,17 @@ var socketOps = function (socket) {
     });
     // Publish a mapview
     socket.on('create mapview', function (data) {
-        mapviews.push({id: data.id, mapview: data.mapview});
-        //set up socket namespace corresponding to new mapview
-        mapio[data.mapview.id] = sio.of('/' + data.mapview.id);
-        sio.emit('mapview update', {mapviews: mapviews});
+        mapviews[data.mapviewid]=data.mapviewid;
+        sio.emit('update mapviews', {mapviews: mapviews});
     });
     // Remove a mapview
     socket.on('remove mapview', function (data) {
-        var n = mapviews.indexOf(data.id);
-        mapviews.splice(n, 1);
+        delete mapviews[data.mapviewid];
         sio.emit('mapview update', {mapviews: mapviews});
     });
     // Update a mapview
     socket.on('update mapview', function (data) {
-        mapviews[data.id].mapview = data.mapview;
-        sio.emit('mapview update', {mapviews: mapviews});
+        mapviews[data.mapviewid]=data.mapviewid;
+        sio.emit('update mapviews', {mapviews: mapviews});
     });
 };

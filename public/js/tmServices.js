@@ -337,6 +337,10 @@ TacMap.factory('SocketService', function () {
         console.log('createNet '+mapviewid+": "+netname);
         scktsvc.map_socket.emit('create network', {mapviewid: mapviewid, netname: netname});
     };
+        scktsvc.createMap = function (mapviewid, mapname) {
+        console.log('createMap '+mapviewid+": "+mapname);
+        scktsvc.map_socket.emit('create map view', {mapviewid: mapviewid, mapname: mapname});
+    };
     scktsvc.joinNet = function (id, netname) {
         scktsvc.socket.join(netname);
         scktsvc.socket.emit('join network', {mapviewid: id, network: netname});

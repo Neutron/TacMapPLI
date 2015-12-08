@@ -34,6 +34,10 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, GeoServ
         SocketService.createNet(usrctl.mselected,usrctl.nettxt);
         usrctl.nettxt="";
     };
+    usrctl.addMap= function () {
+        SocketService.createMap(usrctl.mselected,usrctl.maptxt);
+        usrctl.maptxt="";
+    };
     usrctl.registerUser = function (data) {
         DlgBx.prompt("Enter User Name: ", data.socketid).then(function (uname) {
             var user = {endpoint: {}};

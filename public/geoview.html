@@ -48,6 +48,10 @@
                                 <div data-ng-repeat="(k,m) in usrctl.mapviews">
                                     <div class="maplist" data-ng-model="usrctl.mselected" data-ng-click="usrctl.selMapVw(k)" data-ng-class="{selected : usrctl.mapSelected(k)}">{{k}}</div>
                                 </div>
+                                <div class="maplist">
+                                    <input class="newnet" data-ng-model="usrctl.maptxt" type="text"/>
+                                    <button class="smbtn" data-ng-click="usrctl.addMap()">Add</button>
+                                </div>
                                 <!--                                <div style="margin-left:90px;">
                                                                     <span>Share View: </span>
                                                                     <input data-ng-model="usrctl.sharevw" data-ng-change="usrctl.shareView()" data-ng-false-value="0" type="checkbox"/>
