@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<div data-ng-controller="mapCtl as mapctl">
+    <div class="accordion__tab outline">
+        <div class="accordion__tab-subtitle" data-ng-click="openTab('TRACKS')">TRACKS</div>
+        <div class="accordion__tab-content" data-ng-show="isOpenTab('TRACKS')">
+            <div class="trcksect">
+                <div data-ng-repeat="t in mapctl.tracks">
+                    <div class="unitlisting" data-ng-model="mapctl.trackselected"
+                         data-ng-click="mapctl.selectTrack(t, true)"
+                         data-ng-class="{selected : mapctl.trackselected._id === t._id}">
+                        <img class="dot" data-ng-src="img/bluedot.png">
+                        <div class="unitlabel">{{t._name}}</div> 
+                    </div>
+                </div>
+            </div>
+            <div class="trcks">
+                <button class="smbtn" ng-click="mapctl.newTrack(k)">Add</button>
+                <div class="rtalgn">
+                    <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0"/>
+                    <span>Set Locations</span> 
+                </div>    
+            </div>
+            <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>  
+        </div>
+    </div>
+    <div class="accordion__tab outline">
+        <div class="accordion__tab-subtitle" data-ng-click="openTab('GEOFENCES')">GEOFENCES</div>
+        <div class="accordion__tab-content" data-ng-show="isOpenTab('GEOFENCES')">
+            <div class="trcks">
+                <button class="smbtn" ng-click="mapctl.newGeofence(k)">Add</button>
+                <div class="rtalgn">
+                    <input data-ng-model="mapctl.editgeofencechecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editlocchecked = 0"/>
+                    <span>Edit GeoFence</span>
+                </div>
+            </div>
+            <div class="msect">
+                <div class="bpad" data-ng-show="mapctl.editgeofencechecked">
+                    <div>Right Click to Set Points</div>
+                    <div class="smbtngrp rtalgn" data-ng-show="mapctl.editgeofencechecked">
+                        <button class="smbtn" data-ng-click="mapctl.removeGeoFencePoint()">del pt</button>
+                        <button class="smbtn" data-ng-click="mapctl.removeAllGeoFencePoints()">del all</button>
+                    </div>
+                </div>
+            </div>
+            <div data-ng-repeat="f in mapctl.geofences">
+                <div class="unitlisting" data-ng-model="mapctl.geofenceselected"
+                     data-ng-show="mapctl.showGeoFence(f)"
+                     data-ng-click="mapctl.selectGeoFence(f, true)"
+                     data-ng-class="{selected : mapctl.geofenceselected._id === f._id}">
+                    <img src="" data-ng-src="img/bluedot.png" />
+                    <div class="unitlabel">{{f._name}}</div> 
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

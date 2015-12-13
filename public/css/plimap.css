@@ -32,7 +32,6 @@ button::-moz-focus-inner {
     border:0;
     padding:0;
 }
-
 #cesiumContainer{
     height:100%;
     width:100%;
@@ -113,6 +112,7 @@ option{
     float:right;
 }
 .msect{
+    width:100%;
     margin-top:4px;
     font-style:italic;
     text-align:center;
@@ -259,8 +259,19 @@ option{
     -ms-user-select: none;
     user-select: none;
 }
+.usrprof{
+    margin-bottom:25px; 
+}
+.trcks{
+    padding-top:5px; 
+    padding-bottom:10px; 
+}
+.rtalgn{
+    margin-top:5px;
+    float:right;
+}
 .smbtngrp{
-   margin-left:2px; 
+    margin-left:2px; 
 }
 .maplist{
     cursor: pointer;
@@ -277,4 +288,21 @@ option{
 }
 .newnet{
     width:140px;
+}
+.dot{
+    display:inline;
+    margin-right:5px;
+}
+.outline{
+    border:solid black thin;
+    box-shadow:2px 2px 2px #888888;
+    margin-top:5px;
+}
+.trcksect{
+    width:100%;
+    border-top:thin solid black;
+    font-size:10px;
+}
+.bpad{
+    padding-bottom: 20px;
 }

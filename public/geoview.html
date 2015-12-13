@@ -23,6 +23,8 @@
         <title>TACMAP</title>
         <link rel="stylesheet" href="js/lib/Cesium/Widgets/widgets.css" />
         <link rel="stylesheet" href="css/plimap.css" />
+        <!--        <link href="node_modules/ng-dialog/css/ngDialog-theme-default.min.css" rel="stylesheet" type="text/css"/>
+                <link href="node_modules/ng-dialog/css/ngDialog.min.css" rel="stylesheet" type="text/css"/>-->
     </head>
     <body>
         <div id="infoCol" class="noselect" data-ng-app="TacMap">
@@ -43,26 +45,29 @@
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('views')">VIEWS</div>
+                            <div class="accordion__tab-title" data-ng-click="openTab('views')">MAP VIEWS</div>
                             <div class="accordion__tab-content" data-ng-show="isOpenTab('views')">
                                 <div data-ng-repeat="(k,m) in usrctl.mapviews">
-                                    <div class="maplist" data-ng-model="usrctl.mselected" data-ng-click="usrctl.selMapVw(k)" data-ng-class="{selected : usrctl.mapSelected(k)}">{{k}}</div>
+                                    <div class="accordion__tab-title maplist" data-ng-click="openTab(k)" data-ng-model="usrctl.mselected" data-ng-click="usrctl.selMapVw(k)" data-ng-class="{selected : usrctl.mapSelected(k)}">{{k}}</div>
+                                    <div class="accordion__tab-content" data-ng-show="isOpenTab(k)">
+                                        <div data-ng-include="stctl.mapEntities" data-ng-show="usrctl.mapSelected(k)"></div>
+                                    </div>
                                 </div>
-                                <div class="maplist">
-                                    <input class="newnet" data-ng-model="usrctl.maptxt" type="text"/>
-                                    <button class="smbtn" data-ng-click="usrctl.addMap()">Add</button>
+                                <div class="netlist">
+                                    <input class="newnet" data-ng-model="stctl.maptxt" type="text"/>
+                                    <button class="smbtn" data-ng-click="stctl.addMap(usrctl.mapviews, stctl.maptxt)">Add</button>
                                 </div>
-                                <!--                                <div style="margin-left:90px;">
-                                                                    <span>Share View: </span>
-                                                                    <input data-ng-model="usrctl.sharevw" data-ng-change="usrctl.shareView()" data-ng-false-value="0" type="checkbox"/>
-                                                                </div>-->
+                                <!--<div style="margin-left:90px;">
+                                        <span>Share View: </span>
+                                        <input data-ng-model="usrctl.sharevw" data-ng-change="usrctl.shareView()" data-ng-false-value="0" type="checkbox"/>
+                                    </div>-->
                             </div>
                         </div>
                         <div class="accordion__tab">
                             <div class="accordion__tab-title" data-ng-click="openTab('nets')">NETWORKS</div>
                             <div class="accordion__tab-content" data-ng-show="isOpenTab('nets')">
                                 <div ng-repeat="(ky,n) in usrctl.networks[usrctl.mselected]">
-                                    <input type="checkbox" data-ng-model="netsel" data-ng-change="usrctl.joinNet(n)">{{ky}}
+                                    <input type="checkbox" data-ng-model="usrctl.netsel[ky]" data-ng-change="usrctl.joinNet(n)">{{ky}}
                                 </div>
                                 <div class="netlist">
                                     <input class="newnet" data-ng-model="usrctl.nettxt" type="text"/>
@@ -81,6 +86,9 @@
             </div>
         </div>
         <div id="cesiumContainer"></div>
+        <!--    <div id="alert"></div>
+                <div id="prompt"></div>
+                <div id="confirm"></div>-->
         <script src='/socket.io/socket.io.js'></script>
         <script src="js/lib/Cesium/Cesium.js"></script>
         <script src="js/lib/xml2json.min.js"></script>
@@ -88,6 +96,7 @@
         <script src="js/lib/compression/lz-string-1.3.3-min.js"></script>
         <script src="js/lib/compression/base64-string-v1.1.0.js"></script>
         <script src="js/lib/indexdb/angular-indexed-db.min.js"></script>
+        <!--        <script src="node_modules/ng-dialog/js/ngDialog.min.js"></script>-->
         <script src="js/tacmap.js"></script>
         <script src="js/tmServices.js"></script>
         <script src="js/tmControllers.js"></script>

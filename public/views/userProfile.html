@@ -18,22 +18,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 -->
-<div>
+<div class="usrprof">
     <div class="topspc">
         <span>User Name:  {{usrctl.user.endpoint.name}}</span>
-        <input type="text"  data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.endpoint.name"/>
+        <input type="text"  data-ng-show="usrctl.editprofile" data-ng-model="usrctl.user.endpoint.name"/>
     </div>
 
     <div class="topspc">
         <span>Map View: {{usrctl.user.endpoint.mapview}}</span>
-        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.endpoint.mapview"/>
+        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.user.endpoint.mapview"/>
     </div>
     <div class="topspc">
         <span>Network: {{usrctl.user.endpoint.network}}</span>
-        <input type="text" data-ng-show="usrctl.editprofilechecked" data-ng-model="usrctl.user.endpoint.network"/>
+        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.user.endpoint.network"/>
     </div>
-    <div style="margin-left:90px;">
-        <span>Edit Profile: </span>
-        <input data-ng-model="usrctl.editprofilechecked" data-ng-false-value="0" type="checkbox"/>
+    <div class="rtalgn">
+        <button class="smbtn" ng-click="usrctl.editProfile(usrctl.user.endpoint)" data-ng-hide="usrctl.editprofile">Edit</button>
+        <button class="smbtn" ng-click="usrctl.cancelEdit()" data-ng-show="usrctl.editprofile">Cancel</button>
+        <button class="smbtn" ng-click="usrctl.saveProfile()" data-ng-show="usrctl.editprofile">Save</button>
     </div>
+     <div class="topspc"/>
 </div>

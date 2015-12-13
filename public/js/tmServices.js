@@ -58,14 +58,26 @@ TacMap.factory('DbService', function ($indexedDB) {
         });
     };
     dbsvc.getRecord = function (storename, recordname, callback) {
+        console.log('getRecord ' + recordname);
         dbsvc.dB.openStore(storename, function (mstore) {
-            if (dbsvc.hasRecord(mstore, recordname)) {
-                mstore.find().then(function (rec) {
-                    callback(rec);
-                });
-            } else {
-                callback(null);
-            }
+            mstore.getAllKeys().then(function (keys) {
+//                console.log(keys);
+                if (keys.indexOf(recordname) !== -1) {
+                    mstore.find(recordname).then(function (rec) {
+ //                       console.log(rec);
+                        callback(rec.data);
+                    });
+                } else {
+                    callback(null);
+                }
+            });
+        });
+    };
+    dbsvc.addRecord = function (storename, recordname, recdata) {
+        dbsvc.dB.openStore(storename, function (mstore) {
+            mstore.upsert({
+                name: recordname, data: recdata
+            });
         });
     };
     dbsvc.updateRecord = function (storename, recordname, recdata, callback) {
@@ -86,15 +98,6 @@ TacMap.factory('DbService', function ($indexedDB) {
                     callback();
                 }
             });
-        });
-    };
-    dbsvc.hasRecord = function (dbstore, recname) {
-        dbstore.getAllKeys().then(function (keys) {
-            if (keys.indexOf(recname) === -1) {
-                return false;
-            } else {
-                return true;
-            }
         });
     };
     dbsvc.updateConnection = function (listname, newdata) {
@@ -211,6 +214,7 @@ TacMap.factory('GeoService', function () {
             }
         });
     };
+
     geosvc.addCesiumPoint = function (entity, color) {
         console.log("Add point " + geosvc.mapid + ", " + entity._id + ", " + entity._location);
         var loc = entity._location;
@@ -309,14 +313,16 @@ TacMap.factory('SocketService', function () {
     };
     scktsvc.serverid;
     scktsvc.mapid;
+    //scktsvc.socket is used at the global level
     scktsvc.socket = io.connect(window.location.host);
+    //scktsvc.map_socket is used at the namespace level
     scktsvc.map_socket;
     scktsvc.initMapView = function (mapview, user) {
         console.log('initMapView ' + mapview);
         scktsvc.socket.emit('joinNamespace', {mapvwid: mapview}, function (data) {
             console.log('join namespace ' + data.namespace);
             scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
-            scktsvc.map_socket.on('connect', function () {
+            scktsvc.map_socket.once('connect', function () {
                 console.log('joined namespace ' + data.namespace);
                 scktsvc.socket.emit('initial connection', user);
             });
@@ -327,33 +333,50 @@ TacMap.factory('SocketService', function () {
         scktsvc.socket.emit('joinNamespace', {mapvwid: mapview}, function (data) {
             console.log('join namespace ' + data.namespace);
             scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
-            scktsvc.map_socket.on('connect', function () {
+            scktsvc.map_socket.once('connect', function () {
                 console.log('joined namespace ' + data.namespace);
                 //scktsvc.map_socket.emit('initial connection', user);
             });
         });
     };
     scktsvc.createNet = function (mapviewid, netname) {
-        console.log('createNet '+mapviewid+": "+netname);
-        scktsvc.map_socket.emit('create network', {mapviewid: mapviewid, netname: netname});
+        console.log('createNet ' + mapviewid + ": " + netname);
+        if (typeof scktsvc.map_socket !== 'undefined') {
+            scktsvc.map_socket.emit('create network', {mapviewid: mapviewid, netname: netname});
+        }
     };
-        scktsvc.createMap = function (mapviewid, mapname) {
-        console.log('createMap '+mapviewid+": "+mapname);
-        scktsvc.map_socket.emit('create map view', {mapviewid: mapviewid, mapname: mapname});
+    scktsvc.deleteNet = function (mapviewid, netname) {
+        console.log('deleteNet ' + mapviewid + ": " + netname);
+        if (typeof scktsvc.map_socket !== 'undefined') {
+            scktsvc.map_socket.emit('remove network', {mapviewid: mapviewid, netname: netname});
+        }
+    };
+    scktsvc.createMap = function (mapname) {
+        console.log('createMap ' + mapname);
+        scktsvc.socket.emit('create mapview', {mapviewid: mapname});
+    };
+    scktsvc.changeMap = function (mapname) {
+        if (typeof scktsvc.map_socket !== 'undefined') {
+            console.log('disconnect from ' + mapname);
+            scktsvc.map_socket.emit('change map', null);
+        }
     };
     scktsvc.joinNet = function (id, netname) {
-        scktsvc.socket.join(netname);
-        scktsvc.socket.emit('join network', {mapviewid: id, network: netname});
+        console.log('joinNet ' + id + ', ' + netname);
+        //scktsvc.map_socket.join(netname);
+        scktsvc.map_socket.emit('join network', {mapviewid: id, network: netname});
     };
     scktsvc.leaveNet = function (id, netname) {
-        scktsvc.socket.leave(netname);
-        scktsvc.socket.emit('leave network', {mapviewid: id, network: netname});
+        console.log('leaveNet ' + id + ', ' + netname);
+        if (typeof scktsvc.map_socket !== 'undefined') {
+            scktsvc.map_socket.emit('leave network', {mapviewid: id, network: netname});
+        }
     };
     //This published provided socket message from client
     scktsvc.publish = function (pubmsg, data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            scktsvc.socket.to(networkid).emit(pubmsg, data);
+            scktsvc.map_socket.to(networkid).emit(pubmsg, data);
         } else {
             //publish to all             scktsvc.socket.emit(pubmsg, data);
         }
@@ -362,32 +385,25 @@ TacMap.factory('SocketService', function () {
     scktsvc.publishMsg = function (pubmsg, data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            scktsvc.socket.to(networkid).emit('publish msg', {msg: pubmsg, payload: data});
+            scktsvc.map_socket.to(networkid).emit('publish msg', {msg: pubmsg, payload: data});
         } else {
             //publish to all
-            scktsvc.socket.emit('publish msg to all', {msg: pubmsg, payload: data});
+            scktsvc.map_socket.emit('publish msg to all', {msg: pubmsg, payload: data});
         }
     };
     // Create a mapview that other nodes can 
     scktsvc.createMapView = function (data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            scktsvc.socket.to(networkid).emit('create mapview', data);
+            scktsvc.map_socket.to(networkid).emit('create mapview', data);
         } else {
 //publish to all
-            scktsvc.socket.emit('create mapview', data);
+            scktsvc.map_socket.emit('create mapview', data);
         }
     };
     scktsvc.publishView = function (userid, mapview, vwdata) {
-        scktsvc.socket = io('/' + mapview);
-        scktsvc.socket.emit('update view', {userid: userid, viewdata: vwdata});
-    };
-    scktsvc.disconnectEndpoint = function (data) {
-        console.log("Server Disconnected " + data.socketid);
-        scktsvc.connected = false;
-        scktsvc.socket.emit('server disconnected', {
-            message: 'server', socketid: data.socketid, map: scktsvc.mapid
-        });
+        scktsvc.map_socket = io('/' + mapview);
+        scktsvc.map_socket.emit('update view', {userid: userid, viewdata: vwdata});
     };
     return scktsvc;
 });
