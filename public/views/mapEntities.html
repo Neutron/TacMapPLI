@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <div data-ng-controller="mapCtl as mapctl">
     <div class="accordion__tab outline">
-        <div class="accordion__tab-subtitle" data-ng-click="openTab('TRACKS')">TRACKS</div>
-        <div class="accordion__tab-content" data-ng-show="isOpenTab('TRACKS')">
+        <div class="accordion__tab-subtitle" data-ng-click="mctl.openTab('TRACKS')">TRACKS</div>
+        <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('TRACKS')">
             <div class="trcksect">
                 <div data-ng-repeat="t in mapctl.tracks">
                     <div class="unitlisting" data-ng-model="mapctl.trackselected"
@@ -40,8 +40,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </div>
     </div>
     <div class="accordion__tab outline">
-        <div class="accordion__tab-subtitle" data-ng-click="openTab('GEOFENCES')">GEOFENCES</div>
-        <div class="accordion__tab-content" data-ng-show="isOpenTab('GEOFENCES')">
+        <div class="accordion__tab-subtitle" data-ng-click="mctl.openTab('GEOFENCES')">GEOFENCES</div>
+        <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('GEOFENCES')">
+            <div data-ng-repeat="f in mapctl.geofences">
+                <div class="unitlisting" data-ng-model="mapctl.geofenceselected"
+                     data-ng-show="mapctl.showGeoFence(f)"
+                     data-ng-click="mapctl.selectGeoFence(f, true)"
+                     data-ng-class="{selected : mapctl.geofenceselected._id === f._id}">
+                    <div class="gfence">GF</div>
+                    <div class="unitlabel">{{f._name}}</div> 
+                </div>
+            </div>
             <div class="trcks">
                 <button class="smbtn" ng-click="mapctl.newGeofence(k)">Add</button>
                 <div class="rtalgn">
@@ -56,15 +65,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <button class="smbtn" data-ng-click="mapctl.removeGeoFencePoint()">del pt</button>
                         <button class="smbtn" data-ng-click="mapctl.removeAllGeoFencePoints()">del all</button>
                     </div>
-                </div>
-            </div>
-            <div data-ng-repeat="f in mapctl.geofences">
-                <div class="unitlisting" data-ng-model="mapctl.geofenceselected"
-                     data-ng-show="mapctl.showGeoFence(f)"
-                     data-ng-click="mapctl.selectGeoFence(f, true)"
-                     data-ng-class="{selected : mapctl.geofenceselected._id === f._id}">
-                    <img src="" data-ng-src="img/bluedot.png" />
-                    <div class="unitlabel">{{f._name}}</div> 
                 </div>
             </div>
         </div>

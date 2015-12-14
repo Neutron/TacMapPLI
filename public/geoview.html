@@ -30,54 +30,60 @@
         <div id="infoCol" class="noselect" data-ng-app="TacMap">
             <div data-ng-controller="storeCtl as stctl">
                 <div data-ng-controller="userCtl as usrctl">
-                    <div class="maptitle">{{selmap.name}}</div>
-                    <div class="accordion__container" data-ng-controller="menuCtrl">
+                    <div class="maptitle">{{$scope.map}}</div>
+                    <div class="accordion__container outline" data-ng-controller="menuCtrl as mctl">
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('user')">USER PROFILE</div>
-                            <div class="accordion__tab-content" data-ng-show="isOpenTab('user')">
+                            <div class="accordion__tab-title" data-ng-click="mctl.openTab('user')">USER PROFILE</div>
+                            <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('user')">
                                 <div data-ng-include="stctl.userProfile"></div>
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('maps')">LOCAL MAPS</div>
-                            <div class="accordion__tab-content" data-ng-show="isOpenTab('maps')">
+                            <div class="accordion__tab-title" data-ng-click="mctl.openTab('views')">MAP VIEWS</div>
+                            <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('views')">
+                                <div data-ng-repeat="(k,m) in stctl.mapviews">
+                                    <div class="accordion__subtab outline">
+                                        <div class="accordion__tab-subtitle" data-ng-click="stctl.selMapVw(k, mctl)" data-ng-model="stctl.mselected" data-ng-class="{selected : stctl.mapSelected(k)}">{{k}}</div>
+                                        <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab(k)">
+                                            <div data-ng-include="stctl.mapEntities" data-ng-show="stctl.mapSelected(k)"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="netlist">
+                                    <button class="smbtn" data-ng-hide="stctl.addmap" data-ng-click="stctl.addmap = true">Add</button>
+                                    <div data-ng-show="stctl.addmap">
+                                        <input class="newmap" data-ng-model="stctl.maptxt" type="text"/>
+                                        <button class="smbtn" data-ng-click="stctl.addmap = false; stctl.maptxt = '';">Cancel</button>
+                                        <button class="smbtn" data-ng-click="stctl.addMap(stctl.mapviews, stctl.maptxt)">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="mctl.openTab('nets')">NETWORKS</div>
+                            <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('nets')">
+                                <div ng-repeat="(ky,n) in usrctl.networks[stctl.mselected]">
+                                    <input type="checkbox" data-ng-model="usrctl.netsel[ky]" data-ng-change="usrctl.joinNet(n)">{{ky}}
+                                </div>
+                                <div class="netlist">
+                                    <button class="smbtn" data-ng-hide="usrctl.addnet" data-ng-click="usrctl.addnet = true">Add</button>
+                                    <div data-ng-show="usrctl.addnet">
+                                        <input class="newnet" data-ng-model="usrctl.nettxt" type="text"/>
+                                        <button class="smbtn" data-ng-click="usrctl.addnet = false; usrctl.nettxt = '';">Cancel</button>
+                                        <button class="smbtn" data-ng-click="usrctl.addNet(stctl.mselected)">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-title" data-ng-click="mctl.openTab('maps')">SAVE / LOAD</div>
+                            <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('maps')">
                                 <div data-ng-include="stctl.planMaps"></div>
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('views')">MAP VIEWS</div>
-                            <div class="accordion__tab-content" data-ng-show="isOpenTab('views')">
-                                <div data-ng-repeat="(k,m) in usrctl.mapviews">
-                                    <div class="accordion__tab-title maplist" data-ng-click="openTab(k)" data-ng-model="usrctl.mselected" data-ng-click="usrctl.selMapVw(k)" data-ng-class="{selected : usrctl.mapSelected(k)}">{{k}}</div>
-                                    <div class="accordion__tab-content" data-ng-show="isOpenTab(k)">
-                                        <div data-ng-include="stctl.mapEntities" data-ng-show="usrctl.mapSelected(k)"></div>
-                                    </div>
-                                </div>
-                                <div class="netlist">
-                                    <input class="newnet" data-ng-model="stctl.maptxt" type="text"/>
-                                    <button class="smbtn" data-ng-click="stctl.addMap(usrctl.mapviews, stctl.maptxt)">Add</button>
-                                </div>
-                                <!--<div style="margin-left:90px;">
-                                        <span>Share View: </span>
-                                        <input data-ng-model="usrctl.sharevw" data-ng-change="usrctl.shareView()" data-ng-false-value="0" type="checkbox"/>
-                                    </div>-->
-                            </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('nets')">NETWORKS</div>
-                            <div class="accordion__tab-content" data-ng-show="isOpenTab('nets')">
-                                <div ng-repeat="(ky,n) in usrctl.networks[usrctl.mselected]">
-                                    <input type="checkbox" data-ng-model="usrctl.netsel[ky]" data-ng-change="usrctl.joinNet(n)">{{ky}}
-                                </div>
-                                <div class="netlist">
-                                    <input class="newnet" data-ng-model="usrctl.nettxt" type="text"/>
-                                    <button class="smbtn" data-ng-click="usrctl.addNet()">Add</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="openTab('msgs')">MESSAGE LOG</div>
-                            <div class="accordion__tab-content" data-ng-show="isOpenTab('msgs')">
+                            <div class="accordion__tab-title" data-ng-click="mctl.openTab('msgs')">MESSAGE LOG</div>
+                            <div class="accordion__tab-content" data-ng-show="mctl.isOpenTab('msgs')">
                                 <div data-ng-include="stctl.msgLog"></div>
                             </div>
                         </div>

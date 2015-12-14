@@ -176,9 +176,6 @@ option{
 .hidden{
     display:none;
 }
-.selected{
-    background:yellow;
-}
 .wpchkbx{
     margin-left:10px;
 }
@@ -223,14 +220,22 @@ option{
     font-size:10px;
     font-weight:bold;
 }
+.accordion__subtab{
+    background:#aaa;
+    color:#000;
+    border-bottom:1px solid white;
+    font-size:10px;
+    font-weight:bold;
+}
 .accordion__tab-title{
     background:#E5F2FE;
     padding:5px;
     cursor:pointer;
 }
 .accordion__tab-subtitle{
-    background:lightcyan;
+    background:whitesmoke;
     padding:5px;
+    margin:1px;
     cursor:pointer;
 }
 .accordion__tab-content{
@@ -287,7 +292,10 @@ option{
     padding-bottom:2px;
 }
 .newnet{
-    width:140px;
+    width:90px;
+}
+.newmap{
+    width:90px;
 }
 .dot{
     display:inline;
@@ -296,7 +304,6 @@ option{
 .outline{
     border:solid black thin;
     box-shadow:2px 2px 2px #888888;
-    margin-top:5px;
 }
 .trcksect{
     width:100%;
@@ -305,4 +312,12 @@ option{
 }
 .bpad{
     padding-bottom: 20px;
+}
+.gfence{
+    width:15px;
+    height:15px;
+    border: dashed darkblue thin;
+}
+.selected{
+    background:yellow;
 }

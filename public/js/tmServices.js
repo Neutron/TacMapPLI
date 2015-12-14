@@ -214,7 +214,6 @@ TacMap.factory('GeoService', function () {
             }
         });
     };
-
     geosvc.addCesiumPoint = function (entity, color) {
         console.log("Add point " + geosvc.mapid + ", " + entity._id + ", " + entity._location);
         var loc = entity._location;
@@ -328,7 +327,7 @@ TacMap.factory('SocketService', function () {
             });
         });
     };
-    scktsvc.setMapView = function (mapview, user) {
+    scktsvc.setMapView = function (mapview) {
         console.log('setMapView ' + mapview);
         scktsvc.socket.emit('joinNamespace', {mapvwid: mapview}, function (data) {
             console.log('join namespace ' + data.namespace);
