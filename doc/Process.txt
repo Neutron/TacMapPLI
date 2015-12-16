@@ -1,0 +1,7 @@
+TacMapPLI
+
+1. Establish SocketIO connection
+2. Check for user info in IndexedDB or ask for name
+3. Init default map
+4. Init user mapview
+5. 

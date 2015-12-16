@@ -64,7 +64,7 @@ TacMap.factory('DbService', function ($indexedDB) {
 //                console.log(keys);
                 if (keys.indexOf(recordname) !== -1) {
                     mstore.find(recordname).then(function (rec) {
- //                       console.log(rec);
+                        //                       console.log(rec);
                         callback(rec.data);
                     });
                 } else {
@@ -112,7 +112,7 @@ TacMap.factory('GeoService', function () {
     };
     geosvc.mapid = null;
     geosvc.sdatasources = [];
-    geosvc.initGeodesy = function (mapid, mapdata, callback) {
+    geosvc.initGeodesy = function (mapid, mapdata) {
         console.log("initGeodesy " + mapid);
         geosvc.mapid = mapid;
         geosvc.sdatasources[geosvc.mapid] = new Cesium.CustomDataSource(geosvc.mapid);
@@ -123,7 +123,6 @@ TacMap.factory('GeoService', function () {
         geosvc.addGeoFences(mapdata.Map.GeoFences.GeoFence);
         viewer.zoomTo(geosvc.sdatasources[geosvc.mapid].entities.getById("Default")).then(function () {
             console.log('map ready');
-            callback();
         });
     };
     geosvc.addEntities = function (entities) {
@@ -312,18 +311,21 @@ TacMap.factory('SocketService', function () {
     };
     scktsvc.serverid;
     scktsvc.mapid;
+    scktsvc.namespace;
     //scktsvc.socket is used at the global level
     scktsvc.socket = io.connect(window.location.host);
     //scktsvc.map_socket is used at the namespace level
     scktsvc.map_socket;
-    scktsvc.initMapView = function (mapview, user) {
-        console.log('initMapView ' + mapview);
-        scktsvc.socket.emit('joinNamespace', {mapvwid: mapview}, function (data) {
+    //Initializes MapView as Namespace on SocketIO server
+    //Connects to Namespace, and passes fucntion that notifies all that connected.
+    scktsvc.initMapView = function (ep) {
+        console.log('initMapView ' + ep.mapview);
+        scktsvc.socket.emit('joinNamespace', {id:ep.id,mapvwid: ep.mapview}, function (data) {
             console.log('join namespace ' + data.namespace);
             scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
             scktsvc.map_socket.once('connect', function () {
                 console.log('joined namespace ' + data.namespace);
-                scktsvc.socket.emit('initial connection', user);
+                scktsvc.socket.emit('initial connection', ep);
             });
         });
     };
