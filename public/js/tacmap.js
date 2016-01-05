@@ -26,12 +26,12 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: false,
     infoBox: true,
     selectionIndicator: true,
-    baseLayerPicker: true,
+    baseLayerPicker: false,
     navigationHelpButton: false,
     navigationInstructionsInitiallyVisible: false,
-    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-    }),
+//    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+//        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+//    }),
 //    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
 //        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
 //    }), 
@@ -44,13 +44,13 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
      url: '//earth.localdomain',
      channel: 1008
      }),*/
-//    imageryProvider: new Cesium.TileMapServiceImageryProvider({
-//        url: 'Cesium/Assets/Textures/NaturalEarthII'
-//    }),
-// OpenStreetMap tile provider
-//    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-//        url: '/tiles'
-//    }),
+ //    imageryProvider: new Cesium.TileMapServiceImageryProvider({
+ //        url: 'Cesium/Assets/Textures/NaturalEarthII'
+  //   }),
+ // OpenStreetMap tile provider
+    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: '../tiles'
+    }),
     homeButton: false,
     geocoder: false
 });

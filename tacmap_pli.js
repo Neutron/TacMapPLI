@@ -90,27 +90,28 @@ var networks = {};
 var endpoints = {};
 
 /** Global SockeIO Connection **/
-var ts = sio.of('').on('connection', function (topsocket) {
+sio.of('').on('connection', function (topsocket) {
     topsocket.emit('connection', {message: 'Msg Socket Ready', socketid: topsocket.id});
-    topsocket.on('joinNamespace', function (data, join_ns) {
+    topsocket.on('joinNamespace', function (data, callback) {
         console.log("join namespace: " + data.mapvwid);
         sio.of('/' + data.mapvwid)
                 .once('connection', function (map_socket) {
                     console.log('user connected to ' + data.mapvwid);
                     socketOps(map_socket);
                 });
-        join_ns({namespace: data.mapvwid});
+        callback({namespace: data.mapvwid});
     });
     topsocket.on('initial connection', function (data) {
-        console.log("initial connection: " + data.endpoint.mapview);
-        endpoints[data.endpoint.id] = data.endpoint;
-        mapviews[data.endpoint.mapview] = data.endpoint.mapview;
-        networks[data.endpoint.mapview] = {};
-        networks[data.endpoint.mapview][data.endpoint.network] = data.endpoint.network;
+        console.log("initial connection: " + data.mapview);
+        endpoints[data.id] = data;
+        mapviews[data.mapview] = data.mapview;
+        networks[data.mapview] = {};
+        networks[data.mapview][data.network] = data.network;
         //console.log(networks);
         sio.emit('update endpoints', {endpoints: endpoints});
         sio.emit('update networks', {networks: networks});
         sio.emit('update mapviews', {mapviews: mapviews});
+        sio.to(data.id).emit('load mapview', data);
     });
 // When a Map View is created - another namespace is set up with
 // SocketOps functions
@@ -138,6 +139,11 @@ var ts = sio.of('').on('connection', function (topsocket) {
 });
 
 var socketOps = function (socket) {
+    socket.on('init map', function (data) {
+        console.log('init map to ' + data.id + ' ' + data.network + ' ' + data.mapview);
+        socket.join(data.network);
+        socket.to(data.id).emit('load mapview', data);
+    });
     // Disconnect endpoint.  Remove from all lists
     socket.once('disconnect', function () {
         console.log('disconnect ' + socket.id);
@@ -162,9 +168,10 @@ var socketOps = function (socket) {
 //            endpoints = {};
 //        }
     });
+    // Change map.
     socket.on('change map', function () {
         if (typeof endpoints[socket.id] !== 'undefined') {
-           console.log('change map ' + endpoints[socket.id].mapview);
+            console.log('change map ' + endpoints[socket.id].mapview);
             if (typeof endpoints[socket.id].mapview !== 'undefined') {
                 console.log('disconnect from map ' + mapviews[endpoints[socket.id].mapview]);
                 var mvid = endpoints[socket.id].mapview;
@@ -204,7 +211,7 @@ var socketOps = function (socket) {
         if (typeof data.network !== 'undefined') {
             sio.to(data.netname).emit(data.msg, data.payload);
         } else {
-            sio.emit(data.msg, data.payload);
+            socket.emit(data.msg, data.payload);
         }
     });
     //Relay message to one or all networks
