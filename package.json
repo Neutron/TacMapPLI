@@ -2,7 +2,7 @@
   "name": "tacmap",
   "version": "0.0.1",
   "description": "Simulation using Cesium JavaScript library to visualize PLI message traffic for moving units on a map.",
-  "homepage": "http://natomtf.moesol.com/TacMap",
+  "homepage": "http://tacmap-neushul.rhcloud.com",
   "license": "GPL-3.0",
   "repository": {
     "type": "git",
@@ -15,13 +15,14 @@
   "devDependencies": {
     "compression": "1.0.8",
     "request": "2.36.0",
-    "socket.io-client": "^1.3.6"
+    "socket.io-client": "1.4.x"
   },
   "dependencies": {
     "body-parser": "^1.13.1",
     "express": "4.10.2",
-    "ng-dialog": "0.5.6",
-    "socket.io": "1.3.6"
+    "socket.io": "1.4.x",
+    "cesium": "1.x",
+    "sweetalert2":"latest"
   },
   "author": "James Neushul",
   "bugs": {

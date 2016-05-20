@@ -18,36 +18,33 @@
 var databasename = "tacmapDb";
 var storestructure = [
     ['Resources', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['Maps', 'name', true, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
+    ['Maps', 'name', true, [['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
     ['User', 'name', true, [['id', 'id', true], ['data', 'data', false]]]
 ];
 var viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
-    infoBox: true,
+    infoBox: false,
     selectionIndicator: true,
     baseLayerPicker: false,
     navigationHelpButton: false,
     navigationInstructionsInitiallyVisible: false,
 //    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
 //        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-//    }),
-//    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-//        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
 //    }), 
-    /*imageryProvider: new Cesium.BingMapsImageryProvider({
-     url: '//dev.virtualearth.net',
-     key: 'get-yours-at-https://www.bingmapsportal.com/',
-     mapStyle: Cesium.BingMapsStyle.AERIAL
-     }),*/
+//    imageryProvider: new Cesium.BingMapsImageryProvider({
+//     url: '//dev.virtualearth.net',
+//     key: 'get-yours-at-https://www.bingmapsportal.com/',
+//     mapStyle: Cesium.BingMapsStyle.AERIAL
+//     }),
     /*imageryProvider: new Cesium.GoogleEarthImageryProvider({
      url: '//earth.localdomain',
      channel: 1008
      }),*/
- //    imageryProvider: new Cesium.TileMapServiceImageryProvider({
- //        url: 'Cesium/Assets/Textures/NaturalEarthII'
-  //   }),
- // OpenStreetMap tile provider
+    //    imageryProvider: new Cesium.TileMapServiceImageryProvider({
+    //        url: 'Cesium/Assets/Textures/NaturalEarthII'
+    //   }),
+    //OpenStreetMap tile provider
     imageryProvider: new Cesium.OpenStreetMapImageryProvider({
         url: '../tiles'
     }),
@@ -56,7 +53,12 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
 });
 var scene = viewer.scene;
 var xj = new X2JS();
-var TacMap = angular.module('TacMap', ['indexedDB']);
+var TacMap = angular.module("TacMap", ["indexedDB"]);
+var msgLog = "views/msgLog.html";
+var mapStore = "views/mapStore.html";
+var userProfile = "views/userProfile.html";
+var mapEntities = "views/mapEntities.html";
+
 TacMap.config(function ($indexedDBProvider) {
     $indexedDBProvider.connection(databasename).upgradeDatabase(1, function (event, db, tx) {
         console.log("initDb");

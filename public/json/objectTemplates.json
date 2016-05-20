@@ -1,0 +1,80 @@
+
+{
+    "TacMapPLI Objects": {
+        "map": {
+            "mapname": "",
+            "netname": ""
+        },
+        "mapview": {
+            "mapviewid": "",
+            "netname": ""
+        },
+        "network": {
+            "mapviewid": "",
+            "netname": ""
+        },
+        "endpoint": {
+            "socketid": "",
+            "userid": "",
+            "networkid": "",
+            "mapviewid": ""
+        },
+        "message": {
+            "msg": "",
+            "payload": [
+            ]
+        },
+        "IndexedDB Objects": {
+            "Resource": {
+                "name": {
+                    "url": "",
+                    "lastmod": "",
+                    "data": [
+                    ]
+                }
+            },
+            "Map": {
+                "name": {
+                    "url": "",
+                    "lastmod": "",
+                    "data": [
+                    ]
+                }
+            },
+            "User": [
+                {
+                    "user": {
+                        "id": "",
+                        "data": [
+                            {
+                                "unit": {
+                                    "uid": "",
+                                    "name": "",
+                                    "nation": "",
+                                    "echelon": "",
+                                    "role": "",
+                                    "mission": "",
+                                    "location": ""
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "mapview": {
+                        "id": "",
+                        "data": [
+                        ]
+                    }
+                },
+                {
+                    "network": {
+                        "id": "",
+                        "data": [
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

@@ -18,22 +18,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 -->
-<div class="usrprof">
+<div class="usrprof" data-ng-controller="userCtl as usrctl">
     <div class="topspc">
-        <span>User Name:  {{usrctl.user.endpoint.name}}</span>
-        <input type="text"  data-ng-show="usrctl.editprofile" data-ng-model="usrctl.user.endpoint.name"/>
+        <span>User Name:  {{usrctl.endpoint.userid}}</span>
+        <input type="text"  data-ng-show="usrctl.editprofile" data-ng-model="usrctl.edituserid"/>
     </div>
 
     <div class="topspc">
-        <span>Map View: {{usrctl.user.endpoint.mapview}}</span>
-        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.user.endpoint.mapview"/>
+        <span>Map View: {{usrctl.endpoint.mapviewid}}</span>
+        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.editmapviewid"/>
     </div>
     <div class="topspc">
-        <span>Network: {{usrctl.user.endpoint.network}}</span>
-        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.user.endpoint.network"/>
+        <span>Network: {{usrctl.endpoint.networkid}}</span>
+        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.editnetworkid"/>
     </div>
     <div class="rtalgn">
-        <button class="smbtn" ng-click="usrctl.editProfile(usrctl.user.endpoint)" data-ng-hide="usrctl.editprofile">Edit</button>
+        <button class="smbtn" ng-click="usrctl.editProfile(usrctl.endpoint)" data-ng-hide="usrctl.editprofile">Edit</button>
         <button class="smbtn" ng-click="usrctl.cancelEdit()" data-ng-show="usrctl.editprofile">Cancel</button>
         <button class="smbtn" ng-click="usrctl.saveProfile()" data-ng-show="usrctl.editprofile">Save</button>
     </div>

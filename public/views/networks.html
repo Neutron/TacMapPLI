@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<div  data-ng-controller="netCtl as netctl">
+    <div ng-repeat="(ky,n) in netctl.networks[netctl.netsel]">
+        <input type="checkbox" data-ng-model="netctl.netsel[ky]" data-ng-change="netctl.joinNet(n)">{{ky}}
+    </div>
+    <div class="netlist">
+        <button class="smbtn" data-ng-hide="netctl.netadd" data-ng-click="netctl.netadd = true">Add</button>
+        <div data-ng-show="netctl.netadd">
+            <input class="newnet" data-ng-model="netctl.nettxt" type="text"/>
+            <button class="smbtn" data-ng-click="netctl.netadd = false; netctl.nettxt = '';">Cancel</button>
+            <button class="smbtn" data-ng-click="netctl.addNet(netctl.netsel)">Save</button>
+        </div>
+    </div>
+</div>

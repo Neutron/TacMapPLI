@@ -18,26 +18,23 @@
  **/
 -->
 <!-- mapStore.html -->
-<div data-ng-controller="storeCtl as stctl">
-    <!--        <select data-ng-options="map.name for map in stctl.maplist track by map.id" data-ng-change="stctl.loadMap(selmap)"
-                    data-ng-model="selmap" >
-            </select>-->
-    <div data-ng-repeat="m in stctl.maplist track by $index">
+<div>
+    <div data-ng-repeat="m in mapctl.maplist track by $index">
         <div class="filelisting">
-            <span data-ng-click="stctl.loadMap(m)">{{m.name}}</span>
+            <span data-ng-click="mapctl.loadMap(m)">{{m.name}}</span>
         </div>
     </div>
     <div class="msect">
-        <button class="smbtn" data-ng-click="stctl.deleteMap(selmap)">Delete</button>
-        <button class="smbtn" data-ng-click="stctl.saveMap(selmap)">Save</button>
-        <button class="smbtn" data-ng-click="stctl.import = true">Import</button>
-        <button class="smbtn" data-ng-click="stctl.exportMap()">Export</button>
+        <button class="smbtn" data-ng-click="mapctl.deleteMap(mapctl.currentMap)">Delete</button>
+        <button class="smbtn" data-ng-click="mapctl.saveMap(mapctl.currentMap)">Save</button>
+        <button class="smbtn" data-ng-click="mapctl.import = true">Import</button>
+        <button class="smbtn" data-ng-click="mapctl.exportMap()">Export</button>
     </div>
-    <div class="msect"><span class="txtbtn" data-ng-click="stctl.clearDb()">Reset Local Cache Database</span></div>
-    <div class="filelist" data-ng-show="stctl.import" data-ng-click="stctl.import = false">
-        <div data-ng-repeat="f in stctl.maplist">
+    <div class="msect"><span class="txtbtn" data-ng-click="mapctl.clearDb()">Reset Local Cache Database</span></div>
+    <div class="filelist" data-ng-show="mapctl.import" data-ng-click="mapctl.import = false">
+        <div data-ng-repeat="f in mapctl.maplist">
             <div class="filelisting">
-                <span data-ng-click="stctl.getFile(f)">{{f.name}}</span>
+                <span data-ng-click="mapctl.getFile(f)">{{f.name}}</span>
             </div>
         </div>
     </div>
