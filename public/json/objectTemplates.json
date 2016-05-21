@@ -1,46 +1,189 @@
 
 {
     "TacMapPLI Objects": {
-        "map": {
-            "mapname": "",
-            "netname": ""
-        },
-        "mapview": {
-            "mapviewid": "",
-            "netname": ""
-        },
-        "network": {
-            "mapviewid": "",
-            "netname": ""
-        },
-        "endpoint": {
-            "socketid": "",
-            "userid": "",
-            "networkid": "",
-            "mapviewid": ""
-        },
-        "message": {
-            "msg": "",
-            "payload": [
-            ]
-        },
+        "map": [
+            {
+                "mapname": "",
+                "data":
+                        {
+                            "Polygons": {
+                                "Polygon": [
+                                    {
+                                        "_id": "",
+                                        "_name": "",
+                                        "_color": "",
+                                        "_locations": ""
+                                    }
+                                ]
+                            },
+                            "Entities": {
+                                "Entity": {
+                                    "_id": "",
+                                    "_name": "",
+                                    "_icon": "",
+                                    "_location": ""
+                                }
+                            },
+                            "Tracks": {
+                                "Track": {
+                                    "_id": "",
+                                    "_name": "",
+                                    "_location": ""
+                                }
+                            },
+                            "GeoFences": {
+                                "GeoFence": {
+                                    "_id": "",
+                                    "_name": "",
+                                    "_locations": ""
+                                }
+                            },
+                            "Icons": {
+                                "Icon": [
+                                    {
+                                        "_name": "",
+                                        "_path": ""
+                                    }
+                                ]
+                            }
+                        }
+            }
+        ],
+        "mapview": [
+            {
+                "mapviewid": "",
+                "mapname": "",
+                "data":
+                        {
+                            "Polygons": {
+                                "Polygon": [
+                                    {
+                                        "_id": "",
+                                        "_name": "",
+                                        "_color": "",
+                                        "_locations": ""
+                                    }
+                                ]
+                            },
+                            "Entities": {
+                                "Entity": {
+                                    "_id": "",
+                                    "_name": "",
+                                    "_icon": "",
+                                    "_location": ""
+                                }
+                            },
+                            "Tracks": {
+                                "Track": {
+                                    "_id": "",
+                                    "_name": "",
+                                    "_location": ""
+                                }
+                            },
+                            "GeoFences": {
+                                "GeoFence": {
+                                    "_id": "",
+                                    "_name": "",
+                                    "_locations": ""
+                                }
+                            },
+                            "Icons": {
+                                "Icon": [
+                                    {
+                                        "_name": "",
+                                        "_path": ""
+                                    }
+                                ]
+                            }
+                        }
+            }
+        ],
+        "network": [
+            {
+                "networkid": "",
+                "mapviewid": ""
+            }
+        ],
+        "endpoint": [
+            {
+                "socketid": "",
+                "userid": "",
+                "networkid": "",
+                "mapviewid": ""
+            }
+        ],
+        "message": [
+            {
+                "msg": "",
+                "source": "",
+                "destination": "",
+                "payload": [
+                ]
+            }
+        ],
         "IndexedDB Objects": {
-            "Resource": {
-                "name": {
-                    "url": "",
-                    "lastmod": "",
-                    "data": [
-                    ]
+            "Resource": [
+                {
+                    "name": {
+                        "url": "",
+                        "lastmod": "",
+                        "data": [
+                        ]
+                    }
                 }
-            },
-            "Map": {
-                "name": {
-                    "url": "",
-                    "lastmod": "",
-                    "data": [
-                    ]
+            ],
+            "Map": [
+                {
+                    "name": {
+                        "url": "",
+                        "lastmod": "",
+                        "data": [
+                            {
+                                "Polygons": {
+                                    "Polygon": [
+                                        {
+                                            "_id": "",
+                                            "_name": "",
+                                            "_color": "",
+                                            "_locations": ""
+                                        }
+                                    ]
+                                },
+                                "Entities": {
+                                    "Entity": {
+                                        "_id": "",
+                                        "_name": "",
+                                        "_icon": "",
+                                        "_location": ""
+                                    }
+                                },
+                                "Tracks": {
+                                    "Track": {
+                                        "_id": "",
+                                        "_name": "",
+                                        "_location": ""
+                                    }
+                                },
+                                "GeoFences": {
+                                    "GeoFence": {
+                                        "_id": "",
+                                        "_name": "",
+                                        "_locations": ""
+                                    }
+                                },
+                                "Icons": {
+                                    "Icon": [
+                                        {
+                                            "_name": "",
+                                            "_path": ""
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
                 }
-            },
+            ],
             "User": [
                 {
                     "user": {
@@ -61,18 +204,69 @@
                     }
                 },
                 {
-                    "mapview": {
-                        "id": "",
-                        "data": [
-                        ]
-                    }
+                    "mapview": [
+                        {
+                            "id": "",
+                            "mapname": "",
+                            "data": [
+                                {
+                                    "Polygons": {
+                                        "Polygon": [
+                                            {
+                                                "_id": "",
+                                                "_name": "",
+                                                "_color": "",
+                                                "_locations": ""
+                                            }
+                                        ]
+                                    },
+                                    "Entities": {
+                                        "Entity": {
+                                            "_id": "",
+                                            "_name": "",
+                                            "_icon": "",
+                                            "_location": ""
+                                        }
+                                    },
+                                    "Tracks": {
+                                        "Track": {
+                                            "_id": "",
+                                            "_name": "",
+                                            "_location": ""
+                                        }
+                                    },
+                                    "GeoFences": {
+                                        "GeoFence": {
+                                            "_id": "",
+                                            "_name": "",
+                                            "_locations": ""
+                                        }
+                                    },
+                                    "Icons": {
+                                        "Icon": [
+                                            {
+                                                "_name": "",
+                                                "_path": ""
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
                 },
                 {
-                    "network": {
-                        "id": "",
-                        "data": [
-                        ]
-                    }
+                    "network": [
+                        {
+                            "id": "",
+                            "data": [
+                                {
+                                    "netname": "",
+                                    "mapviewid": ""
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }

@@ -98,6 +98,7 @@ sio.of('').on('connection', function (topsocket) {
     topsocket.emit('connection', {message: 'Msg Socket Ready', socketid: topsocket.id});
     
     /** 
+     * Namespaces correspond to Map Views ..
      * @param endpoint {id,netname,mapviewid}
      * @param callback  
      * **/
@@ -116,8 +117,7 @@ sio.of('').on('connection', function (topsocket) {
         console.log("initial connection: " + endpoint.mapviewid);
         endpointlist[endpoint.socketid] = endpoint;
         mapviewlist[endpoint.mapviewid] = endpoint.mapviewid;
-        networklist[endpoint.mapviewid] = {};
-        networklist[endpoint.mapviewid][endpoint.networkid] = endpoint.networkid;
+        networklist[endpoint.networkid] = endpoint.networkid;
         //console.log(networklist);
         sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
         sio.emit('update endpointlist', {endpointlist: endpointlist});
@@ -126,7 +126,9 @@ sio.of('').on('connection', function (topsocket) {
         //sio.to(endpoint.mapviewid).emit('load mapview', endpoint);
     });
 // When a Map View is created - another namespace is set up with
-// SocketOps functions
+// SocketOps functions.  Each new user has a namespace auomatically assigned
+// and will be avalalabe to others to select.
+// @todo Implement security to restrict/permit access to Map Views / Namespaces
 
 // Create a mapview
     /** @param data {mapviewid} **/
@@ -142,15 +144,26 @@ sio.of('').on('connection', function (topsocket) {
         sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
     });
 // Remove a mapview
+// This will impact others who are connected
+// @todo Handle behavior when others connected to Map Views / Namespaces
 /** @param data {mapviewid} **/
     topsocket.on('remove mapview', function (data) {
         delete mapviewlist[data.mapviewid];
         sio.emit('mapview update', {mapviewlist: mapviewlist});
     });
 // Update a mapview
-/** @param data {endpointid,mapviewid} **/
+/** @param data {endpointid,mapviewid,newmapviewid} **/
     topsocket.on('update mapview', function (data) {
-        mapviewlist[data.mapviewid] = data.mapviewid;
+        mapviewlist[data.mapviewid] = data.newmapview;
+        sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
+    });
+// Rename a mapview
+// This will impact others who are connected
+// @todo Handle behavior when others connected to Map Views / Namespaces when renamed
+/** @param data {endpointid,mapviewid} **/
+    topsocket.on('rename mapview', function (data) {
+        delete mapviewlist[data.mapviewid];
+        mapviewlist[data.newmapviewid] = data.newmapviewid;
         sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
     });
 });
@@ -206,6 +219,15 @@ var socketOps = function (socket) {
     socket.on('leave network', function (data) {
         console.log('leave network ' + data.networkid);
         socket.leave(data.networkid);
+    });
+        // Rename a network.
+    socket.on('rename network', function (data) {
+        console.log('rename network ' + data.networkid+" to "+data.newnetworkid);
+        delete networklist[data.networkid];
+        networklist[data.newnetworkid] = data.newnetwork;
+        sio.emit('update networklist', {networklist: networklist});
+        socket.join(data.newnetworkid);
+        
     });
     // Create a network as a socketIO room
     socket.on('create network', function (data) {

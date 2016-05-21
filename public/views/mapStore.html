@@ -25,16 +25,16 @@
         </div>
     </div>
     <div class="msect">
-        <button class="smbtn" data-ng-click="mapctl.deleteMap(mapctl.currentMap)">Delete</button>
-        <button class="smbtn" data-ng-click="mapctl.saveMap(mapctl.currentMap)">Save</button>
+        <button class="smbtn" data-ng-click="mapctl.deleteMapView(mapctl.currentMap)">Delete</button>
+        <button class="smbtn" data-ng-click="mapctl.saveMapView(mapctl.currentMap)">Save</button>
         <button class="smbtn" data-ng-click="mapctl.import = true">Import</button>
-        <button class="smbtn" data-ng-click="mapctl.exportMap()">Export</button>
+        <button class="smbtn" data-ng-click="mapctl.exportMapView()">Export</button>
     </div>
     <div class="msect"><span class="txtbtn" data-ng-click="mapctl.clearDb()">Reset Local Cache Database</span></div>
     <div class="filelist" data-ng-show="mapctl.import" data-ng-click="mapctl.import = false">
         <div data-ng-repeat="f in mapctl.maplist">
             <div class="filelisting">
-                <span data-ng-click="mapctl.getFile(f)">{{f.name}}</span>
+                <span data-ng-click="mapctl.getMapFile(f)">{{f.name}}</span>
             </div>
         </div>
     </div>

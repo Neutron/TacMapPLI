@@ -58,6 +58,7 @@ var msgLog = "views/msgLog.html";
 var mapStore = "views/mapStore.html";
 var userProfile = "views/userProfile.html";
 var mapEntities = "views/mapEntities.html";
+var userdata=[];
 
 TacMap.config(function ($indexedDBProvider) {
     $indexedDBProvider.connection(databasename).upgradeDatabase(1, function (event, db, tx) {

@@ -16,7 +16,10 @@
  **/
 /* global TacMap, TacMapUnit, viewer, Cesium, DbService, angular, scktsvc, io, $indexedDB, $http, $scope */
 // ***** SERVER SERVICES ******//
-
+/** 
+ * @param  $indexedDB
+ * @param  $http
+ */
 TacMap.factory('DbService', function ($indexedDB, $http) {
     var dbsvc = {
     };
@@ -78,7 +81,7 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
     dbsvc.updateDbFile = function (storename, recordname, data, url, $http) {
         dbsvc.dB.openStore(storename, function (store) {
             store.upsert({
-                name: recordname, data: data, url:url
+                name: recordname, data: data, url: url
             }).then(function () {
                 if (typeof url !== 'undefined') {
                     $http.put(url, data);
@@ -89,7 +92,7 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
     dbsvc.updateMapFile = function (mapname, data, url) {
         dbsvc.dB.openStore('Maps', function (store) {
             store.upsert({
-                name: mapname, data: data, url:url
+                name: mapname, data: data, url: url
             });
         });
     };
@@ -174,6 +177,22 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
             });
         }).error(function () {
             console.log('Error getting resource');
+        });
+    };
+    //
+    dbsvc.getUser = function (callback) {
+        dbsvc.getRecord("User", "user", callback);
+    };
+
+    dbsvc.getUserMapData = function (callback) {
+        dbsvc.getRecord("User", "user", function (udata) {
+            callback(udata.mapview);
+        });
+    };
+    dbsvc.setUserMapData = function (mapdata, callback) {
+        dbsvc.getRecord("User", "user", function (udata) {
+            udata.mapview = mapdata;
+            dbsvc.updateRecord("User", "user", udata, callback);
         });
     };
     return dbsvc;
