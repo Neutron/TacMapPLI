@@ -208,6 +208,12 @@ option{
     padding-left:5px;
     padding-top:8px;
 }
+.gflabel{
+    margin-left:5px;
+    padding-left:5px;
+    padding-top:8px;
+    text-align: center;
+}
 .accordion__container{
     background:#FFF;
     border:1px solid #ccc;
@@ -234,6 +240,12 @@ option{
 }
 .accordion__tab-subtitle{
     background:whitesmoke;
+    padding:5px;
+    margin:1px;
+    cursor:pointer;
+}
+.accordion__tab-sub-subtitle{
+    background:lightgoldenrodyellow;
     padding:5px;
     margin:1px;
     cursor:pointer;
@@ -321,3 +333,25 @@ option{
 .selected{
     background:yellow;
 }
+.swal2-modal h2 {
+    color: #575757;
+    font-size: 18px;
+    text-align: center;
+    font-weight: 600;
+    text-transform: none;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    line-height: 40px;
+    display: block; }
+
+.swal2-content {
+    font-size: 12px;
+    text-align: center;
+    font-weight: 300;
+    position: relative;
+    float: none;
+    margin: 0;
+    padding: 0;
+    line-height: normal;
+    color: #555; }

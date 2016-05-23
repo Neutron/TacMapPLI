@@ -1,0 +1,10 @@
+{
+    "elements": {
+        "modal": {
+            "attributes": {
+                "show-modal": {}
+            }
+        }
+    },
+    "attributes": {}
+}

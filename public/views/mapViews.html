@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<div>
+    <div data-ng-repeat="(k,m) in mapctl.mapviews">
+        <div class="accordion__subtab outline">
+            <div class="accordion__tab-subtitle" data-ng-click="mapctl.selMapVw(k)" data-ng-model="mapctl.mselected" data-ng-class="{selected : mapctl.mapSelected(k)}">{{k}}</div>
+            <div class="accordion__tab-content" data-ng-show="viewctl.isOpenTab(k)">
+                <div data-ng-include="usrctl.mapEntities" data-ng-show="mapctl.mapSelected(k)"></div>
+            </div>
+        </div>
+    </div>
+</div>
