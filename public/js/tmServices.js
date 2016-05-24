@@ -43,20 +43,20 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
             });
         });
     };
-    dbsvc.updateTrackDb = function (mapname, entityId, fieldname, value) {
+    dbsvc.updateTrackDb = function (mapname, trackId, fieldname, value, callback) {
         //console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
         dbsvc.dB.openStore("Maps", function (store) {
             store.find(mapname).then(function (map) {
                 dbsvc.map = map.data;
                 for (i = 0; i < dbsvc.map.Map.Tracks.Track.length; i++) {
-                    if (dbsvc.map.Map.Tracks.Track[i]._id === entityId) {
+                    if (dbsvc.map.Map.Tracks.Track[i]._id === trackId) {
                         dbsvc.map.Map.Tracks.Track[i][fieldname] = value;
                     }
                 }
             }).then(function () {
                 store.upsert({
                     name: mapname, data: dbsvc.map
-                });
+                }).then(callback({name: mapname, data: dbsvc.map}));
             });
         });
     };
@@ -104,7 +104,7 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
                 if (keys.indexOf(recordname) !== -1) {
                     mstore.find(recordname).then(function (rec) {
                         //                       console.log(rec);
-                        callback(rec.data);
+                        callback(rec);
                     });
                 } else {
                     callback(null);
@@ -190,13 +190,13 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
             callback(mdata);
         });
     };
-    
+
     dbsvc.setUserMapData = function (mapviewid, mapdata, callback) {
         console.log("setUserMapData");
         dbsvc.dB.openStore('Maps', function (store) {
             store.upsert({
                 name: mapviewid, data: mapdata
-            });
+            }).then(callback({name: mapviewid, data: mapdata}));
         });
     };
     return dbsvc;
@@ -210,7 +210,7 @@ TacMap.factory('GeoService', function ($indexedDB) {
     geosvc.mapdata = {};
     geosvc.initGeodesy = function (mapid, mapdata) {
         console.log("initGeodesy " + mapid);
-        console.log(mapdata);
+        //console.log(mapdata);
         geosvc.mapdata = mapdata;
         geosvc.mapid = mapid;
         geosvc.sdatasources[geosvc.mapid] = new Cesium.CustomDataSource(geosvc.mapid);
@@ -223,6 +223,17 @@ TacMap.factory('GeoService', function ($indexedDB) {
             console.log('map ready');
         });
     };
+    geosvc.updateView = function (mapid, mapdata) {
+        console.log("updateView " + mapid);
+        //console.log(mapdata);
+        geosvc.mapdata = mapdata;
+        geosvc.mapid = mapid;
+        //geosvc.sdatasources[geosvc.mapid].entities.removeAll();
+        geosvc.updatePolygons(geosvc.mapdata.Map.Polygons.Polygon);
+        geosvc.updateEntities(geosvc.mapdata.Map.Entities.Entity);
+        geosvc.updateTracks(geosvc.mapdata.Map.Tracks.Track);
+
+    };
     geosvc.addEntities = function (entities) {
         //console.log('addEntities ' + entities.length);
         for (i = 0; i < entities.length; i++) {
@@ -231,10 +242,30 @@ TacMap.factory('GeoService', function ($indexedDB) {
             }
         }
     };
+    geosvc.updateEntities = function (entities) {
+        //console.log('addEntities ' + entities.length);
+        for (i = 0; i < entities.length; i++) {
+            if (geosvc.sdatasources[geosvc.mapid].entities.getById(entities[i]._id)) {
+                geosvc.updateCesiumBillboard(entities[i]);
+            } else if (entities[i]._location.length > 0) {
+                geosvc.addCesiumBillboard(entities[i]);
+            }
+        }
+    };
     geosvc.addTracks = function (entities) {
         //console.log('addEntities ' + entities.length);
         for (i = 0; i < entities.length; i++) {
             if (entities[i]._location.length > 0) {
+                geosvc.addCesiumBillboard(entities[i]);
+            }
+        }
+    };
+    geosvc.updateTracks = function (entities) {
+        //console.log('addEntities ' + entities.length);
+        for (i = 0; i < entities.length; i++) {          
+            if (geosvc.sdatasources[geosvc.mapid].entities.getById(entities[i]._id)) {
+                geosvc.updateCesiumBillboard(entities[i]);
+            } else if (entities[i]._location.length > 0) {
                 geosvc.addCesiumBillboard(entities[i]);
             }
         }
@@ -248,7 +279,27 @@ TacMap.factory('GeoService', function ($indexedDB) {
             }
         }
     };
+    geosvc.updatePolygons = function (polygons) {
+        //console.log('addPolygons ' + polygons.length);
+        //console.log(polygons);
+        for (i = 0; i < polygons.length; i++) {
+            if (geosvc.sdatasources[geosvc.mapid].entities.getById(polygons[i]._id)) {
+                geosvc.updateCesiumPolygon(polygons[i]);
+            } else if (polygons[i]._locations.length > 0) {
+                geosvc.addCesiumPolygon(polygons[i]);
+            }
+        }
+    };
     geosvc.addGeoFences = function (geofences) {
+        for (i = 0; i < geofences.length; i++) {
+            if (geosvc.sdatasources[geosvc.mapid].entities.getById(geofences[i]._id)) {
+                geosvc.updateCesiumPolyline(geofences[i]);
+            } else if (geofences[i]._points.length > 0) {
+                geosvc.addCesiumPolyline(geofences[i]);
+            }
+        }
+    };
+    geosvc.updateGeoFences = function (geofences) {
         for (i = 0; i < geofences.length; i++) {
             if (geofences[i]._points.length > 0) {
                 geosvc.addCesiumPolyline(geofences[i]);
@@ -273,6 +324,18 @@ TacMap.factory('GeoService', function ($indexedDB) {
             }
         });
     };
+    geosvc.updateCesiumPolygon = function (poly) {
+        //console.log('addPolygon');
+        var loc = poly._locations;
+        //console.log(loc);
+        loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        //Cartesian wants long, lat
+        var polyg = geosvc.sdatasources[geosvc.mapid].entities.getById(poly._id);
+        polyg.name = poly._name;
+        polyg.polygon.hierarchy = Cesium.Cartesian3.fromDegreesArray(loc.reverse());
+        polyg.polygon.outlineColor = Cesium.Color[poly._color];
+
+    };
     geosvc.addCesiumPolyline = function (poly) {
         var loc = poly._points;
         if (!angular.isArray(loc)) {
@@ -289,8 +352,20 @@ TacMap.factory('GeoService', function ($indexedDB) {
             }
         });
     };
+    geosvc.updateCesiumPolyline = function (poly) {
+        var loc = poly._points;
+        if (!angular.isArray(loc)) {
+            loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        }
+        //Cartesian wants long, lat
+        var pline = geosvc.sdatasources[geosvc.mapid].entities.getById(poly._id);
+        pline.name = poly._name,
+        pline.polyline.positions = Cesium.Cartesian3.fromDegreesArray(loc.reverse());
+        pline.polyline.material = Cesium.Color[poly._color];
+    };
+
     geosvc.addCesiumBillboard = function (entity) {
-        console.log("Add billboard");
+        //console.log("Add billboard");
         var loc = entity._location;
         var w = 40;
         var h = 25;
@@ -320,6 +395,28 @@ TacMap.factory('GeoService', function ($indexedDB) {
                 pixelOffset: new Cesium.Cartesian2(0, 15)
             }
         });
+    };
+    geosvc.updateCesiumBillboard = function (entity) {
+        //console.log("Update billboard");
+        var loc = entity._location;
+        var w = 40;
+        var h = 25;
+        if (entity._width) {
+            w = entity._width;
+        }
+        if (entity._height) {
+            h = entity._height;
+        }
+        if (!Array.isArray(loc)) {
+            loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        }
+        var bbd = geosvc.sdatasources[geosvc.mapid].entities.getById(entity._id);
+        bbd.name = entity._name;
+        bbd.position = Cesium.Cartesian3.fromDegrees(loc[1], loc[0]);
+        bbd.billboard.image = entity._icon;
+        bbd.billboard.width = w;
+        bbd.billboard.height = h;
+        bbd.label.text = entity._name;
     };
     geosvc.addCesiumPoint = function (entity, color) {
         console.log("Add point " + geosvc.mapid + ", " + entity._id + ", " + entity._location);
@@ -355,9 +452,9 @@ TacMap.factory('GeoService', function ($indexedDB) {
         geosvc.sdatasources[geosvc.mapid].entities.add({
             id: entity._id,
             name: entity._name,
-            position: Cesium.Cartesian3.fromDegrees(loc[1], loc[0]),
+            position: geosvc.Cart3.fromDegrees(loc[1], loc[0]),
             ellipsoid: {
-                radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
+                radii: Cesium.Cartesian3(10.0, 10.0, 10.0),
                 material: Cesium.Color.BLUE.withAlpha(0.5)
             },
             label: {
@@ -457,22 +554,23 @@ TacMap.factory('SocketService', function () {
     //Connects to Namespace, and passes fucntion that notifies all that connected.
     scktsvc.initMapView = function (ep) {
         console.log('initMapView ' + ep.mapviewid);
-        scktsvc.socket.emit('join namespace', {userid: ep.userid, mapviewid: ep.mapviewid}, function (data) {
-            console.log('join namespace ' + data.namespace);
-            scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
+        scktsvc.socket.emit('join namespace', ep, function (endpoint) {
+            console.log('join namespace ' + endpoint.mapviewid);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + endpoint.mapviewid);
             scktsvc.map_socket.once('connect', function () {
-                console.log('joined namespace ' + data.namespace);
+                console.log('joined namespace ' + endpoint.mapviewid);
                 scktsvc.socket.emit('initial connection', ep);
             });
         });
     };
-    scktsvc.setMapView = function (mapdata) {
-        console.log('setMapView ' + mapdata.name);
-        scktsvc.socket.emit('joinNamespace',mapdata, function (data) {
-            console.log('join namespace ' + data.namespace);
-            scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
+    scktsvc.setMapView = function (mapname) {
+        console.log("setMapView " + mapname);
+        scktsvc.socket.emit('join namespace', {"mapviewid": mapname}, function (endpoint) {
+            console.log('join namespace ' + mapname);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + mapname);
             scktsvc.map_socket.once('connect', function () {
-                console.log('joined namespace ' + data.namespace);
+                console.log('joined namespace ' + mapname);
+                //scktsvc.socket.emit('initial connection', endpoint);
             });
         });
     };
@@ -488,9 +586,9 @@ TacMap.factory('SocketService', function () {
             scktsvc.map_socket.emit('remove network', {mapviewid: mapviewid, networkid: networkid});
         }
     };
-    scktsvc.createMap = function (mapdata) {
-        console.log('createMap ' + mapdata.name);
-        scktsvc.socket.emit('create mapview', mapdata);
+    scktsvc.createMap = function (mapname, mapdata) {
+        console.log('createMap ' + mapname);
+        scktsvc.socket.emit('create mapview', {"name": mapname});
     };
     scktsvc.changeMap = function (mapviewid) {
         if (typeof scktsvc.map_socket !== 'undefined') {
@@ -529,7 +627,7 @@ TacMap.factory('SocketService', function () {
         }
     };
     // Create a mapview that other nodes can 
-    scktsvc.createMapView = function (networkid,mapdata) {
+    scktsvc.createMapView = function (networkid, mapdata) {
         if (typeof networkid !== 'undefined') {
             //publish to net
             scktsvc.map_socket.to(networkid).emit('create mapview', mapdata);
@@ -538,9 +636,9 @@ TacMap.factory('SocketService', function () {
             scktsvc.map_socket.emit('create mapview', mapdata);
         }
     };
-    scktsvc.publishView = function (mapview, vwdata) {
-        scktsvc.map_socket = io('/' + mapview);
-        scktsvc.map_socket.emit('update mapview', {mapviewid: mapview, viewdata: vwdata});
+    scktsvc.publishView = function (mapviewid, vwdata) {
+        //scktsvc.map_socket = io.connect(window.location.host + '/' +mapviewid);
+        scktsvc.map_socket.emit('publish view', {mapviewid: mapviewid, viewdata: vwdata});
     };
     return scktsvc;
 });

@@ -43,7 +43,7 @@
                                 <div data-ng-repeat="(k,m) in mapctl.mapviews">
                                     <div class="accordion__subtab outline">
                                         <div class="accordion__tab-subtitle" 
-                                             data-ng-click="mapctl.selMapVw(m, vwctl)" 
+                                             data-ng-click="mapctl.selMapVw(k, vwctl)" 
                                              data-ng-model="mapctl.mselected" 
                                              data-ng-class="{selected : mapctl.mapSelected(k)}">{{k}}</div>
                                         <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab(k)">

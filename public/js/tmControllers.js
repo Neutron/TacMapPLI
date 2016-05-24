@@ -123,7 +123,7 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, DlgBx) 
                     SocketService.initMapView(usrctl.endpoint);
                 });
             } else {
-                usrctl.endpoint = usr;
+                usrctl.endpoint = usr.data;
                 usrctl.endpoint.socketid = $scope.socketID;
                 SocketService.initMapView(usrctl.endpoint);
             }
@@ -370,9 +370,10 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
             store.find(mapname).then(function (sc) {
                 if (typeof sc.data !== 'undefined') {
                     mapctl.currmapData = sc.data;
-                    DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData);
-                    mapctl.mapname = mapname;
-                    GeoService.initGeodesy(mapname, sc.data);
+                    DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData, function (mdta) {
+                        mapctl.mapname = mdta.name;
+                        GeoService.initGeodesy(mapctl.mapname, mdta.data);
+                    });
                 }
             });
         });
@@ -388,11 +389,10 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                 mapctl.loadDefaultMap(mapctl.currentMap);
             } else {
                 //console.log(umapdata);
-                mapctl.currmapData = umapdata;
+                mapctl.currmapData = umapdata.data;
                 mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
                 mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                 GeoService.initGeodesy(mapctl.currentMap, mapctl.currmapData);
-                SocketService.createMap(mapctl.currmapData);
             }
         });
     };
@@ -411,18 +411,19 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                             if (u.substring(u.indexOf('.')) === '.xml') {
                                 mapctl.syncResource(maps.Maps.Map[i]._url, function (jdata) {
                                     mapctl.currmapData = jdata;
-                                    DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData);
-                                    if (jdata.Map._name !== 'Default Map') {
-                                        mapctl.maplist.push({
-                                            name: jdata.Map._name
-                                        });
-                                    }
-                                    if (jdata.Map._name === 'Default Map') {
-                                        //console.log('init geo');
-                                        mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
-                                        mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
-                                        GeoService.initGeodesy(mapctl.currentMap, jdata);
-                                    }
+                                    DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData, function (mdta) {
+                                        if (jdata.Map._name !== 'Default Map') {
+                                            mapctl.maplist.push({
+                                                name: jdata.Map._name
+                                            });
+                                        }
+                                        if (jdata.Map._name === 'Default Map') {
+                                            //console.log('init geo');
+                                            mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
+                                            mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
+                                            GeoService.initGeodesy(mdta.name, mdta.data);
+                                        }
+                                    });
                                 });
                             } else {
                                 $http.get(u).success(function (jsondata, status, headers) {
@@ -455,7 +456,7 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         DbService.getUser(function (udata) {
             if (typeof (udata) !== 'undefined') {
                 mapctl.currentMap = udata._mapviewid;
-                mapctl.getUserMapData(mapctl.currentMap, function (umapdta) {
+                mapctl.getMapData(mapctl.currentMap, function (umapdta) {
                     mapctl.currmapData = umapdta;
                     GeoService.initGeodesy(mapctl.currentMap, mapctl.currmapData);
                 });
@@ -625,8 +626,12 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         mapctl.mapid = GeoService.mapid;
         if (typeof entity._id !== 'undefined') {
             GeoService.sdatasources[mapctl.mapid].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
-            DbService.updateEntityDb(mapctl.mapid, entity._id, '_location', lat + "," + lng);
-            mapctl.selectTrack(entity);
+            DbService.updateTrackDb(mapctl.mapid, entity._id, '_location', lat + "," + lng, function (mdata) {
+                console.log("publish view");
+                SocketService.publishView(mdata.name, mdata.data);
+                //mapctl.selectTrack(entity);
+            });
+
         } else {
             mapctl.addTrack(lat, lng);
         }
@@ -652,16 +657,17 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                 DlgBx.alert("Track name exists");
             } else {
                 console.log("Create track " + trackname);
+                console.log(mapctl.currmapData);
                 var trck = {
-                        "_icon": "img/tacicon.png",
-                        "_id": trackname + "_Track",
-                        "_location": [lat, lng],
-                        "_name": trackname,
-                        "_map": mapctl.mapid,
-                        "_network": mapctl.network,
-                        "_report_to": mapctl.report_to,
-                        "_height": 25,
-                        "_width": 25
+                    "_icon": "img/tacicon.png",
+                    "_id": trackname + "_Track",
+                    "_location": [lat, lng],
+                    "_name": trackname,
+                    "_map": mapctl.mapid,
+                    "_network": mapctl.network,
+                    "_report_to": mapctl.report_to,
+                    "_height": 25,
+                    "_width": 25
                 };
                 mapctl.tracks.push(trck);
                 mapctl.trackselected = trck;
@@ -670,8 +676,9 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                 //mapctl.currmapData.Map.Tracks.Track.push(trck);
                 //mapctl.currmapData.Map.Tracks[mapctl.currmapData.Map.Tracks.Track.length+1]=trck;
                 mapctl.currmapData.Map.Tracks.Track = mapctl.tracks;
-                DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData);
-                mapctl.selectTrack(trck, true);
+                DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData, function () {
+                    mapctl.selectTrack(trck, true);
+                });
             }
         });
     };
@@ -769,16 +776,18 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         } else {
             console.log(m + " selected");
             mapctl.mselected = m;
-            mapctl.currentMap=m.name;
-            mapctl.currmapData=m;
-            SocketService.setMapView(m);
+            if (m !== mapctl.currentMap) {
+                mapctl.initUserMapView(m, function () {
+                    SocketService.setMapView(m);
+                })
+            }
         }
     };
     mapctl.mapSelected = function (m) {
         return mapctl.mselected === m;
     };
     //
-    mapctl.getUserMapData = function (callback) {
+    mapctl.getMapData = function (callback) {
         DbService.getUserMapData(mapctl.currentMap, function (umapdta) {
             if (typeof (umapdta) === 'undefined') {
                 DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData, callback);
@@ -796,10 +805,18 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         mapctl.ep = endpoint;
         mapctl.initUserMapView(endpoint.mapviewid);
     });
+    SocketService.socket.on('update view', function (vwdata) {
+        console.log('update view');
+        DbService.setUserMapData(vwdata.mapviewid, vwdata.viewdata, function (mapdata) {
+            if (mapctl.currentMap === mapdata.name) {
+                GeoService.updateView(mapdata.name, mapdata.data);
+            }
+        });
+    });
     SocketService.socket.on('update mapviewlist', function (data) {
         console.log('update mapviewlist');
         mapctl.mapviews = data.mapviewlist;
-        //console.log(mapctl.mapviews);
+        console.log(mapctl.mapviews);
         DbService.updateRecord('User', 'mapviews', data.mapviewlist);
     });
     SocketService.socket.on('track connected', function (data) {
@@ -822,7 +839,7 @@ TacMap.controller('netCtl', function (DbService, SocketService, DlgBx, $http) {
     netctl.nettxt = "";
     netctl.netsel = "";
     netctl.currnet = "";
-    netctl.addNet = function (netlist, netname,mapdata) {
+    netctl.addNet = function (netlist, netname, mapdata) {
         if (typeof netlist[netname] !== 'undefined') {
             DlgBx.alert('Duplicate Value .. Try Again');
         } else if (netname.length !== 0) {
@@ -834,7 +851,7 @@ TacMap.controller('netCtl', function (DbService, SocketService, DlgBx, $http) {
             });
             netctl.currnet = netname;
             DbService.updateDbFile('Resources', 'nets.json', netlist, "/json/nets.json", $http);
-            SocketService.createMapView(netname,mapdata);
+            SocketService.createMapView(netname, mapdata);
         }
     };
     SocketService.socket.on('update networklist', function (data) {
@@ -864,7 +881,7 @@ TacMap.controller('messageCtl', function (GeoService, SocketService) {
         });
     };
 });
-//modalCtl handles modal dialogs
+
 
 
 

@@ -99,17 +99,17 @@ sio.of('').on('connection', function (topsocket) {
     
     /** 
      * Namespaces correspond to Map Views ..
-     * @param endpoint {id,netname,mapviewid}
+     * @param mapdta {id,netname,mapviewid}
      * @param callback  
      * **/
-    topsocket.on('join namespace', function (endpoint, callback) {
-        console.log("join namespace: " + endpoint.mapviewid);
-        sio.of('/' + endpoint.mapviewid)
+    topsocket.on('join namespace', function (mapdta, callback) {
+        console.log("join namespace: " + mapdta.mapviewid);
+        sio.of('/' + mapdta.mapviewid)
                 .once('connection', function (map_socket) {
-                    console.log('user connected to ' + endpoint.mapviewid);
+                    console.log('user connected to ' + mapdta.mapviewid);
                     socketOps(map_socket);
                 });
-        callback({namespace: endpoint.mapviewid});
+        callback(mapdta);
     });
     
     /** @param endpoint {id,netname,mapviewid}**/
@@ -134,7 +134,7 @@ sio.of('').on('connection', function (topsocket) {
     /** @param data {mapviewid} **/
     topsocket.on('create mapview', function (data) {
         console.log('create mapview');
-        mapviewlist[data.name] = data;
+        mapviewlist[data.name] = data.name;
         networklist[data.name] = {};
         sio.of('/' + data.name)
                 .once('connection', function (map_socket) {
@@ -252,5 +252,10 @@ var socketOps = function (socket) {
     //Relay message to one or all networklist
     socket.on('publish msg to all', function (data) {
         sio.emit(data.msg, data.payload);
+    });
+    
+     socket.on('publish view', function (data) {
+         console.log("publish view ");
+        sio.emit('update view',data);
     });
 };
