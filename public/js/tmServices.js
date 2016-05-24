@@ -184,15 +184,19 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
         dbsvc.getRecord("User", "user", callback);
     };
 
-    dbsvc.getUserMapData = function (callback) {
-        dbsvc.getRecord("User", "user", function (udata) {
-            callback(udata.mapview);
+    dbsvc.getUserMapData = function (mapviewid, callback) {
+        console.log("getUserMapData");
+        dbsvc.getRecord("Maps", mapviewid, function (mdata) {
+            callback(mdata);
         });
     };
-    dbsvc.setUserMapData = function (mapdata, callback) {
-        dbsvc.getRecord("User", "user", function (udata) {
-            udata.mapview = mapdata;
-            dbsvc.updateRecord("User", "user", udata, callback);
+    
+    dbsvc.setUserMapData = function (mapviewid, mapdata, callback) {
+        console.log("setUserMapData");
+        dbsvc.dB.openStore('Maps', function (store) {
+            store.upsert({
+                name: mapviewid, data: mapdata
+            });
         });
     };
     return dbsvc;
@@ -206,6 +210,7 @@ TacMap.factory('GeoService', function ($indexedDB) {
     geosvc.mapdata = {};
     geosvc.initGeodesy = function (mapid, mapdata) {
         console.log("initGeodesy " + mapid);
+        console.log(mapdata);
         geosvc.mapdata = mapdata;
         geosvc.mapid = mapid;
         geosvc.sdatasources[geosvc.mapid] = new Cesium.CustomDataSource(geosvc.mapid);
@@ -461,9 +466,9 @@ TacMap.factory('SocketService', function () {
             });
         });
     };
-    scktsvc.setMapView = function (mapview) {
-        console.log('setMapView ' + mapview);
-        scktsvc.socket.emit('joinNamespace', {mapviewid: mapview}, function (data) {
+    scktsvc.setMapView = function (mapdata) {
+        console.log('setMapView ' + mapdata.name);
+        scktsvc.socket.emit('joinNamespace',mapdata, function (data) {
             console.log('join namespace ' + data.namespace);
             scktsvc.map_socket = io.connect(window.location.host + '/' + data.namespace);
             scktsvc.map_socket.once('connect', function () {
@@ -483,9 +488,9 @@ TacMap.factory('SocketService', function () {
             scktsvc.map_socket.emit('remove network', {mapviewid: mapviewid, networkid: networkid});
         }
     };
-    scktsvc.createMap = function (mapname) {
-        console.log('createMap ' + mapname);
-        scktsvc.socket.emit('create mapview', {mapviewid: mapname});
+    scktsvc.createMap = function (mapdata) {
+        console.log('createMap ' + mapdata.name);
+        scktsvc.socket.emit('create mapview', mapdata);
     };
     scktsvc.changeMap = function (mapviewid) {
         if (typeof scktsvc.map_socket !== 'undefined') {
@@ -524,13 +529,13 @@ TacMap.factory('SocketService', function () {
         }
     };
     // Create a mapview that other nodes can 
-    scktsvc.createMapView = function (data, networkid) {
+    scktsvc.createMapView = function (networkid,mapdata) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            scktsvc.map_socket.to(networkid).emit('create mapview', data);
+            scktsvc.map_socket.to(networkid).emit('create mapview', mapdata);
         } else {
             //publish to all
-            scktsvc.map_socket.emit('create mapview', data);
+            scktsvc.map_socket.emit('create mapview', mapdata);
         }
     };
     scktsvc.publishView = function (mapview, vwdata) {

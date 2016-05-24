@@ -134,11 +134,11 @@ sio.of('').on('connection', function (topsocket) {
     /** @param data {mapviewid} **/
     topsocket.on('create mapview', function (data) {
         console.log('create mapview');
-        mapviewlist[data.mapviewid] = data.mapviewid;
-        networklist[data.mapviewid] = {};
-        sio.of('/' + data.mapviewid)
+        mapviewlist[data.name] = data;
+        networklist[data.name] = {};
+        sio.of('/' + data.name)
                 .once('connection', function (map_socket) {
-                    console.log('user connected to ' + data.mapviewid);
+                    console.log('user connected to ' + data.name);
                     socketOps(map_socket);
                 });
         sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
