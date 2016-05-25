@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Maps>
     <Map id='0' name="Default Map" url="xml/DefaultMap.xml"/>
-    <Map id='1' name="CAMPEN Map" url="xml/CAMPEN.xml"/>
+    <Map id='1' name="TRAP" url="xml/TRAP.xml"/>
 </Maps>

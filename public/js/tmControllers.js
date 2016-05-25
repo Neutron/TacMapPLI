@@ -429,14 +429,14 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                                 $http.get(u).success(function (jsondata, status, headers) {
                                     var jsmod = headers()[ 'last-modified'];
                                     mapctl.currmapData = jsondata;
-                                    DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData);
-                                    mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
-                                    mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                                     mapctl.dB.openStore('Maps', function (mstore) {
                                         mstore.upsert({
                                             name: n, url: u, lastmod: jsmod, data: jsondata
                                         });
                                         $http.post("/json/maps.json", angular.toJson(mapctl.sortByKey(mapctl.maplist, 'id')));
+                                        DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData);
+                                        mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
+                                        mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                                     });
                                 });
                             }
