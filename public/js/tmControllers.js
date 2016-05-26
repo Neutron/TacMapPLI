@@ -108,13 +108,14 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, DlgBx) 
     };
     usrctl.registerEndpoint = function (data) {
         DbService.getRecord('User', 'user', function (usr) {
-            // console.log(usr);
             if (usr === null) {
                 DlgBx.prompt("New User: ", "Enter User Name: ", data["socketid"].substring(4, 10)).then(function (uname) {
-                    usrctl.endpoint.socketid = $scope.socketID;
-                    usrctl.endpoint.user_id = uname;
-                    usrctl.endpoint.network_id = uname + '-Net';
-                    usrctl.endpoint.map_id = uname + '-Map';
+                    usrctl.endpoint={
+                        socketid:$scope.socketID,
+                        user_id:uname,
+                        network_id:uname + '-Net',
+                        map_id:uname + '-Map'};
+                    console.log(usrctl.endpoint);
                     DbService.addRecord('User', "user", usrctl.endpoint);
                     console.log('User registered');
                     //console.log(usrctl.endpoint.mapview.viewdata);
@@ -122,9 +123,12 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, DlgBx) 
                     SocketService.initMapView(usrctl.endpoint);
                 });
             } else {
+                //console.log(usr.data);
                 usrctl.endpoint = usr.data;
                 usrctl.endpoint.socketid = $scope.socketID;
-                SocketService.initMapView(usrctl.endpoint);
+                //console.log(usrctl.endpoint);
+                //DbService.updateRecord('User', "user", usrctl.endpoint);
+                SocketService.setMapView(usrctl.endpoint);
             }
         });
     };
@@ -805,7 +809,7 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         console.log('update maps');
         mapctl.maps = maplist;
         //console.log(mapctl.maps);
-        mapctl.maplist = {};
+        mapctl.maplist = [];
         for (var m in maplist) {
             mapctl.maplist.push({id: m.id, name: m.name});
             DbService.updateRecord('Maps', m.id, m.data);

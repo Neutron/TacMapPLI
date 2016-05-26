@@ -571,13 +571,13 @@ TacMap.factory('SocketService', function () {
             });
         });
     };
-    scktsvc.setMapView = function (mapname) {
-        console.log("setMapView " + mapname);
-        scktsvc.socket.emit('join namespace', {"mapviewid": mapname}, function (endpoint) {
-            console.log('join namespace ' + mapname);
-            scktsvc.map_socket = io.connect(window.location.host + '/' + mapname);
+    scktsvc.setMapView = function (ep) {
+        console.log("setMapView " + ep.map_id);
+        scktsvc.socket.emit('join namespace', ep, function (endpoint) {
+            console.log('join namespace ' + ep.map_id);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + ep.map_id);
             scktsvc.map_socket.once('connect', function () {
-                console.log('joined namespace ' + mapname);
+                console.log('joined namespace ' + ep.map_id);
                 //scktsvc.socket.emit('initial connection', endpoint);
             });
         });

@@ -210,15 +210,7 @@
     sio.serveClient(true);
 //The following code implements a peer map service that uses SockeIO namespaces
 //to publish and subscribe to position reporting and other data.
-//
-//maps is a json object containing  map scenarios.  These can be persisted on the server or
-//in broswers in order to allow sharing from different devices or browsers.
-    tm.maps = {};
-//networks is a json object containing  socketIO channels.  Endpoints are added and removed from channels.
-    tm.networks = {};
-//endpoints is a json object containing of connected clients.  Information about endpointlist can be persisted
-//on the server or in broswers in order to allow sharing from different devices or browsers.
-    tm.endpoints = {};
+
     /** Global SockeIO Connection **/
 
     /** @param topsocket Top level socket connection **/
@@ -230,27 +222,21 @@
          * @param mapdta {id,netname,mapviewid}
          * @param callback  
          * **/
-        topsocket.on('join namespace', function (mapdta, callback) {
-            console.log("join namespace: " + mapdta.id);
-            sio.of('/' + mapdta.id)
+        topsocket.on('join namespace', function (ep, callback) {
+            console.log("join namespace: " + ep.map_id);
+            sio.of('/' + ep.map_id)
                     .once('connection', function (map_socket) {
-                        console.log('user connected to ' + mapdta.id);
+                        console.log('user connected to ' + ep.map_id);
                         socketOps(map_socket);
                     });
-            callback(mapdta);
+            callback(ep);
         });
         /** @param endpoint {id,netname,mapviewid}**/
         topsocket.on('initial connection', function (endpoint) {
-            console.log("initial connection: " + endpoint.id);
-            endpoints.push({endpoint: endpoint});
-            maps.push({map: [{id: endpoint.map_id, name: endpoint.map_id, url: 'json/' + endpoint.map_id + '.json', data: {}}]});
-            networks.push({network: [{id: endpoint.network_id, map_id: endpoint.map_id}]});
-            sio.emit('update maps', maps);
-            sio.emit('update endpoints', endpoints);
-            sio.emit('update networks', networks);
             sio.emit('load map', endpoint);
-            //sio.to(endpoint.mapviewid).emit('load mapview', endpoint);
         });
+
+
 // When a Map View is created - another namespace is set up with
 // SocketOps functions.  Each new user has a namespace auomatically assigned
 // and will be avalalabe to others to select.
@@ -260,98 +246,51 @@
         /** @param mapdata {map_id,name,data} **/
         topsocket.on('create map', function (mapdata) {
             console.log('create map');
-            maps.push({map: [{id: mapdata.map_id, name: mapdata.name, url: 'json/' + mapdata.map_id + '.json', data: mapdata.data}]});
             sio.of('/' + mapdata.id)
                     .once('connection', function (map_socket) {
                         console.log('user connected to ' + mapdata.id);
                         socketOps(map_socket);
                     });
-            sio.emit('update maps', maps);
         });
 // Remove a mapview
-// This will impact others who are connected
-// @todo Handle behavior when others connected to Map Views / Namespaces
         /** @param mapdata {id,name,url,data} **/
         topsocket.on('remove map', function (mapdata) {
-            tm.removeMap(mapdata, function (nm) {
-                maps = nm;
-                sio.emit('update maps', maps);
-            });
+            sio.emit('remove map', mapdata);
         });
 // Update a mapview
         /** @param mapdata {id,name,url,data} **/
         topsocket.on('update map', function (mapdata) {
-            tm.updateMap(mapdata, function (nm) {
-                maps = nm;
-                sio.emit('update maps', maps);
-            });
+            sio.emit('update map', mapdata);
         });
-// Rename a mapview
-// This will impact others who are connected
-// @todo Handle behavior when others connected to Map Views / Namespaces when renamed
-        /** @param mapdata {id,name,url,data} **/
-        topsocket.on('rename map', function (mapdata) {
-            tm.renameMap(mapdata, function (nm) {
-                maps = nm;
-                sio.emit('update maps', maps);
-            });
-        });
-        
-         //Publish mapdata for persistence on server
-        topsocket.on('publish map', function (map) {
-            console.log("publish map " + map.id);
-            tm.updateMap(map, function (nm) {
-                maps = nm;
-                sio.emit('update maps', maps);
-            });
-        });
-        
-        topsocket.on('request maps', function () {
-            console.log("load maps");
-            sio.emit('update maps', maps);
-        });
+
     });
     var socketOps = function (socket) {
         // Disconnect endpoint.  Remove from all lists
         socket.once('disconnect', function () {
             console.log('disconnect ' + socket.id);
-            tm.removeEndpoint({socket_id: socket.id}, function (ep) {
-                endpoints = ep;
-                sio.emit('update endpoints', endpoints);
-            });
+            sio.emit('disconnect', {socketid: socket.id});
         });
         // Join a network.
         socket.on('join network', function (netdata) {
-            console.log('join network ' + netdata.network_id);
             socket.join(netdata.network_id);
+            sio.emit('join net', netdata);
         });
         // Leave a network.
         socket.on('leave network', function (netdata) {
-            console.log('leave network ' + netdata.network_id);
             socket.leave(netdata.network_id);
+            sio.emit('leave net', netdata);
         });
         // Rename a network.
-        socket.on('rename network', function (netdata) {
-            console.log('rename network ' + netdata.network_id + " to " + netdata.newnetwork_id);
-            tm.renameNetwork(netdata, function (nw) {
-                networks = nw;
-                socket.join(netdata.newnetworkid);
-                sio.emit('update networks', networks);
-            });
+        socket.on('update network', function (netdata) {
+            sio.emit('update net', netdata);
         });
         // Create a network as a socketIO room
         socket.on('create network', function (netdata) {
-            console.log('create network');
-            networks.push({network: [{id: netdata.network_id, map_id: netdata.map_id}]});
-            sio.emit('update networks', networks);
+            sio.emit('create net', netdata);
         });
         // Remove a network 
         socket.on('remove network', function (netdata) {
-            tm.removeNetwork(netdata, function (nw) {
-                networks = nw;
-                socket.join(netdata.newnetworkid);
-                sio.emit('update networks', networks);
-            });
+            sio.emit('remove net', netdata);
         });
         //
         //Publish message to single socketid, or to one or all network
@@ -364,90 +303,5 @@
                 socket.emit(msg.scktmsg, msg.data);
             }
         });
-        //
-        tm.removeMap = function (mapdata, callback) {
-            var nm = {};
-            for (var m in maps.map) {
-                if (m.id !== mapdata.id) {
-                    nm.push(m);
-                }
-            }
-            callback(nm);
-        };
-        tm.updateMap = function (mapdata, callback) {
-            var nm = {};
-            for (var m in maps.map) {
-                if (m.id === mapdata.id) {
-                    nm.push(mapdata);
-                } else {
-                    nm.push(m);
-                }
-            }
-            callback(nm);
-        };
-        tm.renameMap = function (mapdata, callback) {
-            var nw = {};
-            for (var m in maps.map) {
-                if (m.id === mapdata.id) {
-                    m.name = mapdata.name;
-                    nm.push(m);
-                } else {
-                    nm.push(m);
-                }
-            }
-            callback(nw);
-        };
-        // 
-        tm.removeNetwork = function (netdata, callback) {
-            var nw = {};
-            for (var n in networks.network) {
-                if (n.id !== netdata.id) {
-                    nw.push(n);
-                }
-            }
-            callback(nw);
-        };
-        tm.updateNetwork = function (netdata, callback) {
-            var nw = {};
-            for (var n in networks.network) {
-                if (n.id === netdata.id) {
-                    nw.push(netdata);
-                } else {
-                    nw.push(n);
-                }
-            }
-            callback(nw);
-        };
-        tm.renameNetwork = function (netdata, callback) {
-            var nw = {};
-            for (var n in networks.network) {
-                if (n.id === netdata.network_id) {
-                    n.id = netdata.newnetwork_id;
-                    nw.push(n);
-                } else {
-                    nw.push(n);
-                }
-            }
-            callback(nw);
-        };
-        //
-        tm.removeEndpoint = function (epdata, callback) {
-            var ep = {};
-            for (var e in endpoints.endpoint) {
-                if (e.socket_id !== epdata.socket_id) {
-                    ep.push(e);
-                } else {
-                    tm.removeMap({map_id: e.map_id}, function (nm) {
-                        maps = nm;
-                        sio.emit('update maps', maps);
-                    });
-                    tm.removeNetwork({network_id: e.network_id}, function (nw) {
-                        networks = nw;
-                        sio.emit('update maps', networks);
-                    });
-                }
-            }
-            callback(ep);
-        };
     };
 })();
