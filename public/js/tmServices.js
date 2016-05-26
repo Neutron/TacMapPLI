@@ -96,6 +96,13 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
             });
         });
     };
+    dbsvc.updateMapView = function (mapname, data) {
+        dbsvc.dB.openStore('Maps', function (store) {
+            store.upsert({
+                name: mapname, data: data
+            });
+        });
+    };
     dbsvc.getRecord = function (storename, recordname, callback) {
         console.log('getRecord ' + recordname);
         dbsvc.dB.openStore(storename, function (mstore) {
@@ -125,7 +132,7 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
                 name: recordname, data: recdata
             }).then(function () {
                 if (typeof callback !== 'undefined') {
-                    callback();
+                    callback({name: recordname, data: recdata});
                 }
             });
         });
@@ -144,7 +151,8 @@ TacMap.factory('DbService', function ($indexedDB, $http) {
             mstore.upsert({name: listname, data: newdata});
         });
     };
-    dbsvc.syncFile = function (filename, url, data, callback) {
+    dbsvc.syncResource = function (url, callback) {
+        var filename = url.substring(url.lastIndexOf('/') + 1);
         $http.get(url).success(function (resdata, status, headers) {
             var mod = headers()[ 'last-modified'];
             dbsvc.dB.openStore('Resources', function (store) {
@@ -553,12 +561,12 @@ TacMap.factory('SocketService', function () {
     //Initializes MapView as Namespace on SocketIO server
     //Connects to Namespace, and passes fucntion that notifies all that connected.
     scktsvc.initMapView = function (ep) {
-        console.log('initMapView ' + ep.mapviewid);
+        console.log('initMapView ' + ep.map_id);
         scktsvc.socket.emit('join namespace', ep, function (endpoint) {
-            console.log('join namespace ' + endpoint.mapviewid);
-            scktsvc.map_socket = io.connect(window.location.host + '/' + endpoint.mapviewid);
+            console.log('join namespace ' + endpoint.map_id);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + endpoint.map_id);
             scktsvc.map_socket.once('connect', function () {
-                console.log('joined namespace ' + endpoint.mapviewid);
+                console.log('joined namespace ' + endpoint.map_id);
                 scktsvc.socket.emit('initial connection', ep);
             });
         });
@@ -577,13 +585,13 @@ TacMap.factory('SocketService', function () {
     scktsvc.createNet = function (mapviewid, networkid) {
         console.log('createNet ' + mapviewid + ": " + networkid);
         if (typeof scktsvc.map_socket !== 'undefined') {
-            scktsvc.map_socket.emit('create network', {mapviewid: mapviewid, networkid: networkid});
+            scktsvc.map_socket.emit('create network', {map_id: mapviewid, network_id: networkid});
         }
     };
     scktsvc.deleteNet = function (mapviewid, networkid) {
         console.log('deleteNet ' + mapviewid + ": " + networkid);
         if (typeof scktsvc.map_socket !== 'undefined') {
-            scktsvc.map_socket.emit('remove network', {mapviewid: mapviewid, networkid: networkid});
+            scktsvc.map_socket.emit('remove network', {map_id: mapviewid, network_id: networkid});
         }
     };
     scktsvc.createMap = function (mapname, mapdata) {
@@ -599,12 +607,12 @@ TacMap.factory('SocketService', function () {
     scktsvc.joinNet = function (id, netname) {
         console.log('joinNet ' + id + ', ' + netname);
         //scktsvc.map_socket.join(netname);
-        scktsvc.map_socket.emit('join network', {mapviewid: id, networkid: netname});
+        scktsvc.map_socket.emit('join network', {map_id: id, network_id: netname});
     };
     scktsvc.leaveNet = function (id, netname) {
         console.log('leaveNet ' + id + ', ' + netname);
         if (typeof scktsvc.map_socket !== 'undefined') {
-            scktsvc.map_socket.emit('leave network', {mapviewid: id, networkid: netname});
+            scktsvc.map_socket.emit('leave network', {map_id: id, network_id: netname});
         }
     };
     //This published provided socket message from client
@@ -613,32 +621,37 @@ TacMap.factory('SocketService', function () {
             //publish to net
             scktsvc.map_socket.to(networkid).emit(pubmsg, data);
         } else {
-            //publish to all             scktsvc.socket.emit(pubmsg, data);
+            //publish to all
+            scktsvc.socket.emit(pubmsg, data);
         }
     };
     //This provide socket message to be published from server
     scktsvc.publishMsg = function (pubmsg, data, networkid) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            scktsvc.map_socket.to(networkid).emit('publish msg', {msg: pubmsg, payload: data});
+            scktsvc.map_socket.to(networkid).emit('publish msg', {scktmsg: pubmsg, data: data});
         } else {
             //publish to all
-            scktsvc.map_socket.emit('publish msg to all', {msg: pubmsg, payload: data});
+            scktsvc.map_socket.emit('publish msg to all', {scktmsg: pubmsg, data: data});
         }
     };
     // Create a mapview that other nodes can 
-    scktsvc.createMapView = function (networkid, mapdata) {
+    scktsvc.createMap = function (networkid, mapdata) {
         if (typeof networkid !== 'undefined') {
             //publish to net
-            scktsvc.map_socket.to(networkid).emit('create mapview', mapdata);
+            scktsvc.map_socket.to(networkid).emit('create map', mapdata);
         } else {
             //publish to all
-            scktsvc.map_socket.emit('create mapview', mapdata);
+            scktsvc.map_socket.emit('create map', mapdata);
         }
     };
-    scktsvc.publishView = function (mapviewid, vwdata) {
+    scktsvc.publishMap = function (map) {
         //scktsvc.map_socket = io.connect(window.location.host + '/' +mapviewid);
-        scktsvc.map_socket.emit('publish view', {mapviewid: mapviewid, viewdata: vwdata});
+        scktsvc.map_socket.emit('publish map', map);
+    };
+    scktsvc.requestMaps = function () {
+        //scktsvc.map_socket = io.connect(window.location.host + '/' +mapviewid);
+        scktsvc.map_socket.emit('request maps');
     };
     return scktsvc;
 });

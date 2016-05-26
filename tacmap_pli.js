@@ -17,6 +17,7 @@
 /* global __dirname, require, process */
 (function () {
     "use strict";
+    var tm = {};
     var express = require('express');
     var compression = require('compression');
     var url = require('url');
@@ -51,13 +52,12 @@
     if (argv.help) {
         return yargs.showHelp();
     }
-    
+
     var app = express();
     app.use(bodyParser.json());
     app.use(compression());
     app.use(express.static(__dirname + '/public'));
-    
-   function getRemoteUrlFromParam(req) {
+    function getRemoteUrlFromParam(req) {
         var remoteUrl = req.params[0];
         if (remoteUrl) {
             // add http:// to the URL if no protocol is present
@@ -70,12 +70,12 @@
         }
         return remoteUrl;
     }
-   
+
     var dontProxyHeaderRegex = /^(?:Host|Proxy-Connection|Connection|Keep-Alive|Transfer-Encoding|TE|Trailer|Proxy-Authorization|Proxy-Authenticate|Upgrade)$/i;
     function filterHeaders(req, headers) {
         var result = {};
         // filter out headers that are listed in the regex above
-        Object.keys(headers).forEach(function(name) {
+        Object.keys(headers).forEach(function (name) {
             if (!dontProxyHeaderRegex.test(name)) {
                 result[name] = headers[name];
             }
@@ -86,16 +86,16 @@
     var upstreamProxy = argv['upstream-proxy'];
     var bypassUpstreamProxyHosts = {};
     if (argv['bypass-upstream-proxy-hosts']) {
-        argv['bypass-upstream-proxy-hosts'].split(',').forEach(function(host) {
+        argv['bypass-upstream-proxy-hosts'].split(',').forEach(function (host) {
             bypassUpstreamProxyHosts[host.toLowerCase()] = true;
         });
     }
 
-    app.get('/proxy/*', function(req, res, next) {
-        // look for request like http://localhost:8080/proxy/http://example.com/file?query=1
+    app.get('/proxy/*', function (req, res, next) {
+// look for request like http://localhost:8080/proxy/http://example.com/file?query=1
         var remoteUrl = getRemoteUrlFromParam(req);
         if (!remoteUrl) {
-            // look for request like http://localhost:8080/proxy/?http%3A%2F%2Fexample.com%2Ffile%3Fquery%3D1
+// look for request like http://localhost:8080/proxy/?http%3A%2F%2Fexample.com%2Ffile%3Fquery%3D1
             remoteUrl = Object.keys(req.query)[0];
             if (remoteUrl) {
                 remoteUrl = url.parse(remoteUrl);
@@ -115,16 +115,15 @@
             proxy = upstreamProxy;
         }
 
-        // encoding : null means "body" passed to the callback will be raw bytes
+// encoding : null means "body" passed to the callback will be raw bytes
 
         request.get({
-            url : url.format(remoteUrl),
-            headers : filterHeaders(req, req.headers),
-            encoding : null,
-            proxy : proxy
-        }, function(error, response, body) {
+            url: url.format(remoteUrl),
+            headers: filterHeaders(req, req.headers),
+            encoding: null,
+            proxy: proxy
+        }, function (error, response, body) {
             var code = 500;
-
             if (response) {
                 code = response.statusCode;
                 res.header(filterHeaders(req, response.headers));
@@ -133,16 +132,14 @@
             res.send(code, body);
         });
     });
-
     var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
-    var server = app.listen(argv.port, argv.public ? undefined : server_ip_address, function() {
+    var server = app.listen(argv.port, argv.public ? undefined : server_ip_address, function () {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
         } else {
             console.log('TacMap development server running locally.  Connect to http://localhost:%d/', server.address().port);
         }
     });
-
     server.on('error', function (e) {
         if (e.code === 'EADDRINUSE') {
             console.log('Error: Port %d is already in use, select a different port.', argv.port);
@@ -156,23 +153,20 @@
         console.log(e);
         process.exit(1);
     });
-
-    server.on('close', function() {
+    server.on('close', function () {
         console.log('Cesium development server stopped.');
     });
-
-    process.on('SIGINT', function() {
-        server.close(function() {
+    process.on('SIGINT', function () {
+        server.close(function () {
             process.exit(0);
         });
     });
-    
 //SOCKET IO
-    //var server = http.createServer(app);
-    /** HTTP Services **/
-//    server.listen(server_port, server_ip_address, function () {
-//        console.log('listening on ' + server_port);
-//    });
+
+    /**
+     * @param req Request
+     * @param res Result
+     * **/
     app.get('/', function (req, res) {
         res.sendFile(__dirname + '/public/geoview.html');
     });
@@ -211,55 +205,50 @@
             res.end();
         });
     };
-
     /** SocketIO Services **/
     var sio = require('socket.io').listen(server);
     sio.serveClient(true);
 //The following code implements a peer map service that uses SockeIO namespaces
 //to publish and subscribe to position reporting and other data.
-//mapviewlistervers is a collection of map scenarios.  These can be persisted on the server or
+//
+//maps is a json object containing  map scenarios.  These can be persisted on the server or
 //in broswers in order to allow sharing from different devices or browsers.
-    var mapviewlist = {};
-//networklist is a collection of socketIO channels.  Endpoints are added and removed from channels.
-    var networklist = {};
-//endpointlist is a collection of connected clients.  Information about endpointlist can be persisted
+    tm.maps = {};
+//networks is a json object containing  socketIO channels.  Endpoints are added and removed from channels.
+    tm.networks = {};
+//endpoints is a json object containing of connected clients.  Information about endpointlist can be persisted
 //on the server or in broswers in order to allow sharing from different devices or browsers.
-    var endpointlist = {};
-
-
+    tm.endpoints = {};
     /** Global SockeIO Connection **/
 
     /** @param topsocket Top level socket connection **/
 
     sio.of('').on('connection', function (topsocket) {
         topsocket.emit('connection', {message: 'Msg Socket Ready', socketid: topsocket.id});
-
         /** 
          * Namespaces correspond to Map Views ..
          * @param mapdta {id,netname,mapviewid}
          * @param callback  
          * **/
         topsocket.on('join namespace', function (mapdta, callback) {
-            console.log("join namespace: " + mapdta.mapviewid);
-            sio.of('/' + mapdta.mapviewid)
+            console.log("join namespace: " + mapdta.id);
+            sio.of('/' + mapdta.id)
                     .once('connection', function (map_socket) {
-                        console.log('user connected to ' + mapdta.mapviewid);
+                        console.log('user connected to ' + mapdta.id);
                         socketOps(map_socket);
                     });
             callback(mapdta);
         });
-
         /** @param endpoint {id,netname,mapviewid}**/
         topsocket.on('initial connection', function (endpoint) {
-            console.log("initial connection: " + endpoint.mapviewid);
-            endpointlist[endpoint.socketid] = endpoint;
-            mapviewlist[endpoint.mapviewid] = endpoint.mapviewid;
-            networklist[endpoint.networkid] = endpoint.networkid;
-            //console.log(networklist);
-            sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
-            sio.emit('update endpointlist', {endpointlist: endpointlist});
-            sio.emit('update networklist', {networklist: networklist});
-            sio.emit('load mapview', endpoint);
+            console.log("initial connection: " + endpoint.id);
+            endpoints.push({endpoint: endpoint});
+            maps.push({map: [{id: endpoint.map_id, name: endpoint.map_id, url: 'json/' + endpoint.map_id + '.json', data: {}}]});
+            networks.push({network: [{id: endpoint.network_id, map_id: endpoint.map_id}]});
+            sio.emit('update maps', maps);
+            sio.emit('update endpoints', endpoints);
+            sio.emit('update networks', networks);
+            sio.emit('load map', endpoint);
             //sio.to(endpoint.mapviewid).emit('load mapview', endpoint);
         });
 // When a Map View is created - another namespace is set up with
@@ -268,132 +257,197 @@
 // @todo Implement security to restrict/permit access to Map Views / Namespaces
 
 // Create a mapview
-        /** @param data {mapviewid} **/
-        topsocket.on('create mapview', function (data) {
-            console.log('create mapview');
-            mapviewlist[data.name] = data.name;
-            networklist[data.name] = {};
-            sio.of('/' + data.name)
+        /** @param mapdata {map_id,name,data} **/
+        topsocket.on('create map', function (mapdata) {
+            console.log('create map');
+            maps.push({map: [{id: mapdata.map_id, name: mapdata.name, url: 'json/' + mapdata.map_id + '.json', data: mapdata.data}]});
+            sio.of('/' + mapdata.id)
                     .once('connection', function (map_socket) {
-                        console.log('user connected to ' + data.name);
+                        console.log('user connected to ' + mapdata.id);
                         socketOps(map_socket);
                     });
-            sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
+            sio.emit('update maps', maps);
         });
 // Remove a mapview
 // This will impact others who are connected
 // @todo Handle behavior when others connected to Map Views / Namespaces
-        /** @param data {mapviewid} **/
-        topsocket.on('remove mapview', function (data) {
-            delete mapviewlist[data.mapviewid];
-            sio.emit('mapview update', {mapviewlist: mapviewlist});
+        /** @param mapdata {id,name,url,data} **/
+        topsocket.on('remove map', function (mapdata) {
+            tm.removeMap(mapdata, function (nm) {
+                maps = nm;
+                sio.emit('update maps', maps);
+            });
         });
 // Update a mapview
-        /** @param data {endpointid,mapviewid,newmapviewid} **/
-        topsocket.on('update mapview', function (data) {
-            mapviewlist[data.mapviewid] = data.newmapview;
-            sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
+        /** @param mapdata {id,name,url,data} **/
+        topsocket.on('update map', function (mapdata) {
+            tm.updateMap(mapdata, function (nm) {
+                maps = nm;
+                sio.emit('update maps', maps);
+            });
         });
 // Rename a mapview
 // This will impact others who are connected
 // @todo Handle behavior when others connected to Map Views / Namespaces when renamed
-        /** @param data {endpointid,mapviewid} **/
-        topsocket.on('rename mapview', function (data) {
-            delete mapviewlist[data.mapviewid];
-            mapviewlist[data.newmapviewid] = data.newmapviewid;
-            sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
+        /** @param mapdata {id,name,url,data} **/
+        topsocket.on('rename map', function (mapdata) {
+            tm.renameMap(mapdata, function (nm) {
+                maps = nm;
+                sio.emit('update maps', maps);
+            });
+        });
+        
+         //Publish mapdata for persistence on server
+        topsocket.on('publish map', function (map) {
+            console.log("publish map " + map.id);
+            tm.updateMap(map, function (nm) {
+                maps = nm;
+                sio.emit('update maps', maps);
+            });
+        });
+        
+        topsocket.on('request maps', function () {
+            console.log("load maps");
+            sio.emit('update maps', maps);
         });
     });
-
     var socketOps = function (socket) {
         // Disconnect endpoint.  Remove from all lists
         socket.once('disconnect', function () {
             console.log('disconnect ' + socket.id);
-            if (typeof endpointlist[socket.id] !== 'undefined') {
-                if (typeof endpointlist[socket.id].mapviewid !== 'undefined') {
-                    var mvid = endpointlist[socket.id].mapviewid;
-                    if (sio.of('/' + mvid).sockets.length !== 1) {
-                        delete(mapviewlist[mvid]);
-                        delete(networklist[mvid]);
-                        delete(endpointlist[socket.id]);
-                    }
-                    sio.emit('update endpointlist', {endpointlist: endpointlist});
-                    sio.emit('update networklist', {networklist: networklist});
-                    sio.emit('update mapviewlist', {mapviewlist: mapviewlist});
-                } else {
-                    delete(endpointlist[socket.id]);
-                }
-            }
-//        if (sio.of('/').sockets.length === 0) {
-//            mapviewlist = {};
-//            networklist = {};
-//            endpointlist = {};
-//        }
-        });
-        // Change map.
-        socket.on('change map', function () {
-            if (typeof endpointlist[socket.id] !== 'undefined') {
-                console.log('change map ' + endpointlist[socket.id].mapviewid);
-                if (typeof endpointlist[socket.id].mapviewid !== 'undefined') {
-                    console.log('disconnect from map ' + mapviewlist[endpointlist[socket.id].mapviewid]);
-                    var mvid = endpointlist[socket.id].mapviewid;
-                    if (sio.of('/' + mvid).sockets.length <= 2) {
-                        delete(mapviewlist[mvid]);
-                        delete(networklist[mvid]);
-                        delete(endpointlist[socket.id]);
-                    }
-                } else {
-                    delete(endpointlist[socket.id]);
-                }
-            }
+            tm.removeEndpoint({socket_id: socket.id}, function (ep) {
+                endpoints = ep;
+                sio.emit('update endpoints', endpoints);
+            });
         });
         // Join a network.
-        socket.on('join network', function (data) {
-            console.log('join network ' + data.networkid);
-            socket.join(data.networkid);
+        socket.on('join network', function (netdata) {
+            console.log('join network ' + netdata.network_id);
+            socket.join(netdata.network_id);
         });
         // Leave a network.
-        socket.on('leave network', function (data) {
-            console.log('leave network ' + data.networkid);
-            socket.leave(data.networkid);
+        socket.on('leave network', function (netdata) {
+            console.log('leave network ' + netdata.network_id);
+            socket.leave(netdata.network_id);
         });
         // Rename a network.
-        socket.on('rename network', function (data) {
-            console.log('rename network ' + data.networkid + " to " + data.newnetworkid);
-            delete networklist[data.networkid];
-            networklist[data.newnetworkid] = data.newnetwork;
-            sio.emit('update networklist', {networklist: networklist});
-            socket.join(data.newnetworkid);
-
+        socket.on('rename network', function (netdata) {
+            console.log('rename network ' + netdata.network_id + " to " + netdata.newnetwork_id);
+            tm.renameNetwork(netdata, function (nw) {
+                networks = nw;
+                socket.join(netdata.newnetworkid);
+                sio.emit('update networks', networks);
+            });
         });
         // Create a network as a socketIO room
-        socket.on('create network', function (data) {
+        socket.on('create network', function (netdata) {
             console.log('create network');
-            networklist[data.mapviewid][data.networkid] = data.networkid;
-            sio.emit('update networklist', {networklist: networklist});
+            networks.push({network: [{id: netdata.network_id, map_id: netdata.map_id}]});
+            sio.emit('update networks', networks);
         });
         // Remove a network 
-        socket.on('remove network', function (data) {
-            delete networklist[data.mapviewid][data.networkid];
-            sio.emit('update networklist', {networklist: networklist});
+        socket.on('remove network', function (netdata) {
+            tm.removeNetwork(netdata, function (nw) {
+                networks = nw;
+                socket.join(netdata.newnetworkid);
+                sio.emit('update networks', networks);
+            });
         });
-        //Relay message to one or all networklist
-
-        socket.on('publish msg', function (data) {
-            if (typeof data.network !== 'undefined') {
-                sio.to(data.netname).emit(data.msg, data.payload);
+        //
+        //Publish message to single socketid, or to one or all network
+        socket.on('publish msg', function (msg) {
+            if (typeof msg.data.destination !== 'undefined') {
+                sio.to(msg.data.destination.socketid).emit(msg.scktmsg, msg.data);
+            } else if (typeof msg.data.network !== 'undefined') {
+                sio.to(msg.data.network.id).emit(msg.scktmsg, msg.data);
             } else {
-                socket.emit(data.msg, data.payload);
+                socket.emit(msg.scktmsg, msg.data);
             }
         });
-        //Relay message to one or all networklist
-        socket.on('publish msg to all', function (data) {
-            sio.emit(data.msg, data.payload);
-        });
-
-        socket.on('publish view', function (data) {
-            console.log("publish view ");
-            sio.emit('update view', data);
-        });
+        //
+        tm.removeMap = function (mapdata, callback) {
+            var nm = {};
+            for (var m in maps.map) {
+                if (m.id !== mapdata.id) {
+                    nm.push(m);
+                }
+            }
+            callback(nm);
+        };
+        tm.updateMap = function (mapdata, callback) {
+            var nm = {};
+            for (var m in maps.map) {
+                if (m.id === mapdata.id) {
+                    nm.push(mapdata);
+                } else {
+                    nm.push(m);
+                }
+            }
+            callback(nm);
+        };
+        tm.renameMap = function (mapdata, callback) {
+            var nw = {};
+            for (var m in maps.map) {
+                if (m.id === mapdata.id) {
+                    m.name = mapdata.name;
+                    nm.push(m);
+                } else {
+                    nm.push(m);
+                }
+            }
+            callback(nw);
+        };
+        // 
+        tm.removeNetwork = function (netdata, callback) {
+            var nw = {};
+            for (var n in networks.network) {
+                if (n.id !== netdata.id) {
+                    nw.push(n);
+                }
+            }
+            callback(nw);
+        };
+        tm.updateNetwork = function (netdata, callback) {
+            var nw = {};
+            for (var n in networks.network) {
+                if (n.id === netdata.id) {
+                    nw.push(netdata);
+                } else {
+                    nw.push(n);
+                }
+            }
+            callback(nw);
+        };
+        tm.renameNetwork = function (netdata, callback) {
+            var nw = {};
+            for (var n in networks.network) {
+                if (n.id === netdata.network_id) {
+                    n.id = netdata.newnetwork_id;
+                    nw.push(n);
+                } else {
+                    nw.push(n);
+                }
+            }
+            callback(nw);
+        };
+        //
+        tm.removeEndpoint = function (epdata, callback) {
+            var ep = {};
+            for (var e in endpoints.endpoint) {
+                if (e.socket_id !== epdata.socket_id) {
+                    ep.push(e);
+                } else {
+                    tm.removeMap({map_id: e.map_id}, function (nm) {
+                        maps = nm;
+                        sio.emit('update maps', maps);
+                    });
+                    tm.removeNetwork({network_id: e.network_id}, function (nw) {
+                        networks = nw;
+                        sio.emit('update maps', networks);
+                    });
+                }
+            }
+            callback(ep);
+        };
     };
 })();

@@ -68,41 +68,40 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, DlgBx) 
     usrctl.editmapviewid = "";
     usrctl.editnetworkid = "";
     usrctl.editprofile = false;
+    usrctl.endpoints = {};
 
     usrctl.editProfile = function (ep) {
-        usrctl.edituserid = ep.userid;
-        usrctl.editmapviewid = ep.mapviewid;
-        usrctl.editnetworkid = ep.networkid;
+        usrctl.edituserid = ep.user_id;
+        usrctl.editmapviewid = ep.map_id;
+        usrctl.editnetworkid = ep.network_id;
         usrctl.editprofile = true;
     };
     usrctl.cancelEdit = function () {
         usrctl.editprofile = false;
     };
     usrctl.saveProfile = function () {
-        usrctl.endpoint.userid = usrctl.edituserid;
+        usrctl.endpoint.user_id = usrctl.edituserid;
         //Update namespace if mapview name changed
-        if (usrctl.endpoint.networkid !== usrctl.editnetworkid) {
-            SocketService.deleteNet(usrctl.endpoint.mapviewid, usrctl.endpoint.networkid);
+        if (usrctl.endpoint.network_id !== usrctl.editnetworkid) {
+            SocketService.deleteNet(usrctl.endpoint);
             SocketService.createNet(usrctl.editmapviewid, usrctl.editnetworkid);
-            if (usrctl.endpoint.mapviewid !== usrctl.editmapviewid) {
-                usrctl.endpoint.userid = usrctl.edituserid;
-                usrctl.endpoint.mapviewid = usrctl.editmapviewid;
-                usrctl.endpoint.networkid = usrctl.editnetworkid;
-                //SocketService.changeMap(usrctl.endpoint.mapviewid);
+            if (usrctl.endpoint.map_id !== usrctl.editmapviewid) {
+                usrctl.endpoint.user_id = usrctl.edituserid;
+                usrctl.endpoint.map_id = usrctl.editmapviewid;
+                usrctl.endpoint.network_id = usrctl.editnetworkid;
                 SocketService.initMapView(usrctl.endpoint);
                 DbService.updateRecord('User', 'user', usrctl.endpoint);
             }
-        } else if (usrctl.endpoint.mapviewid !== usrctl.editmapviewid) {
-            usrctl.endpoint.userid = usrctl.edituserid;
-            usrctl.endpoint.mapviewid = usrctl.editmapviewid;
-            usrctl.endpoint.networkid = usrctl.editnetworkid;
-            //SocketService.changeMap(usrctl.endpoint.mapviewid);
+        } else if (usrctl.endpoint.map_id !== usrctl.editmapviewid) {
+            usrctl.endpoint.user_id = usrctl.edituserid;
+            usrctl.endpoint.map_id = usrctl.editmapviewid;
+            usrctl.endpoint.network_id = usrctl.editnetworkid;
             SocketService.initMapView(usrctl.endpoint);
             DbService.updateRecord('User', 'user', usrctl.endpoint);
         } else {
-            usrctl.endpoint.userid = usrctl.edituserid;
-            usrctl.endpoint.mapviewid = usrctl.editmapviewid;
-            usrctl.endpoint.networkid = usrctl.editnetworkid;
+            usrctl.endpoint.user_id = usrctl.edituserid;
+            usrctl.endpoint.map_id = usrctl.editmapviewid;
+            usrctl.endpoint.network_id = usrctl.editnetworkid;
             DbService.updateRecord('User', 'user', usrctl.endpoint);
         }
         usrctl.editprofile = false;
@@ -113,9 +112,9 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, DlgBx) 
             if (usr === null) {
                 DlgBx.prompt("New User: ", "Enter User Name: ", data["socketid"].substring(4, 10)).then(function (uname) {
                     usrctl.endpoint.socketid = $scope.socketID;
-                    usrctl.endpoint.userid = uname;
-                    usrctl.endpoint.networkid = uname + '-Net';
-                    usrctl.endpoint.mapviewid = uname + '-Map';
+                    usrctl.endpoint.user_id = uname;
+                    usrctl.endpoint.network_id = uname + '-Net';
+                    usrctl.endpoint.map_id = uname + '-Map';
                     DbService.addRecord('User', "user", usrctl.endpoint);
                     console.log('User registered');
                     //console.log(usrctl.endpoint.mapview.viewdata);
@@ -137,19 +136,20 @@ TacMap.controller('userCtl', function ($scope, DbService, SocketService, DlgBx) 
             return ((x < y) ? -1 : ((x > y) ? 1 : 0));
         });
     };
-    SocketService.socket.on('load mapview', function (data) {
+    SocketService.socket.on('load map', function (ep) {
         // console.log(data);
-        usrctl.endpoint = data;
+        usrctl.endpoint = ep;
     });
     SocketService.socket.on('connection', function (data) {
         $scope.socketID = data.socketid;
         console.log('user connect ' + $scope.socketID);
         usrctl.registerEndpoint(data);
     });
-    SocketService.socket.on('update endpointlist', function (data) {
+    SocketService.socket.on('update endpoints', function (eplist) {
         console.log('update endpointlist');
+        usrctl.endpoints=eplist;
         //console.log(usrctl.endpoints);
-        DbService.updateRecord('User', 'endpoints', data.endpointlist);
+        DbService.updateRecord('User', 'endpoints', eplist);
     });
 });
 
@@ -270,13 +270,6 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         });
     };
     //Saves changes to loaded map to indexedDB
-    mapctl.updateMapView = function (mapdata) {
-        DbService.dB.openStore("Maps", function (store) {
-            store.upsert({
-                name: mapctl.currentMap, data: mapdata
-            });
-        });
-    };
     mapctl.overwriteMapView = function (mapid) {
         console.log("overwriteMapView: " + mapid);
         DbService.dB.openStore("Maps", function (store) {
@@ -291,6 +284,7 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
             });
         });
     };
+    //
     mapctl.deleteMapView = function (currentmap) {
         if (mapctl.currentMap === 'Default Map') {
             DlgBx.alert("Can't delete Default Map");
@@ -386,13 +380,14 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         mapctl.currentMap = mapid;
         DbService.getUserMapData(mapctl.currentMap, function (umapdata) {
             if (umapdata === null) {
+                console.log("Using Default Map");
                 mapctl.loadDefaultMap(mapctl.currentMap);
             } else {
                 //console.log(umapdata);
                 mapctl.currmapData = umapdata.data;
-                mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
                 mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                 GeoService.initGeodesy(mapctl.currentMap, mapctl.currmapData);
+                mapctl.publishView();
             }
         });
     };
@@ -404,12 +399,15 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                 if (keys.indexOf('maps.json') === -1) {
                     $http.get('xml/maps.xml').success(function (resdata, status, headers) {
                         var maps = DbService.xj.xml_str2json(resdata);
+                        DbService.dB.openStore('Resources', function (mstore) {
+                            mstore.upsert({name: 'maps.json', url: "json/maps.json", data: maps}).then($http.put('json/maps.json'));
+                        });
                         for (i = 0; i < maps.Maps.Map.length; i++) {
                             var u = maps.Maps.Map[i]._url;
                             mapctl.mapurl = u;
                             var n = maps.Maps.Map[i]._name;
                             if (u.substring(u.indexOf('.')) === '.xml') {
-                                mapctl.syncResource(maps.Maps.Map[i]._url, function (jdata) {
+                                mapctl.syncMapData(maps.Maps.Map[i]._url, function (jdata) {
                                     mapctl.currmapData = jdata;
                                     DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData, function (mdta) {
                                         if (jdata.Map._name !== 'Default Map') {
@@ -463,11 +461,10 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
             }
         });
     };
-
     //
     //Compares last modified dates between server file and indexedDb file
     //updates indexeDB and passes current data to callback function
-    mapctl.syncResource = function (url, callback) {
+    mapctl.syncMapData = function (url, callback) {
         //console.log("syncResource " + mapid);
         $http.get(url).success(function (resdata, status, headers) {
             var mod = headers()[ 'last-modified'];
@@ -625,11 +622,10 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
     mapctl.setLocation = function (entity, lat, lng) {
         mapctl.mapid = GeoService.mapid;
         if (typeof entity._id !== 'undefined') {
-            GeoService.sdatasources[mapctl.mapid].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
             DbService.updateTrackDb(mapctl.mapid, entity._id, '_location', lat + "," + lng, function (mdata) {
-                console.log("publish view");
-                SocketService.publishView(mdata.name, mdata.data);
-                //mapctl.selectTrack(entity);
+                mapctl.currmapData = mdata.data;
+                GeoService.sdatasources[mapctl.mapid].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
+
             });
 
         } else {
@@ -672,9 +668,6 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
                 mapctl.tracks.push(trck);
                 mapctl.trackselected = trck;
                 GeoService.addCesiumBillboard(trck);
-                //GeoService.addCesiumPoint(trck, 'BLUE');
-                //mapctl.currmapData.Map.Tracks.Track.push(trck);
-                //mapctl.currmapData.Map.Tracks[mapctl.currmapData.Map.Tracks.Track.length+1]=trck;
                 mapctl.currmapData.Map.Tracks.Track = mapctl.tracks;
                 DbService.setUserMapData(mapctl.currentMap, mapctl.currmapData, function () {
                     mapctl.selectTrack(trck, true);
@@ -777,6 +770,7 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
             console.log(m + " selected");
             mapctl.mselected = m;
             if (m !== mapctl.currentMap) {
+                viewer.dataSources.remove(GeoService.sdatasources[mapctl.currentMap]);
                 mapctl.initUserMapView(m, function () {
                     SocketService.setMapView(m);
                 })
@@ -798,39 +792,25 @@ TacMap.controller('mapCtl', function ($scope, DbService, GeoService, SocketServi
         });
     };
     //
-//    SocketService.socket.on('connection', function () {
-//        mapctl.initMapView();
-//    });
-    SocketService.socket.on('load mapview', function (endpoint) {
+    mapctl.publishView = function () {
+        console.log("publish view");
+        SocketService.publishMap(mapctl.currentMap, mapctl.currmapData);
+    };
+    SocketService.socket.on('load map', function (endpoint) {
         mapctl.ep = endpoint;
-        mapctl.initUserMapView(endpoint.mapviewid);
+        mapctl.initUserMapView(endpoint.map_id);
+        SocketService.requestMaps();
     });
-    SocketService.socket.on('update view', function (vwdata) {
-        console.log('update view');
-        DbService.setUserMapData(vwdata.mapviewid, vwdata.viewdata, function (mapdata) {
-            if (mapctl.currentMap === mapdata.name) {
-                GeoService.updateView(mapdata.name, mapdata.data);
-            }
-        });
+    SocketService.socket.on('update maps', function (maplist) {
+        console.log('update maps');
+        mapctl.maps = maplist;
+        //console.log(mapctl.maps);
+        mapctl.maplist = {};
+        for (var m in maplist) {
+            mapctl.maplist.push({id: m.id, name: m.name});
+            DbService.updateRecord('Maps', m.id, m.data);
+        }
     });
-    SocketService.socket.on('update mapviewlist', function (data) {
-        console.log('update mapviewlist');
-        mapctl.mapviews = data.mapviewlist;
-        console.log(mapctl.mapviews);
-        DbService.updateRecord('User', 'mapviews', data.mapviewlist);
-    });
-    SocketService.socket.on('track connected', function (data) {
-        console.log("Unit connected " + data.id);
-        SocketService.setMap(mapctl.mapid, mapctl.map);
-        //msgctl.messages.push({text: "Unit " + data.socketid + " connected"});
-    });
-//    SocketService.socket.on('load mapview', function (data) {
-//        console.log('********* load mapview' + data.socketid + " " + data.mapviewid);
-//        //mapctl.loadUserMap();
-//        SocketService.map_socket.on('publish msg', function (data) {
-//            console.log('msg published');
-//        });
-//    });
 });
 //netCtl handles networks
 TacMap.controller('netCtl', function (DbService, SocketService, DlgBx, $http) {
@@ -839,6 +819,7 @@ TacMap.controller('netCtl', function (DbService, SocketService, DlgBx, $http) {
     netctl.nettxt = "";
     netctl.netsel = "";
     netctl.currnet = "";
+    netctl.networklist = {};
     netctl.addNet = function (netlist, netname, mapdata) {
         if (typeof netlist[netname] !== 'undefined') {
             DlgBx.alert('Duplicate Value .. Try Again');
@@ -851,14 +832,14 @@ TacMap.controller('netCtl', function (DbService, SocketService, DlgBx, $http) {
             });
             netctl.currnet = netname;
             DbService.updateDbFile('Resources', 'nets.json', netlist, "/json/nets.json", $http);
-            SocketService.createMapView(netname, mapdata);
+            SocketService.createMap(netname, mapdata);
         }
     };
-    SocketService.socket.on('update networklist', function (data) {
-        console.log('update networklist');
-        netctl.networks = data.networklist;
-        //console.log(usrctl.networks);
-        DbService.updateRecord('User', 'networks', data.networklist);
+    SocketService.socket.on('update networks', function (networklist) {
+        console.log('update networks');
+        netctl.networks = networklist;
+        //console.log(netctl.networks);
+        DbService.updateRecord('User', 'networks', networklist);
     });
 });
 //messageCtl handles messages

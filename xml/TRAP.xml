@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Mission name="TRAP">
+<Map name="TRAP">
     <Polygons>
         <Polygon id="Default" name="Bydgoszcz" color="BLACK"
             locations="52.9974565821361,17.8404060428482, 
@@ -89,4 +89,4 @@
         <Network name="CAN" icon="img/CAN_Flag.png" netcon="CanACoHq"/>
         <Network name="NLD" icon="img/NLD_Flag.png" netcon="NldDCoHq"/>
     </Networks>
-</Mission>
+</Map>
