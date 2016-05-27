@@ -15,9 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /* global __dirname, require, process */
-(function () {
+(function() {
     "use strict";
-    var tm = {};
     var express = require('express');
     var compression = require('compression');
     var url = require('url');
@@ -57,6 +56,7 @@
     app.use(bodyParser.json());
     app.use(compression());
     app.use(express.static(__dirname + '/public'));
+
     function getRemoteUrlFromParam(req) {
         var remoteUrl = req.params[0];
         if (remoteUrl) {
@@ -72,10 +72,11 @@
     }
 
     var dontProxyHeaderRegex = /^(?:Host|Proxy-Connection|Connection|Keep-Alive|Transfer-Encoding|TE|Trailer|Proxy-Authorization|Proxy-Authenticate|Upgrade)$/i;
+
     function filterHeaders(req, headers) {
         var result = {};
         // filter out headers that are listed in the regex above
-        Object.keys(headers).forEach(function (name) {
+        Object.keys(headers).forEach(function(name) {
             if (!dontProxyHeaderRegex.test(name)) {
                 result[name] = headers[name];
             }
@@ -86,16 +87,16 @@
     var upstreamProxy = argv['upstream-proxy'];
     var bypassUpstreamProxyHosts = {};
     if (argv['bypass-upstream-proxy-hosts']) {
-        argv['bypass-upstream-proxy-hosts'].split(',').forEach(function (host) {
+        argv['bypass-upstream-proxy-hosts'].split(',').forEach(function(host) {
             bypassUpstreamProxyHosts[host.toLowerCase()] = true;
         });
     }
 
-    app.get('/proxy/*', function (req, res, next) {
-// look for request like http://localhost:8080/proxy/http://example.com/file?query=1
+    app.get('/proxy/*', function(req, res, next) {
+        // look for request like http://localhost:8080/proxy/http://example.com/file?query=1
         var remoteUrl = getRemoteUrlFromParam(req);
         if (!remoteUrl) {
-// look for request like http://localhost:8080/proxy/?http%3A%2F%2Fexample.com%2Ffile%3Fquery%3D1
+            // look for request like http://localhost:8080/proxy/?http%3A%2F%2Fexample.com%2Ffile%3Fquery%3D1
             remoteUrl = Object.keys(req.query)[0];
             if (remoteUrl) {
                 remoteUrl = url.parse(remoteUrl);
@@ -115,14 +116,14 @@
             proxy = upstreamProxy;
         }
 
-// encoding : null means "body" passed to the callback will be raw bytes
+        // encoding : null means "body" passed to the callback will be raw bytes
 
         request.get({
             url: url.format(remoteUrl),
             headers: filterHeaders(req, req.headers),
             encoding: null,
             proxy: proxy
-        }, function (error, response, body) {
+        }, function(error, response, body) {
             var code = 500;
             if (response) {
                 code = response.statusCode;
@@ -133,18 +134,20 @@
         });
     });
     var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
-    var server = app.listen(argv.port, argv.public ? undefined : server_ip_address, function () {
+    var server = app.listen(argv.port, argv.public ? undefined : server_ip_address, function() {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
-        } else {
+        }
+        else {
             console.log('TacMap development server running locally.  Connect to http://localhost:%d/', server.address().port);
         }
     });
-    server.on('error', function (e) {
+    server.on('error', function(e) {
         if (e.code === 'EADDRINUSE') {
             console.log('Error: Port %d is already in use, select a different port.', argv.port);
             console.log('Example: node server.js --port %d', argv.port + 1);
-        } else if (e.code === 'EACCES') {
+        }
+        else if (e.code === 'EACCES') {
             console.log('Error: This process does not have permission to listen on port %d.', argv.port);
             if (argv.port < 1024) {
                 console.log('Try a port number higher than 1024.');
@@ -153,153 +156,160 @@
         console.log(e);
         process.exit(1);
     });
-    server.on('close', function () {
+    server.on('close', function() {
         console.log('Cesium development server stopped.');
     });
-    process.on('SIGINT', function () {
-        server.close(function () {
+    process.on('SIGINT', function() {
+        server.close(function() {
             process.exit(0);
         });
     });
-//SOCKET IO
-
+    //SOCKET IO
     /**
      * @param req Request
      * @param res Result
      * **/
-    app.get('/', function (req, res) {
+    app.get('/', function(req, res) {
         res.sendFile(__dirname + '/public/geoview.html');
     });
-    app.get('node_modules/*', function (req, res) {
+    app.get('node_modules/*', function(req, res) {
         res.sendFile(__dirname + '/node_modules/' + req.url);
     });
-    app.get('/json/*', function (req, res) {
+    app.get('/json/*', function(req, res) {
         res.sendFile(__dirname + '/' + req.url);
     });
-    app.post('/json/*', function (req, res) {
+    app.post('/json/*', function(req, res) {
         //console.log(request.body);
-        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function () {
+        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function() {
             res.end();
         });
     });
-    app.put('/json/*', function (req, res) {
+    app.put('/json/*', function(req, res) {
         //console.log(req.body);
-        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function () {
+        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function() {
             res.end();
         });
     });
-    app.get('/xml/*', function (req, res) {
+    app.get('/xml/*', function(req, res) {
         res.sendFile(__dirname + '/' + req.url);
     });
-    app.put('/xml/*', function (req, res) {
+    app.put('/xml/*', function(req, res) {
         console.log("Put " + req.url);
         console.log(req.body);
-        fs.writeFile(__dirname + '/' + req.url, req.body, function () {
+        fs.writeFile(__dirname + '/' + req.url, req.body, function() {
             res.end();
         });
     });
-    app.put('/entity/*'), function (req, res) {
-        console.log("Post entity " + req.url);
-        console.log(req.body);
-        fs.writeFile(__dirname + '/public' + req.url, req.body, function () {
-            res.end();
-        });
-    };
+    app.put('/entity/*'),
+        function(req, res) {
+            console.log("Post entity " + req.url);
+            console.log(req.body);
+            fs.writeFile(__dirname + '/public' + req.url, req.body, function() {
+                res.end();
+            });
+        };
     /** SocketIO Services **/
     var sio = require('socket.io').listen(server);
     sio.serveClient(true);
-//The following code implements a peer map service that uses SockeIO namespaces
-//to publish and subscribe to position reporting and other data.
+    //The following code implements a peer map service that uses SockeIO namespaces
+    //to publish and subscribe to position reporting and other data.
 
     /** Global SockeIO Connection **/
 
     /** @param topsocket Top level socket connection **/
 
-    sio.of('').on('connection', function (topsocket) {
-        topsocket.emit('connection', {message: 'Msg Socket Ready', socketid: topsocket.id});
+    sio.of('').on('connection', function(topsocket) {
+        topsocket.emit('connection', {
+            message: 'Msg Socket Ready',
+            socketid: topsocket.id
+        });
         /** 
          * Namespaces correspond to Map Views ..
          * @param mapdta {id,netname,mapviewid}
          * @param callback  
          * **/
-        topsocket.on('join namespace', function (ep, callback) {
+        topsocket.on('join namespace', function(ep, callback) {
             console.log("join namespace: " + ep.map_id);
             sio.of('/' + ep.map_id)
-                    .once('connection', function (map_socket) {
-                        console.log('user connected to ' + ep.map_id);
-                        socketOps(map_socket);
-                    });
+                .once('connection', function(map_socket) {
+                    console.log('user connected to ' + ep.map_id);
+                    socketOps(map_socket);
+                });
             callback(ep);
         });
         /** @param endpoint {id,netname,mapviewid}**/
-        topsocket.on('initial connection', function (endpoint) {
-            sio.emit('load map', endpoint);
+        topsocket.on('initial connection', function(endpoint) {
+            sio.to(endpoint.socketid).emit('load map', endpoint);
         });
 
 
-// When a Map View is created - another namespace is set up with
-// SocketOps functions.  Each new user has a namespace auomatically assigned
-// and will be avalalabe to others to select.
-// @todo Implement security to restrict/permit access to Map Views / Namespaces
+        // When a Map View is created - another namespace is set up with
+        // SocketOps functions.  Each new user has a namespace auomatically assigned
+        // and will be avalalabe to others to select.
+        // @todo Implement security to restrict/permit access to Map Views / Namespaces
 
-// Create a mapview
+        // Create a mapview
         /** @param mapdata {map_id,name,data} **/
-        topsocket.on('create map', function (mapdata) {
+        topsocket.on('create map', function(mapdata) {
             console.log('create map');
             sio.of('/' + mapdata.id)
-                    .once('connection', function (map_socket) {
-                        console.log('user connected to ' + mapdata.id);
-                        socketOps(map_socket);
-                    });
+                .once('connection', function(map_socket) {
+                    console.log('user connected to ' + mapdata.id);
+                    socketOps(map_socket);
+                });
         });
-// Remove a mapview
+        // Remove a mapview
         /** @param mapdata {id,name,url,data} **/
-        topsocket.on('remove map', function (mapdata) {
+        topsocket.on('remove map', function(mapdata) {
             sio.emit('remove map', mapdata);
         });
-// Update a mapview
+        // Update a mapview
         /** @param mapdata {id,name,url,data} **/
-        topsocket.on('update map', function (mapdata) {
+        topsocket.on('update map', function(mapdata) {
             sio.emit('update map', mapdata);
         });
 
     });
-    var socketOps = function (socket) {
+    var socketOps = function(socket) {
         // Disconnect endpoint.  Remove from all lists
-        socket.once('disconnect', function () {
+        socket.once('disconnect', function() {
             console.log('disconnect ' + socket.id);
-            sio.emit('disconnect', {socketid: socket.id});
+            sio.emit('disconnect', {
+                socketid: socket.id
+            });
         });
         // Join a network.
-        socket.on('join network', function (netdata) {
+        socket.on('join network', function(netdata) {
             socket.join(netdata.network_id);
             sio.emit('join net', netdata);
         });
         // Leave a network.
-        socket.on('leave network', function (netdata) {
+        socket.on('leave network', function(netdata) {
             socket.leave(netdata.network_id);
             sio.emit('leave net', netdata);
         });
         // Rename a network.
-        socket.on('update network', function (netdata) {
+        socket.on('update network', function(netdata) {
             sio.emit('update net', netdata);
         });
         // Create a network as a socketIO room
-        socket.on('create network', function (netdata) {
+        socket.on('create network', function(netdata) {
             sio.emit('create net', netdata);
         });
         // Remove a network 
-        socket.on('remove network', function (netdata) {
+        socket.on('remove network', function(netdata) {
             sio.emit('remove net', netdata);
         });
         //
         //Publish message to single socketid, or to one or all network
-        socket.on('publish msg', function (msg) {
+        socket.on('publish msg', function(msg) {
             if (typeof msg.data.destination !== 'undefined') {
                 sio.to(msg.data.destination.socketid).emit(msg.scktmsg, msg.data);
-            } else if (typeof msg.data.network !== 'undefined') {
+            }
+            else if (typeof msg.data.network !== 'undefined') {
                 sio.to(msg.data.network.id).emit(msg.scktmsg, msg.data);
-            } else {
+            }
+            else {
                 socket.emit(msg.scktmsg, msg.data);
             }
         });

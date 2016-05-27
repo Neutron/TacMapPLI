@@ -38,12 +38,12 @@
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('views')">MAP VIEWS</div>
+                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('views')">MAPS</div>
                             <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('views')">
-                                <div data-ng-repeat="(k,m) in mapctl.mapviews">
+                                <div data-ng-repeat="(k,m) in mapctl.maplist">
                                     <div class="accordion__subtab outline">
                                         <div class="accordion__tab-subtitle" 
-                                             data-ng-click="mapctl.selMapVw(k, vwctl)" 
+                                             data-ng-click="mapctl.selMapVw(k, m, vwctl)" 
                                              data-ng-model="mapctl.mselected" 
                                              data-ng-class="{selected : mapctl.mapSelected(k)}">{{k}}</div>
                                         <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab(k)">

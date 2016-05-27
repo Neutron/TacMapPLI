@@ -42,13 +42,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <div class="accordion__tab outline">
         <div class="accordion__tab-sub-subtitle" data-ng-click="vwctl.openTab('GEOFENCES')">GEOFENCES</div>
         <div class="accordion__tab-sub-subtitle" data-ng-show="vwctl.isOpenTab('GEOFENCES')">
-            <div data-ng-repeat="fnce in mapctl.geofencelist">
+            <div data-ng-repeat="fnce in mapctl.geofences track by $index">
                 <div class="unitlisting" 
-                     data-ng-show="fnce._map===mapctl.mapid"
                      data-ng-model="mapctl.geofenceselected"
                      data-ng-click="mapctl.selectGeoFence(fnce, true)"
                      data-ng-class="{selected : mapctl.geofenceselected._id === fnce._id}">
-                    <div class="gflabel">{{fnce._map}}-{{fnce._name}}</div>
+                    <div class="gflabel">{{fnce._name}}</div>
                 </div>
             </div>
             <div class="trcks">

@@ -26,12 +26,12 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     timeline: false,
     infoBox: false,
     selectionIndicator: true,
-    baseLayerPicker: false,
+    baseLayerPicker: true,
     navigationHelpButton: false,
     navigationInstructionsInitiallyVisible: false,
-//    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-//        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-//    }), 
+    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+    }), 
 //    imageryProvider: new Cesium.BingMapsImageryProvider({
 //     url: '//dev.virtualearth.net',
 //     key: 'get-yours-at-https://www.bingmapsportal.com/',
@@ -45,9 +45,9 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     //        url: 'Cesium/Assets/Textures/NaturalEarthII'
     //   }),
     //OpenStreetMap tile provider
-    imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url: '../tiles'
-    }),
+    // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+    //     url: '../tiles'
+    // }),
     homeButton: false,
     geocoder: false
 });
