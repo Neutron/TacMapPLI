@@ -65,7 +65,8 @@ TacMap.controller('viewCtl', function() {
 TacMap.controller('userCtl', function($scope, DbService, SocketService, DlgBx) {
     var usrctl = this;
     usrctl.endpoint = {};
-    //UI Views
+    usrctl.userlist = []
+        //UI Views
     usrctl.edituserid = "";
     usrctl.editmapviewid = "";
     usrctl.editnetworkid = "";
@@ -81,6 +82,17 @@ TacMap.controller('userCtl', function($scope, DbService, SocketService, DlgBx) {
     usrctl.cancelEdit = function() {
         usrctl.editprofile = false;
     };
+    usrctl.updateUserList = function() {
+        DbService.getKeys('User', function(kys) {
+            usrctl.userlist = [];
+            for (var k in kys) {
+                usrctl.userlist.push({
+                    k: kys[k]
+                })
+            }
+
+        });
+    }
     usrctl.saveProfile = function() {
         usrctl.endpoint.user_id = usrctl.edituserid;
         //Update namespace if mapview name changed
@@ -92,7 +104,7 @@ TacMap.controller('userCtl', function($scope, DbService, SocketService, DlgBx) {
                 usrctl.endpoint.map_id = usrctl.editmapviewid;
                 usrctl.endpoint.network_id = usrctl.editnetworkid;
                 SocketService.initMapView(usrctl.endpoint);
-                DbService.updateRecord('User', 'user', usrctl.endpoint);
+                DbService.updateRecord('User', usrctl.endpoint.user_id, usrctl.endpoint, usrctl.updateUserList);
             }
         }
         else if (usrctl.endpoint.map_id !== usrctl.editmapviewid) {
@@ -100,44 +112,70 @@ TacMap.controller('userCtl', function($scope, DbService, SocketService, DlgBx) {
             usrctl.endpoint.map_id = usrctl.editmapviewid;
             usrctl.endpoint.network_id = usrctl.editnetworkid;
             SocketService.initMapView(usrctl.endpoint);
-            DbService.updateRecord('User', 'user', usrctl.endpoint);
+            DbService.updateRecord('User', usrctl.endpoint.user_id, usrctl.endpoint, usrctl.updateUserList);
         }
         else {
             usrctl.endpoint.user_id = usrctl.edituserid;
             usrctl.endpoint.map_id = usrctl.editmapviewid;
             usrctl.endpoint.network_id = usrctl.editnetworkid;
-            DbService.updateRecord('User', 'user', usrctl.endpoint);
+            DbService.updateRecord('User', usrctl.endpoint.user_id, usrctl.endpoint, usrctl.updateUserList);
         }
         usrctl.editprofile = false;
     };
     usrctl.registerEndpoint = function(data) {
-        DbService.getRecord('User', 'user', function(usr) {
-            if (usr === null) {
-                DlgBx.prompt("New User: ", "Enter User Name: ", data["socketid"].substring(4, 10)).then(function(uname) {
-                    usrctl.endpoint = {
-                        socketid: $scope.socketID,
-                        user_id: uname,
-                        network_id: uname + '-Net',
-                        map_id: uname + '-Map'
-                    };
-                    console.log(usrctl.endpoint);
-                    DbService.addRecord('User', "user", usrctl.endpoint);
-                    console.log('User registered');
-                    //console.log(usrctl.endpoint.mapview.viewdata);
-                    //Initialize namespace for current mapview.
-                    SocketService.initMapView(usrctl.endpoint);
-                });
+        DbService.getKeys('User', function(kys) {
+            if (kys === null) {
+                usrctl.newUser(data);
             }
             else {
-                //console.log(usr.data);
-                usrctl.endpoint = usr.data;
-                usrctl.endpoint.socketid = $scope.socketID;
-                //console.log(usrctl.endpoint);
-                //DbService.updateRecord('User', "user", usrctl.endpoint);
-                SocketService.initMapView(usrctl.endpoint);
+                console.log(kys);
+                usrctl.userlist = [];
+                for (var k in kys) {
+                    usrctl.userlist[kys[k]] = kys[k];
+                }
+                usrctl.userlist["New User"] = "New User";
+                DlgBx.select("Select User: ", "", usrctl.userlist).then(function(uname) {
+                    if (uname === "Select User") {
+                        usrctl.newUser(data);
+                    }
+                    else if (uname === "New User") {
+                        usrctl.newUser(data);
+                    }
+                    else {
+                        usrctl.endpoint = {
+                            socketid: $scope.socketID,
+                            user_id: uname,
+                            network_id: uname + '-Net',
+                            map_id: uname + '-Map'
+                        };
+
+                        usrctl.endpoint.socketid = $scope.socketID;
+                        //console.log(usrctl.endpoint);
+                        //DbService.updateRecord('User', "user", usrctl.endpoint);
+                        SocketService.initMapView(usrctl.endpoint);
+                    }
+                });
             }
         });
     };
+
+    usrctl.newUser = function(data) {
+        DlgBx.prompt("New User: ", "Enter User Name: ", data["socketid"].substring(4, 10)).then(function(uname) {
+            usrctl.endpoint = {
+                socketid: $scope.socketID,
+                user_id: uname,
+                network_id: uname + '-Net',
+                map_id: uname + '-Map'
+            };
+            console.log(usrctl.endpoint);
+            DbService.addRecord('User', usrctl.endpoint.user_id, usrctl.endpoint, usrctl.updateUserList);
+            console.log('User registered');
+            //console.log(usrctl.endpoint.mapview.viewdata);
+            //Initialize namespace for current mapview.
+            SocketService.initMapView(usrctl.endpoint);
+        });
+    };
+
     //Sorts list by key name 
     usrctl.sortByKey = function(array, key) {
         return array.sort(function(a, b) {
@@ -287,7 +325,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                         mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                         DbService.updateMapData(mapctl.currentMap, mapctl.currmapData, function(mdta) {
                             mapctl.maplist[mapctl.currentMap] = mapctl.currmapData;
-                            GeoService.initGeodesy(mdta.name, mdta.data);
+                            GeoService.initGeodesy(mdta.map_id, mdta.data);
                         });
                     }
                     else {

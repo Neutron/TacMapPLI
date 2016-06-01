@@ -602,6 +602,16 @@ TacMap.factory('GeoService', function($indexedDB) {
     return geosvc;
 });
 
+TacMap.factory('XMLService',function($indexedDB){
+    var xmlsvc = {};
+    
+    xmlsvc.mtfMsg=function(){
+        
+    }
+    
+    return xmlsvc;
+})
+
 TacMap.factory('SocketService', function() {
     var scktsvc = {};
     scktsvc.serverid;
@@ -767,5 +777,26 @@ TacMap.factory('DlgBx', function($window, $q) {
         });
         return (defer.promise);
     };
+    dlg.select = function(title, message, list) {
+        var defer = $q.defer();
+        // The native prompt will return null or a string.
+        var response = $window.swal({
+            title: title,
+            text: message,
+            input: 'select',
+            inputOptions: list,
+            inputPlaceholder: 'Select User',
+            showCancelButton: false,
+            width: 300
+        });
+        
+        if (response === null) {
+            defer.reject();
+        }
+        else {
+            defer.resolve(response);
+        }
+        return (defer.promise);
+    }
     return dlg;
 });
