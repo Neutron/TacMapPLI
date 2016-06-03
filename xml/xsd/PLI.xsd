@@ -96,6 +96,11 @@
                                 <xs:attribute name="id"/>
                             </xs:complexType>
                         </xs:element>
+                         <xs:element name="Person">
+                            <xs:complexType>
+                                <xs:attribute name="id"/>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:choice>
                 </xs:complexType>
             </xs:element>
@@ -320,6 +325,7 @@
             </xs:element>
         </xs:choice>
     </xs:complexType>
+
     <xs:element name="PositionLocationInformation" type="PositionLocationInformationType"/>
     <xs:element name="EnityInfo" type="EntityInformationType"/>
     <xs:element name="GeoLoc" type="GeographicLocationType"/>

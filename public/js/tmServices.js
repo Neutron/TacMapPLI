@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
-/* global TacMap, viewer, Cesium, angular, io,  X2JS LZString */
+/* global TacMap, viewer, Cesium, angular, io,  X2JS, LZString, Saxon */
 // ***** SERVER SERVICES ******//
 /** 
  * @param  $indexedDB
@@ -43,24 +43,31 @@ TacMap.factory('DbService', function($indexedDB, $http) {
             });
         });
     };
-    dbsvc.updateTrackDb = function(mapname, trackId, fieldname, value, callback) {
-        //console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
+    dbsvc.updateTrackDb = function(mapname, trackId, changes, callback) {
+        console.log('updateTrackDb');
+        //  console.log(changes);
         dbsvc.dB.openStore("Maps", function(store) {
             store.find(mapname).then(function(map) {
                 dbsvc.map = map.data;
                 for (var i = 0; i < dbsvc.map.Map.Tracks.Track.length; i++) {
                     if (dbsvc.map.Map.Tracks.Track[i]._id === trackId) {
-                        dbsvc.map.Map.Tracks.Track[i][fieldname] = value;
+                        for (var c in changes) {
+                            dbsvc.map.Map.Tracks.Track[i][c] = changes[c];
+                        }
                     }
                 }
             }).then(function() {
                 store.upsert({
                     name: mapname,
                     data: dbsvc.map
-                }).then(callback({
-                    name: mapname,
-                    data: dbsvc.map
-                }));
+                }).then(function() {
+                    if (typeof(callback) != 'undefined') {
+                        callback({
+                            name: mapname,
+                            data: dbsvc.map
+                        });
+                    }
+                });
             });
         });
     };
@@ -258,7 +265,7 @@ TacMap.factory('GeoService', function($indexedDB) {
     geosvc.mapid = null;
     geosvc.sdatasources = [];
     geosvc.mapdata = {};
-    geosvc.initGeodesy = function(mapid, mapdata) {
+    geosvc.initGeodesy = function(mapid, mapdata, callback) {
         console.log("initGeodesy " + mapid);
         //console.log(mapdata);
         geosvc.mapdata = mapdata;
@@ -272,6 +279,9 @@ TacMap.factory('GeoService', function($indexedDB) {
         viewer.zoomTo(geosvc.sdatasources[geosvc.mapid].entities.getById("Default")).then(function() {
             console.log('map ready');
         });
+        if (typeof callback !== 'undefined') {
+            callback(mapdata);
+        }
     };
     geosvc.updateView = function(mapid, mapdata) {
         console.log("updateView " + mapid);
@@ -602,14 +612,25 @@ TacMap.factory('GeoService', function($indexedDB) {
     return geosvc;
 });
 
-TacMap.factory('XMLService',function($indexedDB){
-    var xmlsvc = {};
-    
-    xmlsvc.mtfMsg=function(){
-        
+TacMap.factory('MsgService', function($indexedDB, $http) {
+    var msgsvc = {};
+
+    msgsvc.postMsg = function(url, data) {
+        console.log("postMsg");
+        //console.log(url);
+        //console.log(data);
+        $http.post(url, data).success(function(response) {
+            console.log("success");
+        }).error(function(err) {
+            console.log("failure " + err);
+        });
     }
-    
-    return xmlsvc;
+
+    msgsvc.mtfMsg = function() {
+
+    }
+
+    return msgsvc;
 })
 
 TacMap.factory('SocketService', function() {
@@ -617,6 +638,7 @@ TacMap.factory('SocketService', function() {
     scktsvc.serverid;
     scktsvc.mapid;
     scktsvc.namespace;
+    scktsvc.scktid = "";
     //scktsvc.socket is used at the global level
     scktsvc.socket = io.connect(window.location.host);
     //scktsvc.map_socket is used at the namespace level
@@ -625,6 +647,7 @@ TacMap.factory('SocketService', function() {
     //Connects to Namespace, and passes fucntion that notifies all that connected.
     scktsvc.initMapView = function(ep) {
         console.log('initMapView ' + ep.map_id);
+        scktsvc.scktid = ep.socketid;
         scktsvc.socket.emit('join namespace', ep, function(endpoint) {
             console.log('join namespace ' + endpoint.map_id);
             scktsvc.map_socket = io.connect(window.location.host + '/' + endpoint.map_id);
@@ -722,8 +745,38 @@ TacMap.factory('SocketService', function() {
         //scktsvc.map_socket = io.connect(window.location.host + '/' +mapviewid);
         scktsvc.map_socket.emit('request maps');
     };
+    scktsvc.syncTracks = function(tracklist) {
+        scktsvc.map_socket.emit('Sync Tracks', {
+            scktid: scktsvc.scktid,
+            tracks: tracklist
+        });
+    };
     return scktsvc;
 });
+
+TacMap.factory('XSLService', function() {
+    var xslsvce={};
+    xslsvce.saxonloaded = false;
+    xslsvce.xslproc = [];
+
+    xslsvce.onSaxonLoad = function() {
+        console.log('saxon loaded');
+        xslsvce.saxonloaded = true;
+    };
+
+    xslsvce.initXSL=function(name, xsl) {
+        xslsvce.xslproc[name] = Saxon.newXSLT20Processor(Saxon.parseXML(xsl));
+    }
+
+    xslsvce.doXSL=function(name, xmlsrc, params) {
+        for (var p = 0; p < params.length; p++) {
+            xslsvce.xslproc[name].setParameter(null, params[p].name, params[p].value);
+        }
+        var result = xslsvce.xslproc[name].transformToFragment(Saxon.parseXML(xmlsrc));
+        return Saxon.serializeXML(result);
+    }
+    return xslsvce;
+})
 
 TacMap.factory('DlgBx', function($window, $q) {
     var dlg = {};
@@ -732,6 +785,7 @@ TacMap.factory('DlgBx', function($window, $q) {
         $window.swal({
             title: title,
             text: message,
+            allowOutsideClick: false,
             type: 'warning',
             width: 300
 
@@ -746,6 +800,7 @@ TacMap.factory('DlgBx', function($window, $q) {
             title: title,
             text: message,
             input: 'text',
+            allowOutsideClick: false,
             type: 'info',
             inputValue: defaultValue,
             width: 300
@@ -764,6 +819,7 @@ TacMap.factory('DlgBx', function($window, $q) {
         $window.swal({
             title: title,
             text: message,
+            allowOutsideClick: false,
             type: 'warning',
             showCancelButton: true,
             width: 300
@@ -783,13 +839,14 @@ TacMap.factory('DlgBx', function($window, $q) {
         var response = $window.swal({
             title: title,
             text: message,
+            allowOutsideClick: false,
             input: 'select',
             inputOptions: list,
             inputPlaceholder: 'Select User',
             showCancelButton: false,
             width: 300
         });
-        
+
         if (response === null) {
             defer.reject();
         }

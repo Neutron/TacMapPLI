@@ -91,7 +91,6 @@
             bypassUpstreamProxyHosts[host.toLowerCase()] = true;
         });
     }
-
     app.get('/proxy/*', function(req, res, next) {
         // look for request like http://localhost:8080/proxy/http://example.com/file?query=1
         var remoteUrl = getRemoteUrlFromParam(req);
@@ -200,14 +199,21 @@
             res.end();
         });
     });
-    app.put('/entity/*'),
-        function(req, res) {
-            console.log("Post entity " + req.url);
+    app.put('/entity/*', function(req, res) {
+            console.log("Put entity " + req.url);
             console.log(req.body);
             fs.writeFile(__dirname + '/public' + req.url, req.body, function() {
                 res.end();
             });
-        };
+        });
+
+    app.post('/msg/*',function(req,res){
+        var jsonmsg=req.body;
+        console.log(jsonmsg);
+        sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
+    });
+
+
     /** SocketIO Services **/
     var sio = require('socket.io').listen(server);
     sio.serveClient(true);
@@ -268,7 +274,6 @@
         topsocket.on('update map', function(mapdata) {
             sio.emit('update map', mapdata);
         });
-
     });
     var socketOps = function(socket) {
         // Disconnect endpoint.  Remove from all lists
@@ -300,6 +305,11 @@
         socket.on('remove network', function(netdata) {
             sio.emit('remove net', netdata);
         });
+        // Synch Tracks 
+        socket.on('Sync Tracks', function(trackdata) {
+            console.log('Sync Tracks');
+            sio.emit('update tracks', {scktid:trackdata.scktid,tracks:trackdata.tracks});
+        });
         //
         //Publish message to single socketid, or to one or all network
         socket.on('publish msg', function(msg) {
@@ -310,7 +320,7 @@
                 sio.to(msg.data.network.id).emit(msg.scktmsg, msg.data);
             }
             else {
-                socket.emit(msg.scktmsg, msg.data);
+                sio.emit(msg.scktmsg, msg.data);
             }
         });
     };

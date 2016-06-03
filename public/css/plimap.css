@@ -1,4 +1,3 @@
-
 /* 
  * Copyright (C) 2015 Major James Neushul, USMC
  *
@@ -16,258 +15,306 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+html {
+    height: 100%;
+}
 
-html{
-    height:100%;
+body {
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    height: 100%;
+    background-color: black;
 }
-body{
-    padding:0;
-    margin:0;
-    overflow:hidden;
-    height:100%;
-    background-color:black;
-}
+
+
 /*Remove button padding in FF*/
+
 button::-moz-focus-inner {
-    border:0;
-    padding:0;
+    border: 0;
+    padding: 0;
 }
-#cesiumContainer{
-    height:100%;
-    width:100%;
-    margin:0;
-    padding:0;
-    overflow:hidden;
-    font-family:sans-serif;
+
+#cesiumContainer {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: sans-serif;
 }
-#infoCol{
-    position:absolute;
-    left:4px;
-    top:4px;
-    height:auto;
-    width:180px;
-    margin:2px;
-    z-index : 1;
+
+#infoCol {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    height: auto;
+    width: 180px;
+    margin: 2px;
+    z-index: 1;
 }
-.sect{
-    width:100%;
-    margin-top:5px;
-    padding-top:5px;
-    border-top:thin solid black;
-    font-size:10px;
+
+.sect {
+    width: 100%;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: thin solid black;
+    font-size: 10px;
 }
-.rptlist{
-    height:300px;
+
+.rptlist {
+    height: 300px;
     overflow-y: auto;
 }
-.rptlsting{
-    font-size:12px; 
+
+.rptlsting {
+    font-size: 12px;
     font-weight: bold;
-    width:98%;
-    height:50px;
-    border:thin solid black;
-    text-align:center;
-    margin-top:5px; 
+    width: 98%;
+    height: 50px;
+    border: thin solid black;
+    text-align: center;
+    margin-top: 5px;
 }
-.rptunit{
-    text-align:center;
-}
-.rptsel{
-    font-size:12px; 
-    margin-top:3px;
-    width:120px;
-    text-indent: 10px;
-}
-.rptsect{
-    width:100%;
-    margin-top:5px;
-    font-size:10px; 
-}
-.msglisting{
-    font-size:9px; 
-    font-weight: normal;
-}
-.maptitle{
-    color:yellow;
-    font-weight:bold;
-    font-size:18px;
-}
-select{
-    font-size:12px; 
-    width:100%;
-}
-option{
-    font-size:12px;
-}
-.rptsel{
-    font-size:10px;
-    font-weight: bold;
-}
-.rptsel span{
-    width:50%; 
-}
-.rptsel select{
-    font-size:10px;
-    width:50%; 
-    float:right;
-}
-.msect{
-    width:100%;
-    margin-top:4px;
-    font-style:italic;
-    text-align:center;
-}
-.label{
-    margin:4px;
-    font-style:italic;
-    text-align:left;
-}
-.bsect{
-    padding-top:5px;
-    border-top:thin solid black;
-    height:20px;
-    width:90%;
-    margin: 0 auto;
-    padding-bottom:15px;
-}
-.bsect input{
-    margin-top:5px;
-}
-.bspc{
-    margin-bottom:5px;
-}
-.topspc{
-    margin-top:5px;
-}
-.smbtn{
-    padding:0;
-    font-size:10px;
-    color:blue;
-    cursor:pointer;
-    margin-left:1px;
-}
-.bottomdiv{
-    position:absolute;
-    bottom:5px;
-    width:160px;
-}
-.txtbtn{
-    color:red;
-    margin-top: 3px;
-    width:160px;
-    text-align:center;
-    cursor:pointer;
-    font-size:10px;
-}
-.status{
-    position:absolute;
-    bottom:25px;
-    width:160px;
-    color:white;
-    text-align:center;
-}
-.btn{
-    padding:0;
-    font-size:10px;
-    color:blue;
-    cursor:pointer;
-    margin-left:25px;
-}
-.hidden{
-    display:none;
-}
-.wpchkbx{
-    margin-left:10px;
-}
-.units{
-    width:154px;
-    margin-right:2px;
-    max-height:400px;
-    overflow-y:auto;
-}
-.unitlisting img{
-    margin-left:3px;
-    margin-right:3px;
-    float:left;
-    height:20px;
-}
-.unitlisting{
-    width:90%;
-    height:20px;
-    cursor:pointer;
-    border:thin solid black;
-    border-radius:2px;
-    padding:2px;
-    box-shadow:2px 2px 2px #888888;
-    margin:2px;
-    text-align:left;
-    font-weight:normal;
-}
-.unitlabel{
-    margin-left:5px;
-    padding-left:5px;
-    padding-top:8px;
-}
-.gflabel{
-    margin-left:5px;
-    padding-left:5px;
-    padding-top:8px;
+
+.rptunit {
     text-align: center;
 }
-.accordion__container{
-    background:#FFF;
-    border:1px solid #ccc;
-    /* padding: 2px; */
+
+.rptsel {
+    font-size: 12px;
+    margin-top: 3px;
+    width: 120px;
+    text-indent: 10px;
 }
-.accordion__tab{
-    background:#aaa;
-    color:#000;
-    border-bottom:1px solid white;
-    font-size:10px;
-    font-weight:bold;
+
+.rptsect {
+    width: 100%;
+    margin-top: 5px;
+    font-size: 10px;
 }
-.accordion__subtab{
-    background:#aaa;
-    color:#000;
-    border-bottom:1px solid white;
-    font-size:10px;
-    font-weight:bold;
+
+.msglisting {
+    font-size: 9px;
+    font-weight: normal;
 }
-.accordion__tab-title{
-    background:#E5F2FE;
-    padding:5px;
-    cursor:pointer;
+
+.maptitle {
+    color: yellow;
+    font-weight: bold;
+    font-size: 18px;
 }
-.accordion__tab-subtitle{
-    background:whitesmoke;
-    padding:5px;
-    margin:1px;
-    cursor:pointer;
+
+select {
+    font-size: 12px;
+    width: 100%;
 }
-.accordion__tab-sub-subtitle{
-    background:lightgoldenrodyellow;
-    padding:5px;
-    margin:1px;
-    cursor:pointer;
+
+option {
+    font-size: 12px;
 }
-.accordion__tab-content{
-    background:#FFF;
-    padding:2px;
+
+.rptsel {
+    font-size: 10px;
+    font-weight: bold;
 }
+
+.rptsel span {
+    width: 50%;
+}
+
+.rptsel select {
+    font-size: 10px;
+    width: 50%;
+    float: right;
+}
+
+.msect {
+    width: 100%;
+    margin-top: 4px;
+    font-style: italic;
+    text-align: center;
+}
+
+.label {
+    margin: 4px;
+    font-style: italic;
+    text-align: left;
+}
+
+.bsect {
+    padding-top: 5px;
+    border-top: thin solid black;
+    height: 20px;
+    width: 90%;
+    margin: 0 auto;
+    padding-bottom: 15px;
+}
+
+.bsect input {
+    margin-top: 5px;
+}
+
+.bspc {
+    margin-bottom: 5px;
+}
+
+.topspc {
+    margin-top: 5px;
+}
+
+.smbtn {
+    padding: 0;
+    font-size: 10px;
+    color: blue;
+    cursor: pointer;
+    margin-left: 1px;
+}
+
+.bottomdiv {
+    position: absolute;
+    bottom: 5px;
+    width: 160px;
+}
+
+.txtbtn {
+    color: red;
+    margin-top: 3px;
+    width: 160px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.status {
+    position: absolute;
+    bottom: 25px;
+    width: 160px;
+    color: white;
+    text-align: center;
+}
+
+.btn {
+    padding: 0;
+    font-size: 10px;
+    color: blue;
+    cursor: pointer;
+    margin-left: 25px;
+}
+
+.hidden {
+    display: none;
+}
+
+.wpchkbx {
+    margin-left: 10px;
+}
+
+.units {
+    width: 154px;
+    margin-right: 2px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.unitlisting img {
+    margin-left: 3px;
+    margin-right: 3px;
+    float: left;
+    height: 20px;
+}
+
+.unitlisting {
+    max-width: 90%;
+    max-height: 20px;
+    cursor: pointer;
+    border: thin solid black;
+    border-radius: 2px;
+    padding: 2px;
+    box-shadow: 2px 2px 2px #888888;
+    margin: 2px;
+    text-align: left;
+    font-weight: normal;
+}
+
+.unitlabel {
+    margin-left: 5px;
+    padding-left: 5px;
+    padding-top: 8px;
+}
+
+.gflabel {
+    margin-left: 5px;
+    padding-left: 5px;
+    padding-top: 8px;
+    text-align: center;
+}
+
+.accordion__container {
+    background: #FFF;
+    border: 1px solid #ccc;
+    padding: 4px;
+    border-radius: 10px;
+}
+
+.accordion__tab {
+    background: #aaa;
+    color: #000;
+    border-bottom: 1px solid white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 10px;
+}
+
+.accordion__subtab {
+    background: #aaa;
+    color: #000;
+    border-bottom: 1px solid white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.accordion__tab-title {
+    background: #E5F2FE;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.accordion__tab-subtitle {
+    background: whitesmoke;
+    padding: 5px;
+    margin: 1px;
+    cursor: pointer;
+}
+
+.accordion__tab-sub-subtitle {
+    background: lightgoldenrodyellow;
+    padding: 5px;
+    margin: 1px;
+    cursor: pointer;
+}
+
+.accordion__tab-content {
+    background: #FFF;
+    padding: 2px;
+}
+
 .filelist {
-    width:145px;
-    margin:2px;
-    border:solid black thin;
-    min-height:75px;
-    max-height:150px;
-    overflow-y:auto;
-    cursor:not-allowed;
+    max-width: 145px;
+    margin: 2px;
+    border: solid black thin;
+    min-height: 75px;
+    max-height: 150px;
+    overflow-y: auto;
+    cursor: not-allowed;
 }
-.filelisting{
-    padding:3px;
-    cursor:pointer;
-    color:blue;
+
+.filelisting {
+    padding: 3px;
+    cursor: pointer;
+    color: blue;
 }
+
 .noselect {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -276,63 +323,78 @@ option{
     -ms-user-select: none;
     user-select: none;
 }
-.usrprof{
-    margin-bottom:25px; 
+
+.usrprof {
+    margin-bottom: 25px;
 }
-.trcks{
-    padding-top:5px; 
-    padding-bottom:10px; 
+
+.trcks {
+    padding-top: 5px;
+    padding-bottom: 10px;
 }
-.rtalgn{
-    margin-top:5px;
-    float:right;
+
+.rtalgn {
+    margin-top: 5px;
+    float: right;
 }
-.smbtngrp{
-    margin-left:2px; 
+
+.smbtngrp {
+    margin-left: 2px;
 }
-.maplist{
+
+.maplist {
     cursor: pointer;
-    height:18px;
-    padding-top:4px;
-    padding-left:2px;
-    border:solid thin darkgrey;
+    max-height: 18px;
+    padding-top: 4px;
+    padding-left: 2px;
+    border: solid thin darkgrey;
 }
-.netlist{
-    height:18px;
-    padding-top:4px;
-    padding-left:2px;
-    padding-bottom:2px;
+
+.netlist {
+    max-height: 18px;
+    padding-top: 4px;
+    padding-left: 2px;
+    padding-bottom: 2px;
 }
-.newnet{
-    width:90px;
+
+.newnet {
+    width: 90px;
 }
-.newmap{
-    width:90px;
+
+.newmap {
+    width: 90px;
 }
-.dot{
-    display:inline;
-    margin-right:5px;
+
+.dot {
+    display: inline;
+    margin-right: 5px;
 }
-.outline{
-    border:solid black thin;
-    box-shadow:2px 2px 2px #888888;
+
+.outline {
+    border: solid black thin;
+    box-shadow: 2px 2px 2px #888888;
 }
-.trcksect{
-    width:100%;
-    border-top:thin solid black;
-    font-size:10px;
+
+.trcksect {
+    width: 100%;
+    border-top: thin solid black;
+    font-size: 10px;
 }
-.bpad{
+
+.bpad {
     padding-bottom: 20px;
 }
-.gfence{
-    width:15px;
-    height:15px;
+
+.gfence {
+    max-width: 15px;
+    max-height: 15px;
     border: dashed darkblue thin;
 }
-.selected{
-    background:yellow;
+
+.selected {
+    background: yellow;
 }
+
 .swal2-modal h2 {
     color: #575757;
     font-size: 18px;
@@ -343,7 +405,8 @@ option{
     margin: 0;
     padding: 0;
     line-height: 40px;
-    display: block; }
+    display: block;
+}
 
 .swal2-content {
     font-size: 12px;
@@ -354,10 +417,31 @@ option{
     margin: 0;
     padding: 0;
     line-height: normal;
-    color: #555; }
-    
-    .info{
-        height:155;
-        width:155;
-        background-color:whitesmoke;
-    }
+    color: #555;
+}
+
+.infobox {
+    position: absolute;
+    top: 80px;
+    right: 40px;
+    min-height: 200px;
+    min-width: 200px;
+    padding: 5px;
+    border: thin blue solid;
+    border-radius: 25px;
+    z-index: 1000;
+    background-color: whitesmoke;
+}
+
+.info_title {
+    font-size: 14;
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.ctr {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
