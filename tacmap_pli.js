@@ -26,6 +26,7 @@
     var cesium = require('./geoserver/cesiumserver');
     //var http = require('http');
     var cors = require('cors');
+    //var https = require('https');
     var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
     var yargs = require('yargs').options({
         'port': {
@@ -137,6 +138,10 @@
     var server = app.listen(argv.port, argv.public ? undefined : server_ip_address, function() {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
+        }else if(argv.publicssl) {
+            server.key=fs.readFileSync('key.pem');
+            server.cert=fs.readFileSync('cert.pem');
+            console.log('TacMap development server running locally.  Connect to http://localhost:%d/', server.address().port);
         }
         else {
             console.log('TacMap development server running locally.  Connect to http://localhost:%d/', server.address().port);
