@@ -212,6 +212,7 @@
         var jsonmsg=req.body;
         //console.log(jsonmsg);
         sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
+        res.send(req.body);
     });
 
 
