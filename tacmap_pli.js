@@ -135,6 +135,10 @@
         });
     });
     var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+    if(argv.publicssl) {
+        server_port=55555;
+    }
+    var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
     var server = app.listen(argv.port, argv.public ? undefined : server_ip_address, function() {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
