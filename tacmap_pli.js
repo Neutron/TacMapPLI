@@ -208,7 +208,7 @@
             });
         });
 
-    app.post('/msg/*',function(req,res){
+    app.post('/msg/*',cors(),function(req,res){
         var jsonmsg=req.body;
         //console.log(jsonmsg);
         sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
