@@ -23,7 +23,8 @@
     "socket.io": "1.4.x",
     "cesium": "1.x",
     "sweetalert2":"latest",
-    "yargs":"4.7.x"
+    "yargs":"4.7.x",
+    "cors":"2.7.x"
   },
   "author": "James Neushul",
   "bugs": {
