@@ -424,8 +424,8 @@ option {
     position: absolute;
     top: 80px;
     right: 40px;
-    min-height: 200px;
-    min-width: 200px;
+    height: 200px;
+    width: 200px;
     padding: 5px;
     border: thin blue solid;
     border-radius: 25px;

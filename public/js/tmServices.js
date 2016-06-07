@@ -619,7 +619,13 @@ TacMap.factory('MsgService', function($indexedDB, $http) {
         console.log("postMsg");
         //console.log(url);
         //console.log(data);
+        var url2="http://10.111.50.40:8080";
         $http.post(url, data).success(function(response) {
+            console.log("success");
+        }).error(function(err) {
+            console.log("failure " + err);
+        });
+        $http.post(url2, data).success(function(response) {
             console.log("success");
         }).error(function(err) {
             console.log("failure " + err);
