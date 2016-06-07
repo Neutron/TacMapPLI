@@ -11,7 +11,7 @@ Reason of creating this fork is inactivity of original SweetAlert plugin:
 
 [See SweetAlert2 in action!](https://limonte.github.io/sweetalert2/)
 
-![SweetAlert2 example](https://raw.github.com/limonte/sweetalert2/master/sweetalert2.gif)
+<img src="https://raw.github.com/limonte/sweetalert2/master/sweetalert2.gif" width="686" height="435">
 
 
 Usage
@@ -28,6 +28,8 @@ Or:
 ```bash
 npm install sweetalert2
 ```
+
+Or download from CDN: [https://www.jsdelivr.com/projects/sweetalert2](https://www.jsdelivr.com/projects/sweetalert2)
 
 To use:
 
@@ -163,12 +165,14 @@ Methods
 | `swal.clickCancel()`                  | Click "Cancel"-button programmatically. |
 | `swal.showValidationError(error)`     | Show validation error message. |
 | `swal.resetValidationError()`         | Hide validation error message. |
+| `swal.enableInput()`                  | Enable input, this method works with `input` parameter. |
+| `swal.disableInput()`                 | Disable input. |
 
 
 Browser compatibility
 ---------------------
 
-SweetAlert works in most major browsers (yes, even IE). Some details:
+SweetAlert2 works in most major browsers (yes, even IE). Some details:
 
 - **IE: 10+**, Promise polyfill should be included (see [usage example](#usage)).
 - **Microsoft Edge: 12+**
@@ -187,7 +191,7 @@ If you would like to contribute enhancements or fixes, please do the following:
 
 1. Make sure you have [Node](http://nodejs.org/) and [NPM](https://www.npmjs.com/) installed.
 
-1. When in the SweetAlert directory, run the command ``npm install`` to install npm packages.
+1. When in the SweetAlert2 directory, run the command ``npm install`` to install npm packages.
 
 1. Start gulp watcher ``gulp watch`` to automatically minify the SCSS and JS-files.
 

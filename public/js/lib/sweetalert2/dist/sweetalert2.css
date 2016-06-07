@@ -28,16 +28,16 @@
   .swal2-modal.loading {
     overflow-y: hidden; }
   .swal2-modal h2 {
-      color: #575757;
-      font-size: 30px;
-      text-align: center;
-      font-weight: 600;
-      text-transform: none;
-      position: relative;
-      margin: 0;
-      padding: 0;
-      line-height: 60px;
-      display: block; }
+    color: #575757;
+    font-size: 30px;
+    text-align: center;
+    font-weight: 600;
+    text-transform: none;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    line-height: 60px;
+    display: block; }
   .swal2-modal hr {
     height: 10px;
     color: transparent;
@@ -344,18 +344,22 @@
 @-webkit-keyframes hideSweetAlert {
   0% {
     -webkit-transform: scale(1);
-            transform: scale(1); }
+            transform: scale(1);
+    opacity: 1; }
   100% {
     -webkit-transform: scale(0.5);
-            transform: scale(0.5); } }
+            transform: scale(0.5);
+    opacity: 0; } }
 
 @keyframes hideSweetAlert {
   0% {
     -webkit-transform: scale(1);
-            transform: scale(1); }
+            transform: scale(1);
+    opacity: 1; }
   100% {
     -webkit-transform: scale(0.5);
-            transform: scale(0.5); } }
+            transform: scale(0.5);
+    opacity: 0; } }
 
 .show-swal2 {
   -webkit-animation: showSweetAlert 0.3s;
@@ -365,8 +369,8 @@
             animation: none; }
 
 .hide-swal2 {
-  -webkit-animation: hideSweetAlert 0.2s;
-          animation: hideSweetAlert 0.2s; }
+  -webkit-animation: hideSweetAlert 0.15s;
+          animation: hideSweetAlert 0.15s; }
   .hide-swal2.no-animation {
     -webkit-animation: none;
             animation: none; }
