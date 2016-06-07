@@ -25,6 +25,7 @@
     var fs = require('fs');
     var cesium = require('./geoserver/cesiumserver');
     //var http = require('http');
+    var cors = require('cors');
     var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
     var yargs = require('yargs').options({
         'port': {
@@ -51,11 +52,11 @@
     if (argv.help) {
         return yargs.showHelp();
     }
-
     var app = express();
     app.use(bodyParser.json());
     app.use(compression());
     app.use(express.static(__dirname + '/public'));
+    app.use(cors());
 
     function getRemoteUrlFromParam(req) {
         var remoteUrl = req.params[0];
@@ -209,7 +210,7 @@
 
     app.post('/msg/*',function(req,res){
         var jsonmsg=req.body;
-        console.log(jsonmsg);
+        //console.log(jsonmsg);
         sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
     });
 
