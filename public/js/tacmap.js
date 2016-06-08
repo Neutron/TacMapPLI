@@ -21,6 +21,7 @@ var storestructure = [
     ['Maps', 'name', true, [['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
     ['User', 'name', true, [['id', 'id', true], ['data', 'data', false]]]
 ];
+//Cesium.BingMapsApi.defaultKey = 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i';
 var viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
@@ -29,14 +30,14 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     baseLayerPicker: true,
     navigationHelpButton: false,
     navigationInstructionsInitiallyVisible: false,
-    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+/*    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-    }), 
-//    imageryProvider: new Cesium.BingMapsImageryProvider({
-//     url: '//dev.virtualearth.net',
-//     key: 'get-yours-at-https://www.bingmapsportal.com/',
-//     mapStyle: Cesium.BingMapsStyle.AERIAL
-//     }),
+    }), */
+    imageryProvider: new Cesium.BingMapsImageryProvider({
+     url: '//dev.virtualearth.net',
+     key: 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i',
+     mapStyle: Cesium.BingMapsStyle.AERIAL
+     }),
     /*imageryProvider: new Cesium.GoogleEarthImageryProvider({
      url: '//earth.localdomain',
      channel: 1008
