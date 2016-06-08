@@ -619,17 +619,17 @@ TacMap.factory('MsgService', function($indexedDB, $http) {
         console.log("postMsg");
         //console.log(url);
         //console.log(data);
-        var url2="http://10.111.50.40:8080"+url;
+        //var url2="http://10.111.50.40:8080"+url;
         $http.post(url, data).success(function(response) {
             console.log("success");
         }).error(function(err) {
             console.log("failure " + err);
         });
-        $http.post(url2, data).success(function(response) {
+       /* $http.post(url2, data).success(function(response) {
             console.log("success");
         }).error(function(err) {
             console.log("failure " + err);
-        });
+        });*/
     }
 
     msgsvc.mtfMsg = function() {
@@ -674,12 +674,13 @@ TacMap.factory('SocketService', function() {
             });
         });
     };
-    scktsvc.createNet = function(mapviewid, networkid) {
+    scktsvc.createNet = function(mapviewid, networkid,networkaddress) {
         console.log('createNet ' + mapviewid + ": " + networkid);
         if (typeof scktsvc.map_socket !== 'undefined') {
             scktsvc.map_socket.emit('create network', {
                 map_id: mapviewid,
-                network_id: networkid
+                network_id: networkid,
+                network_address: networkaddress,
             });
         }
     };

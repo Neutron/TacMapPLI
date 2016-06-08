@@ -785,12 +785,38 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     };
     //
     mapctl.getById = function(jobj, id) {
-        for (var x in jobj) {
-            if (jobj[x]._id === id) {
-                return jobj[x];
+            for (var x in jobj) {
+                if (jobj[x]._id === id) {
+                    return jobj[x];
+                }
             }
         }
-    }
+        //
+    mapctl.filterParentUnits = function(unit) {
+        var c = 0;
+        for (var u in mapctl.tracks) {
+            if (mapctl.tracks[u]._report_to === unit._id) {
+                c++;
+            }
+        }
+        if (c > 1) {
+            return true;
+        }
+        else {
+            return false;
+
+        }
+    };
+    mapctl.filterSubUnits = function(unit, unitid) {
+        if (unitid === unit._report_to) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
+
+
     SocketService.socket.on('load map', function(endpoint) {
         mapctl.ep = endpoint;
         mapctl.initUserMapView(endpoint.map_id);
@@ -937,37 +963,39 @@ TacMap.controller('messageCtl', function(GeoService, SocketService) {
     };
 });
 
-TacMap.directive('draggable', ['$document' , function($document) {
+TacMap.directive('draggable', ['$document', function($document) {
     return {
-      restrict: 'A',
-      link: function(scope, elm, attrs) {
-        var startX, startY, initialMouseX, initialMouseY;
-        elm.css({position: 'absolute'});
+        restrict: 'A',
+        link: function(scope, elm, attrs) {
+            var startX, startY, initialMouseX, initialMouseY;
+            elm.css({
+                position: 'absolute'
+            });
 
-        elm.bind('mousedown', function($event) {
-          startX = elm.prop('offsetLeft');
-          startY = elm.prop('offsetTop');
-          initialMouseX = $event.clientX;
-          initialMouseY = $event.clientY;
-          $document.bind('mousemove', mousemove);
-          $document.bind('mouseup', mouseup);
-          return false;
-        });
+            elm.bind('mousedown', function($event) {
+                startX = elm.prop('offsetLeft');
+                startY = elm.prop('offsetTop');
+                initialMouseX = $event.clientX;
+                initialMouseY = $event.clientY;
+                $document.bind('mousemove', mousemove);
+                $document.bind('mouseup', mouseup);
+                return false;
+            });
 
-        function mousemove($event) {
-          var dx = $event.clientX - initialMouseX;
-          var dy = $event.clientY - initialMouseY;
-          elm.css({
-            top:  startY + dy + 'px',
-            left: startX + dx + 'px'
-          });
-          return false;
+            function mousemove($event) {
+                var dx = $event.clientX - initialMouseX;
+                var dy = $event.clientY - initialMouseY;
+                elm.css({
+                    top: startY + dy + 'px',
+                    left: startX + dx + 'px'
+                });
+                return false;
+            }
+
+            function mouseup() {
+                $document.unbind('mousemove', mousemove);
+                $document.unbind('mouseup', mouseup);
+            }
         }
-
-        function mouseup() {
-          $document.unbind('mousemove', mousemove);
-          $document.unbind('mouseup', mouseup);
-        }
-      }
     };
-  }]);
+}]);

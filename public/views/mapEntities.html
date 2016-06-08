@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                          data-ng-click="mapctl.selectTrack(t, true)"
                          data-ng-class="{selected : mapctl.trackselected._id === t._id}">
                         <img class="dot" data-ng-src="img/tacicon.png">
-                        <div class="unitlabel">{{t._name}}</div> 
+                        <div class="unitlabel">{{t._name}} -- {{t._report_to}}</div> 
                     </div>
                 </div>
             </div>
