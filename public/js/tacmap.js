@@ -21,13 +21,13 @@ var storestructure = [
     ['Maps', 'name', true, [['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
     ['User', 'name', true, [['id', 'id', true], ['data', 'data', false]]]
 ];
-//Cesium.BingMapsApi.defaultKey = 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i';
+Cesium.BingMapsApi.defaultKey = 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i';
 var viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
     infoBox: false,
     selectionIndicator: true,
-    baseLayerPicker: true,
+    baseLayerPicker: false,
     navigationHelpButton: false,
     navigationInstructionsInitiallyVisible: false,
 /*    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
@@ -36,7 +36,7 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     imageryProvider: new Cesium.BingMapsImageryProvider({
      url: '//dev.virtualearth.net',
      key: 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i',
-     mapStyle: Cesium.BingMapsStyle.AERIAL
+     mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
      }),
     /*imageryProvider: new Cesium.GoogleEarthImageryProvider({
      url: '//earth.localdomain',
