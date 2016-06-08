@@ -16,15 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <div class="infobox" draggable="true">
-    <div class="info_title">INFO</div>
-    <div>Unit: {{mapctl.trackselected._name}}</div>
-    <div style="width:90%">
-        <div><img data-ng-src="{{mapctl.trackselected._icon}}" width="60px" class="ctr"></img>
-        </div>
-    </div>
+    <div class="info_title">{{mapctl.trackselected._name}}</div>
+     <img data-ng-src="{{mapctl.trackselected._icon}}" width="60px" class="ctr"></img>
+     </br>
+     <div class="info">
+    <div>Unit ID: {{mapctl.trackselected._id}}</div>
+    <div>Report To: {{mapctl.trackselected._report_to}}</div>
+    <div>Network: {{mapctl.trackselected._network}}</div>
+    </br>
     <div>
         <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0" />
         <span>Set Location</span>
     </div>
     <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
+    </div>
 </div>

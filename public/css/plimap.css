@@ -432,9 +432,12 @@ option {
     z-index: 1000;
     background-color: whitesmoke;
 }
+.info {
+    font-size:10px;
+}
 
 .info_title {
-    font-size: 14;
+    font-size: 14px;
     margin-bottom: 15px;
     font-weight: bold;
     text-align: center;
@@ -444,4 +447,12 @@ option {
     display: block;
     margin-left: auto;
     margin-right: auto;
+}
+
+.txtctr {
+    text-align: center;
+}
+
+.ident{
+    margin-left:10px;
 }

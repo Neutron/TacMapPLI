@@ -522,6 +522,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
             DbService.updateTrackDb(mapctl.mapid, entity._id, chg, function(mdata) {
                 mapctl.currmapData = mdata.data;
                 GeoService.sdatasources[mapctl.mapid].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
+                
                 MsgService.postMsg('/msg/', {
                     scktid: SocketService.scktid,
                     scktmsg: 'POSREP',
@@ -793,22 +794,19 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         }
         //
     mapctl.filterParentUnits = function(unit) {
-        var c = 0;
-        for (var u in mapctl.tracks) {
-            if (mapctl.tracks[u]._report_to === unit._id) {
-                c++;
-            }
-        }
-        if (c > 1) {
+        if (unit._report_to === unit._id) {
             return true;
         }
         else {
-            return false;
-
+            for (var u in mapctl.tracks) {
+                if (mapctl.tracks[u]._id === unit._report_to) {
+                    return false;
+                }
+            }
         }
     };
-    mapctl.filterSubUnits = function(unit, unitid) {
-        if (unitid === unit._report_to) {
+    mapctl.filterSubUnits = function(unitrpt, rptid) {
+        if (unitrpt === rptid) {
             return true;
         }
         else {

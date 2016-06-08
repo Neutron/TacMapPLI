@@ -20,43 +20,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <div class="accordion__tab-sub-subtitle" data-ng-click="vwctl.openTab('TRACKS')">TRACKS</div>
         <div class="accordion__tab-sub-subtitle" data-ng-show="vwctl.isOpenTab('TRACKS')">
             <div class="trcksect">
-                <div data-ng-repeat="t in mapctl.tracks track by $index">
-                    <div class="unitlisting" data-ng-model="mapctl.trackselected"
-                         data-ng-click="mapctl.selectTrack(t, true)"
-                         data-ng-class="{selected : mapctl.trackselected._id === t._id}">
+                <div data-ng-repeat="t in mapctl.tracks | filter:mapctl.filterParentUnits track by $index">
+                    <div class="unitlisting" data-ng-model="mapctl.trackselected" data-ng-click="mapctl.selectTrack(t, true)" data-ng-class="{selected : mapctl.trackselected._id ===t._id}">
                         <img class="dot" data-ng-src="img/tacicon.png">
-                        <div class="unitlabel">{{t._name}} -- {{t._report_to}}</div> 
+                        <div class="unitlabel">{{t._name}}</div>
+                    </div>
+                    <div data-ng-repeat="u in mapctl.tracks track by $index" class="ident">
+                        <div data-ng-if="u._report_to===t._id && u._id !==t._id" class="unitlisting" data-ng-model="mapctl.trackselected" data-ng-click="mapctl.selectTrack(u, true)" data-ng-class="{selected : mapctl.trackselected._id ===u._id}">
+                            <img class="dot" data-ng-src="img/tacicon.png">
+                            <div class="unitlabel">{{u._name}}</div>
+                        </div>
+                        <div data-ng-repeat="s in mapctl.tracks track by $index" class="ident">
+                            <div data-ng-if="s._report_to===u._id && s._id !==u._id" class="unitlisting" data-ng-model="mapctl.trackselected" data-ng-click="mapctl.selectTrack(s, true)" data-ng-class="{selected : mapctl.trackselected._id ===s._id}">
+                                <img class="dot" data-ng-src="img/tacicon.png">
+                                <div class="unitlabel">{{s._name}}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="trcks">
                 <button class="smbtn" ng-click="mapctl.newTrack(k,usrctl.endpoint.networkid,usrctl.endpoint.userid)">Add</button>
                 <div class="rtalgn">
-                    <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0"/>
-                    <span>Set Locations</span> 
-                </div>    
+                    <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0" />
+                    <span>Set Locations</span>
+                </div>
             </div>
-           <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
+            <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
         </div>
     </div>
     <div class="accordion__tab outline">
         <div class="accordion__tab-sub-subtitle" data-ng-click="vwctl.openTab('GEOFENCES')">GEOFENCES</div>
         <div class="accordion__tab-sub-subtitle" data-ng-show="vwctl.isOpenTab('GEOFENCES')">
             <div data-ng-repeat="fnce in mapctl.geofences track by $index">
-                <div class="unitlisting" 
-                     data-ng-model="mapctl.geofenceselected"
-                     data-ng-click="mapctl.selectGeoFence(fnce, true)"
-                     data-ng-class="{selected : mapctl.geofenceselected._id === fnce._id}">
+                <div class="unitlisting" data-ng-model="mapctl.geofenceselected" data-ng-click="mapctl.selectGeoFence(fnce, true)" data-ng-class="{selected : mapctl.geofenceselected._id === fnce._id}">
                     <div class="gflabel">{{fnce._name}}</div>
                 </div>
             </div>
             <div class="trcks">
                 <button class="smbtn" ng-click="mapctl.newGeofence(k)">Add</button>
                 <div class="rtalgn">
-                    <input data-ng-model="mapctl.editgeofencechecked" 
-                           data-ng-false-value="0" 
-                           data-ng-change="mapctl.editlocchecked = 0"
-                           type="checkbox" />
+                    <input data-ng-model="mapctl.editgeofencechecked" data-ng-false-value="0" data-ng-change="mapctl.editlocchecked = 0" type="checkbox" />
                     <span>Edit GeoFence</span>
                 </div>
             </div>
