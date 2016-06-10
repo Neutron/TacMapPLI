@@ -160,7 +160,7 @@ option {
 }
 
 .topspc {
-    margin-top: 5px;
+    margin-top: 4px;
 }
 
 .smbtn {
@@ -258,12 +258,12 @@ option {
 }
 
 .accordion__tab {
-    background: #aaa;
+    background: whitesmoke;
     color: #000;
     border-bottom: 1px solid white;
     font-size: 10px;
     font-weight: bold;
-    border-radius: 10px;
+    border-radius: 5px;
 }
 
 .accordion__subtab {
@@ -288,7 +288,7 @@ option {
 }
 
 .accordion__tab-sub-subtitle {
-    background: lightgoldenrodyellow;
+    background: whitesmoke;
     padding: 5px;
     margin: 1px;
     cursor: pointer;
@@ -356,6 +356,9 @@ option {
     padding-left: 2px;
     padding-bottom: 2px;
 }
+.netlisting{
+    border-bottom:thin solid black;
+}
 
 .newnet {
     width: 90px;
@@ -379,6 +382,7 @@ option {
     width: 100%;
     border-top: thin solid black;
     font-size: 10px;
+    cursor:pointer;
 }
 
 .bpad {
@@ -422,25 +426,33 @@ option {
 
 .infobox {
     position: absolute;
+    font-size: 12px;
     top: 80px;
     right: 40px;
-    height: 200px;
-    width: 200px;
-    padding: 5px;
+    min-height: 210px;
+    width: 220px;
     border: thin blue solid;
-    border-radius: 25px;
-    z-index: 1000;
+    border-radius: 20px;
+    z-index: 10;
+    padding:5px;
     background-color: whitesmoke;
 }
+
 .info {
-    font-size:10px;
+    font-size:12px;
 }
 
 .info_title {
     font-size: 14px;
-    margin-bottom: 15px;
+    min-height:25px;
+    width:95%;
     font-weight: bold;
     text-align: center;
+    border-radius: 25px;
+    padding-top:5px;
+    margin-right:5px;
+    z-index:20;
+    background-color:#CE6;
 }
 
 .ctr {
@@ -450,9 +462,98 @@ option {
 }
 
 .txtctr {
+    width:100%;
     text-align: center;
+}
+
+.txtrt {
+    text-align: right;
 }
 
 .ident{
     margin-left:10px;
+}
+
+.ident2{
+    margin-left:50px;
+}
+
+.btn1 {
+    font-weight:bold;
+    font-size: 10px;
+    background-color:whitesmoke;
+    min-width: 60px;
+    color:blue;
+}
+.md-button.md-raised {
+    color:blue;
+}
+
+.loc{
+    font-size:12px; 
+    text-align:center; 
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+.expnd{
+    padding:3px;
+}
+
+.clpsible{
+    float:left;
+}
+
+.editunit{
+    display:block;
+    margin-top:10px;
+    border:thin black solid;
+    padding:10px;
+}
+
+.md-block{
+    margin:2px 0;
+    font-size:12px;
+}
+.md-caption{
+    font-size:10px;
+}
+
+.lcol{
+    width:62px;
+    margin-right:4px;
+    float:left;
+    text-align:right;
+}
+
+.rcol{
+    width:120px;
+    float:left;
+}
+.col{
+    width:100%;
+    float:left;
+    padding-bottom:10px;
+}
+
+.lftbtn{
+    display: block;
+    float:left;
+    margin-right:40px;
+}
+
+.rtbtn{
+    display: block;
+    float:left;
+}
+
+.bline{
+    border-bottom:solid thin black;
+}
+.lftline{
+    border-left:solid thin black;
+}
+
+input{
+    max-width:132px;
 }

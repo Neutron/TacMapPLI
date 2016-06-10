@@ -15,19 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<div class="infobox" draggable="true">
-    <div class="info_title">{{mapctl.trackselected._name}}</div>
-     <img data-ng-src="{{mapctl.trackselected._icon}}" width="60px" class="ctr"></img>
-     </br>
-     <div class="info">
-    <div>Unit ID: {{mapctl.trackselected._id}}</div>
-    <div>Report To: {{mapctl.trackselected._report_to}}</div>
-    <div>Network: {{mapctl.trackselected._network}}</div>
-    </br>
-    <div>
-        <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0" />
-        <span>Set Location</span>
+<div id="info" class="infobox">
+    <div class="info_title noselect" draghandle>{{mapctl.trackselected._name}}</div>
+    <div class="noselect" style="margin-top:35px;">
+        <img data-ng-src="{{mapctl.trackselected._icon}}" class="ctr" width="60px"></img>
     </div>
-    <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
+    <div class="loc">{{mapctl.trackselected._location}}</div>
+    <div class="ident2" style="font-size:12px;">
+        <div>Unit ID: {{mapctl.trackselected._id}}</div>
+        <div>Echelon: {{mapctl.trackselected._echelon}}</div>
+        <div>Report To: {{mapctl.trackselected._report_to}}</div>
+        <div>Network: {{mapctl.trackselected._network}}</div>
     </div>
+    <div class="noselect" data-ng-hide="mapctl.editunit" style="width:60%; float:left">
+        <div style="margin-top:5px;">
+            <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0">Set Location</input>
+        </div>
+        <div class="txtctr" data-ng-show="mapctl.editlocchecked">Right Click on Map</div>
+    </div>
+    <button class="smbtn btn1 rtalgn" data-ng-hide="mapctl.editunit" ng-click="mapctl.editUnit();"> EDIT </button>
+     <div data-ng-include="vwctl.editbox"></div>
 </div>

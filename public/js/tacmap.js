@@ -53,7 +53,6 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     geocoder: false
 });
 var scene = viewer.scene;
-var xj = new X2JS();
 var TacMap = angular.module("TacMap", ["indexedDB"]);
 var msgLog = "views/msgLog.html";
 var mapStore = "views/mapStore.html";
@@ -64,13 +63,13 @@ var userdata=[];
 TacMap.config(function ($indexedDBProvider) {
     $indexedDBProvider.connection(databasename).upgradeDatabase(1, function (event, db, tx) {
         console.log("initDb");
-        for (i = 0; i < storestructure.length; i++) {
+        for (var i = 0; i < storestructure.length; i++) {
             //console.log("add store " + storestructure[i][0] + " key:" + storestructure[i][1] + " autoinc:" + storestructure[i][2]);
             var objectStore = db.createObjectStore(storestructure[i][0], {
                 keyPath: storestructure[i][1], autoIncrement: storestructure[i][2]
             });
             var indices = storestructure[i][3];
-            for (j = 0; j < indices.length; j++) {
+            for (var j = 0; j < indices.length; j++) {
                 //console.log("add index " + indices[j][0] + " ref:" + indices[j][1] + " unique:" + indices[j][2]);
                 objectStore.createIndex(indices[j][0], indices[j][1], {
                     unique: indices[j][2]

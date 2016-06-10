@@ -181,8 +181,8 @@
     app.get('/', function(req, res) {
         res.sendFile(__dirname + '/public/geoview.html');
     });
-    app.get('node_modules/*', function(req, res) {
-        res.sendFile(__dirname + '/node_modules/' + req.url);
+    app.get('/node_modules/*', function(req, res) {
+        res.sendFile(__dirname + '/' + req.url);
     });
     app.get('/json/*', function(req, res) {
         res.sendFile(__dirname + '/' + req.url);

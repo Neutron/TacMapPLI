@@ -625,11 +625,11 @@ TacMap.factory('MsgService', function($indexedDB, $http) {
         }).error(function(err) {
             console.log("failure " + err);
         });
-       /* $http.post(url2, data).success(function(response) {
-            console.log("success");
-        }).error(function(err) {
-            console.log("failure " + err);
-        });*/
+        /* $http.post(url2, data).success(function(response) {
+             console.log("success");
+         }).error(function(err) {
+             console.log("failure " + err);
+         });*/
     }
 
     msgsvc.mtfMsg = function() {
@@ -674,7 +674,7 @@ TacMap.factory('SocketService', function() {
             });
         });
     };
-    scktsvc.createNet = function(mapviewid, networkid,networkaddress) {
+    scktsvc.createNet = function(mapviewid, networkid, networkaddress) {
         console.log('createNet ' + mapviewid + ": " + networkid);
         if (typeof scktsvc.map_socket !== 'undefined') {
             scktsvc.map_socket.emit('create network', {
@@ -762,7 +762,7 @@ TacMap.factory('SocketService', function() {
 });
 
 TacMap.factory('XSLService', function() {
-    var xslsvce={};
+    var xslsvce = {};
     xslsvce.saxonloaded = false;
     xslsvce.xslproc = [];
 
@@ -771,11 +771,11 @@ TacMap.factory('XSLService', function() {
         xslsvce.saxonloaded = true;
     };
 
-    xslsvce.initXSL=function(name, xsl) {
+    xslsvce.initXSL = function(name, xsl) {
         xslsvce.xslproc[name] = Saxon.newXSLT20Processor(Saxon.parseXML(xsl));
     }
 
-    xslsvce.doXSL=function(name, xmlsrc, params) {
+    xslsvce.doXSL = function(name, xmlsrc, params) {
         for (var p = 0; p < params.length; p++) {
             xslsvce.xslproc[name].setParameter(null, params[p].name, params[p].value);
         }

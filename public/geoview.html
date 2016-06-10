@@ -31,41 +31,69 @@
         <div data-ng-controller="viewCtl as vwctl">
             <div data-ng-controller="mapCtl as mapctl">
                 <div id="infoCol" class="noselect">
-                    <div class="maptitle">{{mapctl.mapname}}</div>
                     <div class="accordion__container outline">
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('user')">USER PROFILE</div>
+                            <div class="accordion__tab-subtitle" data-ng-click="vwctl.openTab('user')">USER PROFILE</div>
                             <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('user')">
                                 <div data-ng-include="vwctl.userProfile"></div>
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('views')">MAPS</div>
-                            <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('views')">
-                                <div data-ng-repeat="(k,m) in mapctl.maplist">
-                                    <div class="accordion__subtab outline">
-                                        <div class="accordion__tab-subtitle" data-ng-click="mapctl.selMapVw(k, m, vwctl)" data-ng-model="mapctl.mselected" data-ng-class="{selected : mapctl.mapSelected(k)}">{{k}}</div>
-                                        <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab(k)">
-                                            <div data-ng-include="vwctl.mapentities" data-ng-show="mapctl.mapSelected(k)"></div>
+                            <div class="accordion__tab-subtitle" data-ng-click="vwctl.openTab('nets')">NETWORKS</div>
+                            <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('nets')">
+                                <div data-ng-include="vwctl.networks"></div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-sub-subtitle" data-ng-click="vwctl.openTab('units')">UNITS</div>
+                            <div data-ng-show="vwctl.isOpenTab('units')">
+                                <div class="trcksect">
+                                    <div data-ng-include="vwctl.tree"></div>
+                                    <div class="trcks">
+                                        <button class="smbtn" ng-click="mapctl.newTrack(k,usrctl.endpoint.networkid,usrctl.endpoint.userid)">Add</button>
+                                        <div class="rtalgn">
+                                            <input data-ng-model="mapctl.editlocchecked" data-ng-false-value="0" type="checkbox" data-ng-change="mapctl.editgeofencechecked = 0" />
+                                            <span>Set Locations</span>
+                                        </div>
+                                    </div>
+                                    <div class="msect" data-ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion__tab">
+                            <div class="accordion__tab-sub-subtitle" data-ng-click="vwctl.openTab('GEOFENCES')">GEOFENCES</div>
+                            <div data-ng-show="vwctl.isOpenTab('GEOFENCES')">
+                                <div data-ng-repeat="fnce in mapctl.geofences track by $index">
+                                    <div class="unitlisting" data-ng-model="mapctl.geofenceselected" data-ng-click="mapctl.selectGeoFence(fnce, true)" data-ng-class="{selected : mapctl.geofenceselected._id === fnce._id}">
+                                        <div class="gflabel">{{fnce._name}}</div>
+                                    </div>
+                                </div>
+                                <div class="trcks">
+                                    <button class="smbtn" ng-click="mapctl.newGeofence(k)">Add</button>
+                                    <div class="rtalgn">
+                                        <input data-ng-model="mapctl.editgeofencechecked" data-ng-false-value="0" data-ng-change="mapctl.editlocchecked = 0" type="checkbox" />
+                                        <span>Edit GeoFence</span>
+                                    </div>
+                                </div>
+                                <div class="msect">
+                                    <div class="bpad" data-ng-show="mapctl.editgeofencechecked">
+                                        <div>Right Click to Set Points</div>
+                                        <div class="smbtngrp rtalgn" data-ng-show="mapctl.editgeofencechecked">
+                                            <button class="smbtn" data-ng-click="mapctl.removeGeoFencePoint()">del pt</button>
+                                            <button class="smbtn" data-ng-click="mapctl.removeAllGeoFencePoints()">del all</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('nets')">NETWORKS</div>
-                            <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('nets')">
-                                <div data-ng-include="vwctl.networks"></div>
-                            </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('maps')">SAVE / LOAD</div>
+                            <div class="accordion__tab-subtitle" data-ng-click="vwctl.openTab('maps')">SAVE / LOAD</div>
                             <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('maps')">
                                 <div data-ng-include="vwctl.mapStore"></div>
                             </div>
                         </div>
                         <div class="accordion__tab">
-                            <div class="accordion__tab-title" data-ng-click="vwctl.openTab('msgs')">MESSAGE LOG</div>
+                            <div class="accordion__tab-subtitle" data-ng-click="vwctl.openTab('msgs')">MESSAGE LOG</div>
                             <div class="accordion__tab-content" data-ng-show="vwctl.isOpenTab('msgs')">
                                 <div data-ng-include="vwctl.msgLog"></div>
                             </div>
@@ -79,15 +107,19 @@
         </div>
     </div>
     <div id="cesiumContainer"></div>
+    //
     <script src="js/lib/Saxonce/Saxonce.nocache.js"></script>
     <script src="socket.io/socket.io.js"></script>
-    <script src="js/lib/Cesium/Cesium.js"></script>
     <script src="js/lib/xml2json.min.js"></script>
-    <script src="js/lib/angular/angular.min.js"></script>
+    //
+    <script src="../node_modules/cesium/Build/Cesium/Cesium.js"></script>
+    <script src="../node_modules/angular/angular.min.js"></script>
+    //
     <script src="js/lib/compression/lz-string-1.3.3-min.js"></script>
     <script src="js/lib/compression/base64-string-v1.1.0.js"></script>
     <script src="js/lib/indexdb/angular-indexed-db.min.js"></script>
     <script src="js/lib/sweetalert2/dist/sweetalert2.min.js"></script>
+    //
     <script src="js/tacmap.js"></script>
     <script src="js/tmServices.js"></script>
     <script src="js/tmControllers.js"></script>

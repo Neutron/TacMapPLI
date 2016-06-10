@@ -23,15 +23,15 @@
         <span>User Name:  {{usrctl.endpoint.user_id}}</span>
         <input type="text"  data-ng-show="usrctl.editprofile" data-ng-model="usrctl.edituserid"/>
     </div>
-
-    <div class="topspc">
-        <span>Map View: {{usrctl.endpoint.map_id}}</span>
-        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.editmapviewid"/>
-    </div>
-    <div class="topspc">
+ <div class="topspc">
         <span>Network: {{usrctl.endpoint.network_id}}</span>
         <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.editnetworkid"/>
     </div>
+    <div class="topspc">
+        <span>Unit: {{usrctl.endpoint.map_id}}</span>
+        <input type="text" data-ng-show="usrctl.editprofile" data-ng-model="usrctl.editmapviewid"/>
+    </div>
+  
     <div class="rtalgn">
         <button class="smbtn" ng-click="usrctl.editProfile(usrctl.endpoint)" data-ng-hide="usrctl.editprofile">Edit</button>
         <button class="smbtn" ng-click="usrctl.cancelEdit()" data-ng-show="usrctl.editprofile">Cancel</button>

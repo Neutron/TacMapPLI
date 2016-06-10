@@ -15,9 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<div  data-ng-controller="netCtl as netctl">
-    <div ng-repeat="(ky,n) in netctl.networks[netctl.netsel]">
-        <input type="checkbox" data-ng-model="netctl.netsel[ky]" data-ng-change="netctl.joinNet(n)">{{ky}}
+<div>
+    <div ng-repeat="(ky,n) in mapctl.networks" class="netlisting">
+        <input type="checkbox" data-ng-model="mapctl.netsel[ky]" data-ng-change="mapctl.joinNet(n)">{{n._name}}
     </div>
     <div class="netlist">
         <button class="smbtn" data-ng-hide="netctl.netadd" data-ng-click="netctl.netadd = true">Add</button>
