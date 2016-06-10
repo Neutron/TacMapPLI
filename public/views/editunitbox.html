@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<div data-ng-show="mapctl.editunit">
+    <div class="col" class="editunit">
+        <div class="topspc txtctr" style="font-weight:bold;font-size;14px;">UNIT INFO</div>
+        <div class="lcol">
+            <div class="topspc">Unit ID:</div>
+            <div class="topspc">Unit Name:</div>
+            <div class="topspc">Report To:</div>
+            <div class="topspc">Network:</div>
+            <div class="topspc">Echelon:</div>
+        </div>
+        <div class="rcol">
+            <input type="text" data-ng-model="mapctl.editid"></input>
+            <input type="text" data-ng-model="mapctl.editname"></input>
+            <select data-ng-model="mapctl.editreport_to">
+                <option data-ng-repeat="t in mapctl.tracks track by $index" value="{{t._id}}">{{t._name}}</option>
+            </select>
+            <select data-ng-model="mapctl.editnetwork">
+                <option data-ng-repeat="n in mapctl.networks track by $index" value="{{n._name}}">{{n._name}}</option>
+            </select>
+            <select data-ng-model="mapctl.editechelon">
+                <option data-ng-repeat="e in mapctl.echelons track by $index" value="{{e}}">{{e}}</option>
+            </select>
+        </div>
+    </div>
+    <div class="col" class="editunit">
+        <div class="topspc txtctr" style="font-weight:bold;font-size;14px;">INFOSEC</div>
+        <div class="lcol bline" style="padding-right:25px;">Visibility</div>
+        <div class="rcol bline"><span style="margin-left:40px;">Value</span></div>
+        <div style="height:40px; margin-bottom:10px; padding-top:5px;">
+            <div data-ng-include="vwctl.infosec"></div>
+        </div>
+    </div>
+    <div style="padding-left:20px; padding-right:10px; margin-top:25px;">
+        <button class="smbtn btn1 lftbtn" ng-click="mapctl.cancelUnitEdit()">Cancel</button>
+        <button class="smbtn btn1 rtbtn" ng-click="mapctl.saveUnitEdit()">Save</button>
+    </div>
+</div>

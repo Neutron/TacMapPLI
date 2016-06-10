@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<md-dialog aria-label="New User">
+    <md-dialog-content>
+        <div class="topspc">
+            <div>User Name:
+                <input type="text" data-ng-model="usrctl.newuserid" />
+            </div>
+        </div>
+        <div class="topspc">
+            <div>Network:
+                 <md-select ng-model="usrctl.selunit" placeholder="Select Networks">
+                    <md-option ng-value="unit" ng-repeat="(k,v) in usrctl.nets()">{{ v._name }}</md-option>
+                </md-select>
+            </div>
+        </div>
+        <div class="topspc">
+            <div>Unit:
+                <md-select ng-model="usrctl.selnet" placeholder="Select Unit">
+                    <md-option ng-value="unit" ng-repeat="(k,v) in usrctl.units()">{{ v._name }}</md-option>
+                </md-select>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions>
+        <md-button ng-click="usrctl.doneDlg" class="md-primary">Register</md-button>
+    </md-dialog-actions>
+</md-dialog>

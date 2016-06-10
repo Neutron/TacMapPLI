@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Networks>
+    <Network id="nato" name="NATO" icon="img/NATO_Flag.png" netcon="NatoHq" address="localhost" port="8080"/>
+    <Network id="usa" name="USA" icon="img/USA_Flag.png" netcon="MeuArg" address="tacmap.neushul.net" port="80"/>
+    <Network id="can" name="CAN" icon="img/CAN_Flag.png" netcon="CanACoHq" address="10.111.50.40" port="8080"/>
+    <Network id="nld" name="NLD" icon="img/NLD_Flag.png" netcon="NldDCoHq" address="https://tacmappli-neusol.c9users.io" port="80"/>
+</Networks>

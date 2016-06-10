@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+
+<div data-ng-repeat="(k,v) in v track by $index" class="ident">
+    <div data-ng-if="v._name">
+         <span data-ng-show="mapctl.hasChildren(v) && !vwctl.isOpenTab(v._id)" data-ng-click="vwctl.openTab(v._id)">  +  </span>
+         <span data-ng-show="mapctl.hasChildren(v) && vwctl.isOpenTab(v._id)" data-ng-click="vwctl.openTab(v._id)">  -  </span>
+         <span data-ng-model="mapctl.trackselected" data-ng-click="mapctl.selectTrack(v, true)" data-ng-class="{selected : mapctl.trackselected._id ===v._id}">{{v._name}}</span>
+        <div class="accordion__tab">
+            <div data-ng-show="vwctl.isOpenTab(v._id)">
+                <div data-ng-include="vwctl.treenode"></div>
+            </div>
+        </div>
+    </div>
+</div>

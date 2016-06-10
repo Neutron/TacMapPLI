@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Resources>
+    <Resource id='networks' name="Networks" url="xml/Networks.xml"/>
+    <Resource id='units' name="Units" url="xml/Units.xml"/>
+    <Resource id='symbols' name="Symbols" url="xml/Symbols.xml"/>
+    <Resource id='defaultmap' name="Default Map" url="xml/DefaultMap.xml"/>
+    <Resource id='trapmap' name="TRAP" url="xml/TRAP.xml"/>
+</Resources>

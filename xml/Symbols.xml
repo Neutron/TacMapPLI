@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Symbols>
+    <Symbol name="bluedot" path="img/bluedot.png" />
+    <Symbol name="car" path="img/car.png" />
+    <Symbol name="tacicon" path="img/tacicon.png" />
+    <Symbol name="usflag" path="img/usflag.png" />
+    <Symbol name="marker" path="img/marker.png" />
+    <Symbol name="HQ" path="img/HQ.png" echelon="Battalion" />
+    <Symbol name="AMPHIB" path="img/AMPHIB.png" echelon="Battalion" />
+    <Symbol name="HELO" path="img/HELO.png" echelon="Team" />
+    <Symbol name="OP" path="img/OP.png" echelon="Team" />
+    <Symbol name="CO" path="img/CO.png" echelon="Company" />
+    <Symbol name="PLT" path="img/PLT.png" echelon="Platoon" />
+    <Symbol name="SQD" path="img/SQD.png" echelon="Squad" />
+    <Symbol name="SQD_MOT" path="img/SQD_MOT.png" echelon="Squad" />
+    <Symbol name="TM" path="img/TM.png" echelon="Team" />
+</Symbols>

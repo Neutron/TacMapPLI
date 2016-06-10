@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!--
+/** 
+ * Copyright (C) 2015 JD NEUSHUL
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+-->
+<div class="col">
+    <div style="width:80px; float:left; margin-left:5px;">
+        <select data-ng-model="mapctl.infosectype">
+            <option data-ng-repeat="t in mapctl.infosectypes track by $index" value="{{t}}">{{t}}</option>
+        </select>
+    </div>
+    <div style="width:100px; float:left; margin-left:8px;">
+        <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype===''">
+            <option value="Select Type">Select Type</option>
+        </select>
+        <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='Echelon'">
+            <option data-ng-repeat="e in mapctl.echelons track by $index" value="{{e}}">{{e}}</option>
+        </select>
+        <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='Unit'">
+            <option data-ng-repeat="t in mapctl.tracks track by $index" value="{{t._id}}">{{t._name}}</option>
+        </select>
+        <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='Network'">
+            <option data-ng-repeat="n in mapctl.networks track by $index" value="{{n._id}}">{{n._name}}</option>
+        </select>
+        <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='GeoFence'">
+            <option data-ng-repeat="g in mapctl.geofences track by $index" value="{{g._id}}">{{g._name}}</option>
+        </select>
+    </div>
+    <button class="smbtn" style="float:left; margin-left:3px;" ng-click="mapctl.addInfoSecParam()">Add</button>
+</div>

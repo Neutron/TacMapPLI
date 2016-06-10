@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<md-dialog aria-label="Select User">
+    <md-dialog-content>
+        <div class="topspc md-title" data-ng-controller="userCtl as usrctl">
+            <div>User Name:
+                <md-select data-ng-model="usrctl.seluser" md-on-open="usrctl.getUsers()" placeholder="Select User" >
+                     <md-option data-ng-value="user" data-ng-repeat="u in userctl.users">{{u}}</md-option>
+                </md-select>
+            </div>
+        </div>
+    </md-dialog-content>
+    <md-dialog-actions>
+        <md-button ng-click="usrctl.doneDlg" class="md-primary">Login</md-button>
+    </md-dialog-actions>
+</md-dialog>
