@@ -25,6 +25,131 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     dbsvc.xj = new X2JS();
     dbsvc.dB = $indexedDB;
     dbsvc.map = [];
+    //
+    dbsvc.loadResources = function(callback) {
+        console.log("loadResources");
+        dbsvc.dB.openStore('Resources', function(mstore) {
+            mstore.getAllKeys().then(function(keys) {
+                if (keys.indexOf('resources.json') === -1) {
+                    $http.get('xml/resources.xml').success(function(resdata, status, headers) {
+                        var resrcs = dbsvc.xj.xml_str2json(resdata);
+                        dbsvc.dB.openStore('Resources', function(mstore) {
+                            mstore.upsert({
+                                id: 'resources',
+                                name: 'resources.json',
+                                url: "json/resources.json",
+                                data: resrcs
+                            }).then($http.put('json/resources.json'));
+                            for (var i = 0; i < resrcs.Resources.Resource.length; i++) {
+                                dbsvc.loadResource(resrcs.Resources.Resource[i], function(data) {
+                                   callback(data);
+                                });
+                            }
+                        });
+                    });
+                }
+                else {
+                    mstore.find('resources.json').then(function(resrcs) {
+                        for (var i = 0; i < resrcs.data.Resources.Resource.length; i++) {
+                            dbsvc.loadResource(resrcs.data.Resources.Resource[i], function(data) {
+                                callback(data);
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    };
+    dbsvc.loadResource = function(rscrc, callback) {
+        console.log("loadResource");
+        var id = rscrc._id;
+        var u = rscrc._url;
+        var n = rscrc._name;
+        $http.get(u).success(function(resdata, status, headers) {
+            var mod = headers()['last-modified'];
+            if (u.substring(u.indexOf('.')) === '.json') {
+                dbsvc.openStore('Resources', function(mstore) {
+                    mstore.upsert({
+                        id: id,
+                        name: n,
+                        url: u,
+                        lastmod: mod,
+                        data: resdata
+                    }).then(function() {
+                        callback(resdata);
+                    });
+                });
+            }
+            else if (u.substring(u.indexOf('.')) === '.xml') {
+                var jdata = dbsvc.xj.xml_str2json(resdata);
+                var jname = n.replace(' ', '').toLowerCase();
+                dbsvc.dB.openStore('Resources', function(mstore) {
+                    mstore.upsert({
+                        id: id,
+                        name: n,
+                        url: 'json/' + jname + '.json',
+                        lastmod: mod,
+                        data: jdata
+                    }).then(function() {
+                        callback(jdata);
+                    });
+                });
+            };
+        });
+    };
+    // Loads latest version of file or updates server based on last modified 
+    dbsvc.syncFile = function(storename, url, callback) {
+            var filename = url.substring(url.lastIndexOf('/') + 1);
+            $http.get(url).success(function(resdata, status, headers) {
+                var mod = headers()['last-modified'];
+                dbsvc.dB.openStore(storename, function(store) {
+                    store.getAllKeys().then(function(keys) {
+                        if (keys.indexOf(filename) === -1) {
+                            store.upsert({
+                                name: filename,
+                                url: url,
+                                lastmod: mod,
+                                data: resdata
+                            });
+                            callback(resdata);
+                        }
+                        else {
+                            store.find(filename).then(function(dbrec) {
+                                if (dbrec.lastmod !== mod) {
+                                    console.log('upsert ' + filename);
+                                    store.upsert({
+                                        name: filename,
+                                        url: url,
+                                        lastmod: mod,
+                                        data: dbrec.data
+                                    }).then(function() {
+                                        if (typeof url !== 'undefined') {
+                                            $http.put(url, dbrec.data);
+                                        }
+                                    });
+                                    callback(dbrec.data);
+                                }
+                                else {
+                                    callback(resdata);
+                                }
+                            });
+
+                        }
+                    });
+                });
+            }).error(function() {
+                console.log('Error getting resource');
+            });
+        }
+        //
+    dbsvc.sortByKey = function(array, key) {
+        return array.sort(function(a, b) {
+            var x = a[key];
+            var y = b[key];
+            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+        });
+    };
+    //
     dbsvc.updateEntityDb = function(mapname, entityId, fieldname, value) {
         //console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
         dbsvc.dB.openStore("Maps", function(store) {
@@ -132,10 +257,8 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         console.log('getRecord ' + recordname);
         dbsvc.dB.openStore(storename, function(mstore) {
             mstore.getAllKeys().then(function(keys) {
-                //                console.log(keys);
                 if (keys.indexOf(recordname) !== -1) {
                     mstore.find(recordname).then(function(rec) {
-                        //                       console.log(rec);
                         callback(rec);
                     });
                 }
@@ -153,15 +276,17 @@ TacMap.factory('DbService', function($indexedDB, $http) {
             });
         });
     };
-    dbsvc.updateRecord = function(storename, recordname, recdata, callback) {
+    dbsvc.updateRecord = function(storename, recordid, recdata, callback) {
         dbsvc.dB.openStore(storename, function(mstore) {
             mstore.upsert({
-                name: recordname,
+                id: recordid,
+                name:recdata._name,
                 data: recdata
             }).then(function() {
                 if (typeof callback !== 'undefined') {
                     callback({
-                        name: recordname,
+                        id: recordid,
+                        name:recdata._name,
                         data: recdata
                     });
                 }
@@ -185,49 +310,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
             });
         });
     };
-    dbsvc.syncResource = function(url, callback) {
-        var filename = url.substring(url.lastIndexOf('/') + 1);
-        $http.get(url).success(function(resdata, status, headers) {
-            var mod = headers()['last-modified'];
-            dbsvc.dB.openStore('Resources', function(store) {
-                store.getAllKeys().then(function(keys) {
-                    if (keys.indexOf(filename) === -1) {
-                        store.upsert({
-                            name: filename,
-                            url: url,
-                            lastmod: mod,
-                            data: resdata
-                        });
-                        callback(resdata);
-                    }
-                    else {
-                        store.find(filename).then(function(dbrec) {
-                            if (dbrec.lastmod !== mod) {
-                                console.log('upsert ' + filename);
-                                store.upsert({
-                                    name: filename,
-                                    url: url,
-                                    lastmod: mod,
-                                    data: dbrec.data
-                                }).then(function() {
-                                    if (typeof url !== 'undefined') {
-                                        $http.put(url, dbrec.data);
-                                    }
-                                });
-                                callback(dbrec.data);
-                            }
-                            else {
-                                callback(resdata);
-                            }
-                        });
 
-                    }
-                });
-            });
-        }).error(function() {
-            console.log('Error getting resource');
-        });
-    };
     //
     dbsvc.getUser = function(callback) {
         dbsvc.getRecord("User", "user", callback);
@@ -244,12 +327,12 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         //console.log("setUserMapData");
         dbsvc.dB.openStore('Maps', function(store) {
             store.upsert({
-                name: map_id,
+                id: map_id,
                 data: mapdata
             }).then(function() {
                 if (typeof(callback) !== "undefined") {
                     callback({
-                        map_id: map_id,
+                        id: map_id,
                         data: mapdata
                     });
                 };
@@ -652,13 +735,13 @@ TacMap.factory('SocketService', function() {
     //Initializes MapView as Namespace on SocketIO server
     //Connects to Namespace, and passes fucntion that notifies all that connected.
     scktsvc.initMapView = function(ep) {
-        console.log('initMapView ' + ep.map_id);
+        console.log('initMapView ' + ep.user_id);
         scktsvc.scktid = ep.socketid;
         scktsvc.socket.emit('join namespace', ep, function(endpoint) {
-            console.log('join namespace ' + endpoint.map_id);
-            scktsvc.map_socket = io.connect(window.location.host + '/' + endpoint.map_id);
+            console.log('join namespace ' + endpoint.user_id);
+            scktsvc.map_socket = io.connect(window.location.host + '/' + endpoint.user_id);
             scktsvc.map_socket.once('connect', function() {
-                console.log('joined namespace ' + endpoint.map_id);
+                console.log('joined namespace ' + endpoint.user_id);
                 scktsvc.socket.emit('initial connection', ep);
             });
         });
@@ -849,7 +932,7 @@ TacMap.factory('DlgBx', function($window, $q) {
             allowOutsideClick: false,
             input: 'select',
             inputOptions: list,
-            inputPlaceholder: 'Select User',
+            inputPlaceholder: 'Admin',
             showCancelButton: false,
             width: 300
         });

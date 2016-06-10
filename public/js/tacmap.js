@@ -17,9 +17,9 @@
 /* global Cesium, angular, stctl */
 var databasename = "tacmapDb";
 var storestructure = [
-    ['Resources', 'name', false, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['Maps', 'name', true, [['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['User', 'name', true, [['id', 'id', true], ['data', 'data', false]]]
+    ['Resources', 'id', true, [['name', 'name', true],['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
+    ['Maps', 'id', true, [['name', 'name', true],['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
+    ['User', 'id', true, [['name', 'name', true], ['data', 'data', false]]]
 ];
 Cesium.BingMapsApi.defaultKey = 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i';
 var viewer = new Cesium.Viewer('cesiumContainer', {

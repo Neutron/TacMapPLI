@@ -74,6 +74,7 @@ TacMap.controller('userCtl', function($scope, $http, DbService, GeoService, Sock
     usrctl.seluser = "";
     usrctl.selunit = {};
     usrctl.selnet = {};
+    usrctl.unitlist = [];
     usrctl.users = [];
     usrctl.map = "";
     //UI Views
@@ -196,6 +197,7 @@ TacMap.controller('userCtl', function($scope, $http, DbService, GeoService, Sock
         usrctl.editprofile = false;
     };
     usrctl.registerEndpoint = function(data) {
+        console.log("registerEndpoint");
         DbService.getKeys('User', function(kys) {
             if (kys === null) {
                 usrctl.newUnitUser(data);
@@ -207,23 +209,17 @@ TacMap.controller('userCtl', function($scope, $http, DbService, GeoService, Sock
                 }
                 usrctl.userlist["New Unit"] = "New Unit";
                 DlgBx.select("Select Unit View: ", "", usrctl.userlist).then(function(uname) {
-                    if (uname === "Select User") {
+                    if (uname === "New Unit") {
                         usrctl.newUser(data);
-                    }
-                    else if (uname === "New User") {
-                        usrctl.newUser(data);
-                    }
-                    else {
+                    } else {
+                        if (uname === "") {
+                            uname = "Admin";
+                        }
                         usrctl.endpoint = {
                             socketid: $scope.socketID,
-                            user_id: uname,
-                            network_id: uname + '-Net',
-                            map_id: uname + '-Map'
+                            user_id: uname
                         };
-
                         usrctl.endpoint.socketid = $scope.socketID;
-                        //console.log(usrctl.endpoint);
-                        //DbService.updateRecord('User', "user", usrctl.endpoint);
                         SocketService.initMapView(usrctl.endpoint);
                     }
                 });
@@ -250,59 +246,6 @@ TacMap.controller('userCtl', function($scope, $http, DbService, GeoService, Sock
         }
 
     }
-    usrctl.loadXMLResourceList = function() {
-        console.log("loadResourceList");
-        DbService.dB.openStore('Resources', function(mstore) {
-            mstore.getAllKeys().then(function(keys) {
-                if (keys.indexOf('resources.json') === -1) {
-                    $http.get('xml/resources.xml').success(function(resdata, status, headers) {
-                        var resrcs = DbService.xj.xml_str2json(resdata);
-                        DbService.dB.openStore('Resources', function(mstore) {
-                            mstore.upsert({
-                                name: 'resources.json',
-                                url: "json/resources.json",
-                                data: resrcs
-                            }).then($http.put('json/resources.json'));
-                            usrctl.loadXMLResources(resrcs.data);
-                        });
-                    });
-                }
-                else {
-                    mstore.find('resources.json').then(function(resrcs) {
-                        usrctl.loadXMLResources(resrcs.data);
-                    });
-                }
-            });
-        });
-    };
-    usrctl.loadXMLResources = function(rscrcs) {
-        console.log("loadResources");
-        for (var i = 0; i < rscrcs.Resources.Resource.length; i++) {
-            var u = rscrcs.Resources.Resource[i]._url;
-            var resurl = u;
-            var n = rscrcs.Resources.Resource[i]._name;
-            $http.get(u).success(function(jsondata, status, headers) {
-                var jsmod = headers()['last-modified'];
-                DbService.openStore('Resources', function(mstore) {
-                    mstore.upsert({
-                        name: n,
-                        url: u,
-                        lastmod: jsmod,
-                        data: jsondata
-                    });
-                    $http.post("/json/resources.json", angular.toJson(usrctl.sortByKey(usrctl.reslist, 'id')));
-                });
-            });
-        }
-    };
-    //Sorts list by key name 
-    usrctl.sortByKey = function(array, key) {
-        return array.sort(function(a, b) {
-            var x = a[key];
-            var y = b[key];
-            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-        });
-    };
     SocketService.socket.on('load map', function(ep) {
         // console.log(data);
         usrctl.endpoint = ep;
@@ -310,8 +253,15 @@ TacMap.controller('userCtl', function($scope, $http, DbService, GeoService, Sock
     SocketService.socket.on('connection', function(data) {
         $scope.socketID = data.socketid;
         console.log('user connect ' + $scope.socketID);
-        
-        usrctl.registerEndpoint(data);
+        DbService.loadResources(function(udata) {
+            if (typeof udata.Units !== "undefined") {
+                usrctl.unitlist = udata.Units.Unit;
+                for (var u in usrctl.unitlist) {
+                    DbService.updateRecord("User", usrctl.unitlist[u]._id, usrctl.unitlist[u]);
+                }
+                usrctl.registerEndpoint(data);
+            }
+        })
     });
     SocketService.socket.on('update endpoints', function(eplist) {
         console.log('update endpointlist');
@@ -362,7 +312,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     //*******************************************//
 
     //Copies current map assuming name already deconflicted
-    mapctl.copyMapView = function(currentmap, newmapid) {
+    mapctl.saveMap = function(currentmap, newmapid) {
         console.log("Copy " + currentmap + " to " + newmapid);
         DbService.dB.openStore("Maps", function(store) {
             store.find(currentmap).then(function(map) {
@@ -379,178 +329,40 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
             });
         });
     };
-    //Loads map data from IndexedDB and calls GeoService to initialize Cesium View
-    mapctl.loadMapView = function(mapname) {
-        console.log("loadMapView " + mapname);
-        viewer.dataSources.remove(GeoService.sdatasources[mapctl.currentMap]);
-        DbService.dB.openStore("Maps", function(store) {
-            store.find(mapname).then(function(sc) {
-                if (typeof sc.data !== 'undefined') {
-                    mapctl.currmapData = sc.data;
-                    DbService.updateMapData(mapctl.currentMap, mapctl.currmapData, function(mdta) {
-                        mapctl.mapname = mdta.map_id;
-                        GeoService.initGeodesy(mapctl.map_id, mdta.data, mapctl.syncTracks);
+    //Loads map.  If Not in Maps store, initializes from Resources.
+    mapctl.loadMap = function(mapname) {
+        console.log("loadMap " + mapname);
+        DbService.getRecord("Maps",mapname, function(jdata) {
+            if (jdata === null) {
+                DbService.getRecord("Resources", "defaultmap", function(jdata) {
+                    //console.log(jdata);
+                    mapctl.currmap = mapname;
+                    mapctl.currmapData = jdata.data;
+                    mapctl.currmapData.id=mapname;
+                    mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
+                    mapctl.networks = mapctl.currmapData.Map.Networks.Network;
+                    mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
+                    DbService.updateMapData(mapname, mapctl.currmapData, function(mdta) {
+                        mapctl.maplist[mapname] = mapctl.currmapData;
+                        GeoService.initGeodesy(mapname, mdta.data, mapctl.syncTracks);
                     });
-                }
-            });
-        });
-        mapctl.currentMap = mapname;
-    };
-    //Loads XML defined maps from node.js server, checks if indexedDB storage is current and
-    //updates if necessary
-    mapctl.initUserMapView = function(mapid) {
-        console.log("initUserMapView");
-        mapctl.currentMap = mapid;
-        DbService.getMapData(mapctl.currentMap, function(umapdata) {
-            if (umapdata === null) {
-                console.log("Using Default Map");
-                mapctl.loadDefaultMap(mapctl.currentMap);
+                })
             }
             else {
-                //console.log(umapdata);
-                mapctl.currmapData = umapdata.data;
+                mapctl.currmapData = mapname;
+                mapctl.currmapData = jdata;
                 mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
-                mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                 mapctl.networks = mapctl.currmapData.Map.Networks.Network;
-                mapctl.maplist[mapctl.currentMap] = mapctl.currmapData;
-                GeoService.initGeodesy(mapctl.currentMap, mapctl.currmapData, mapctl.syncTracks);
-            }
-        });
-    };
-    mapctl.loadDefaultMap = function() {
-        console.log("loadDefaultMap");
-        DbService.dB.openStore('Resources', function(mstore) {
-            mstore.getAllKeys().then(function(keys) {
-                if (keys.indexOf('maps.json') === -1) {
-                    $http.get('xml/maps.xml').success(function(resdata, status, headers) {
-                        var maps = DbService.xj.xml_str2json(resdata);
-                        DbService.dB.openStore('Resources', function(mstore) {
-                            mstore.upsert({
-                                name: 'maps.json',
-                                url: "json/maps.json",
-                                data: maps
-                            }).then($http.put('json/maps.json'));
-                            mapctl.loadMaps(maps);
-                        });
-                    });
-                }
-                else {
-                    mstore.find('maps.json').then(function(maps) {
-                        mapctl.loadMaps(maps.data);
-                    });
-                }
-            });
-        });
-    };
-    mapctl.loadMaps = function(maps) {
-        console.log("loadMaps");
-        for (var i = 0; i < maps.Maps.Map.length; i++) {
-            var u = maps.Maps.Map[i]._url;
-            mapctl.mapurl = u;
-            console.log(u);
-            var n = maps.Maps.Map[i]._name;
-            if (u.substring(u.indexOf('.')) === '.xml') {
-                mapctl.syncMapData(maps.Maps.Map[i]._url, function(jdata) {
-                    if (jdata.Map._name === 'Default Map') {
-                        mapctl.currmapData = jdata.Map._name;
-                        mapctl.currmapData = jdata;
-                        mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
-                        mapctl.networks = mapctl.currmapData.Map.Networks.Network;
-                        mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
-                        DbService.updateMapData(mapctl.currentMap, mapctl.currmapData, function(mdta) {
-                            mapctl.maplist[mapctl.currentMap] = mapctl.currmapData;
-                            GeoService.initGeodesy(mdta.map_id, mdta.data, mapctl.syncTracks);
-                        });
-                    }
-                    else {
-                        DbService.updateMapData(jdata.Map._name, jdata.Map);
-                    }
-                });
-            }
-            else {
-                $http.get(u).success(function(jsondata, status, headers) {
-                    var jsmod = headers()['last-modified'];
-                    mapctl.currmapData = jsondata;
-                    mapctl.dB.openStore('Maps', function(mstore) {
-                        mstore.upsert({
-                            name: n,
-                            url: u,
-                            lastmod: jsmod,
-                            data: jsondata
-                        });
-                        $http.post("/json/maps.json", angular.toJson(mapctl.sortByKey(mapctl.maplist, 'id')));
-                        DbService.updateMapData(mapctl.currentMap, mapctl.currmapData);
-                    });
-                });
-            }
-        }
-    };
-    mapctl.loadUserMap = function(mapid) {
-        DbService.getMapData(mapid, function(mdata) {
-            if (typeof(mdata) !== 'undefined') {
-                mapctl.currentMap = mdata._name;
-                mapctl.currmapData = mdata.data;
-                mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
                 mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
-                mapctl.networks = mapctl.currmapData.Map.Networks.Network;
-                console.log(mapctl.tracks);
-                mapctl.maplist[mapctl.currentMap] = mapctl.currmapData;
-                GeoService.initGeodesy(mapctl.currentMap, mapctl.currmapData, mapctl.syncTracks);
+                GeoService.initGeodesy(mapname, jdata, mapctl.syncTracks);
             }
         });
+
     };
+    //Puiblish Tracks to SocketIO
     mapctl.syncTracks = function(mapdta) {
         console.log("syncTracks");
         SocketService.syncTracks(mapdta.Map.Tracks.Track);
-    };
-    //Compares last modified dates between server file and indexedDb file
-    //updates indexeDB and passes current data to callback function
-    mapctl.syncMapData = function(url, callback) {
-        //console.log("syncResource " + mapid);
-        $http.get(url).success(function(resdata, status, headers) {
-            var mod = headers()['last-modified'];
-            var filename = url.substring(url.lastIndexOf('/') + 1);
-            var jdata = DbService.xj.xml_str2json(resdata);
-            var mname = jdata.Map._name;
-            var jname = mname.replace(' ', '').toLowerCase();
-            DbService.dB.openStore('Maps', function(mstore) {
-                mstore.upsert({
-                    name: mname,
-                    url: 'json/' + jname + '.json',
-                    lastmod: mod,
-                    data: jdata
-                }).then(function() {
-                    DbService.dB.openStore('Resources', function(store) {
-                        store.getAllKeys().then(function(keys) {
-                            if (keys.indexOf(filename) === -1) {
-                                store.upsert({
-                                    name: filename,
-                                    url: url,
-                                    lastmod: mod,
-                                    data: resdata
-                                });
-                            }
-                            else {
-                                store.find(filename).then(function(dbrec) {
-                                    if (dbrec.lastmod !== mod) {
-                                        console.log('upsert ' + filename);
-                                        store.upsert({
-                                            name: filename,
-                                            url: url,
-                                            lastmod: mod,
-                                            data: resdata
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                        callback(jdata);
-                    });
-                });
-            });
-        }).error(function() {
-            console.log('Error getting resource');
-        });
     };
     //Deletes data stores in Browser IndexedDB
     mapctl.clearDb = function() {
@@ -989,6 +801,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         mapctl.editunit = true;
         mapctl.editid = mapctl.trackselected._id;
         mapctl.editname = mapctl.trackselected._name;
+        mapctl.editechelon = mapctl.trackselected._echelon;
         mapctl.editreport_to = mapctl.trackselected._report_to;
         mapctl.editnetwork = mapctl.trackselected._network;
     }
@@ -999,6 +812,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         mapctl.editunit = false;
         mapctl.editid = "";
         mapctl.editname = "";
+        mapctl.editechelon ="";
         mapctl.editreport_to = "";
         mapctl.editnetwork = "";
     }
@@ -1037,7 +851,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     }
     SocketService.socket.on('load map', function(endpoint) {
         mapctl.ep = endpoint;
-        mapctl.initUserMapView(endpoint.map_id);
+        mapctl.loadMap(endpoint.user_id);
         SocketService.requestMaps();
     });
     SocketService.socket.on('update maps', function(maplist) {

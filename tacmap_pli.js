@@ -246,10 +246,10 @@
          * @param callback  
          * **/
         topsocket.on('join namespace', function(ep, callback) {
-            console.log("join namespace: " + ep.map_id);
-            sio.of('/' + ep.map_id)
+            console.log("join namespace: " + ep.user_id);
+            sio.of('/' + ep.user_id)
                 .once('connection', function(map_socket) {
-                    console.log('user connected to ' + ep.map_id);
+                    console.log('user connected to ' + ep.user_id);
                     socketOps(map_socket);
                 });
             callback(ep);
@@ -266,7 +266,7 @@
         // @todo Implement security to restrict/permit access to Map Views / Namespaces
 
         // Create a mapview
-        /** @param mapdata {map_id,name,data} **/
+        /** @param mapdata {user_id,name,data} **/
         topsocket.on('create map', function(mapdata) {
             console.log('create map');
             sio.of('/' + mapdata.id)
