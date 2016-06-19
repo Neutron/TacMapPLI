@@ -142,7 +142,7 @@
     var server = app.listen(server_port, argv.public ? undefined : server_ip_address, function() {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
-        }else if(argv.publicssl) {
+        } else if (argv.publicssl) {
             server.key=fs.readFileSync('key.pem');
             server.cert=fs.readFileSync('cert.pem');
             console.log('TacMap development server running publicly.  Connect to https://localhost:%d/', server.address().port);

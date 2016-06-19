@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "angular": "^1.5.6",
-    "angular-animate": "^1.5.6",
+    "font-awesome": "4.6.x",
     "body-parser": "^1.13.1",
     "cesium": "1.x",
     "cors": "2.7.x",

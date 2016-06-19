@@ -35,14 +35,13 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                         var resrcs = dbsvc.xj.xml_str2json(resdata);
                         dbsvc.dB.openStore('Resources', function(mstore) {
                             mstore.upsert({
-                                id: 'resources',
-                                name: 'resources.json',
+                                id: 'resources.json',
                                 url: "json/resources.json",
                                 data: resrcs
                             }).then($http.put('json/resources.json'));
                             for (var i = 0; i < resrcs.Resources.Resource.length; i++) {
                                 dbsvc.loadResource(resrcs.Resources.Resource[i], function(data) {
-                                   callback(data);
+                                    callback(data);
                                 });
                             }
                         });
@@ -64,14 +63,12 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         console.log("loadResource");
         var id = rscrc._id;
         var u = rscrc._url;
-        var n = rscrc._name;
         $http.get(u).success(function(resdata, status, headers) {
             var mod = headers()['last-modified'];
             if (u.substring(u.indexOf('.')) === '.json') {
                 dbsvc.openStore('Resources', function(mstore) {
                     mstore.upsert({
                         id: id,
-                        name: n,
                         url: u,
                         lastmod: mod,
                         data: resdata
@@ -82,11 +79,10 @@ TacMap.factory('DbService', function($indexedDB, $http) {
             }
             else if (u.substring(u.indexOf('.')) === '.xml') {
                 var jdata = dbsvc.xj.xml_str2json(resdata);
-                var jname = n.replace(' ', '').toLowerCase();
+                var jname = rscrc._name.replace(' ', '').toLowerCase();
                 dbsvc.dB.openStore('Resources', function(mstore) {
                     mstore.upsert({
                         id: id,
-                        name: n,
                         url: 'json/' + jname + '.json',
                         lastmod: mod,
                         data: jdata
@@ -106,7 +102,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                     store.getAllKeys().then(function(keys) {
                         if (keys.indexOf(filename) === -1) {
                             store.upsert({
-                                name: filename,
+                                id: filename,
                                 url: url,
                                 lastmod: mod,
                                 data: resdata
@@ -118,7 +114,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                                 if (dbrec.lastmod !== mod) {
                                     console.log('upsert ' + filename);
                                     store.upsert({
-                                        name: filename,
+                                        id: filename,
                                         url: url,
                                         lastmod: mod,
                                         data: dbrec.data
@@ -162,14 +158,14 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                 }
             }).then(function() {
                 store.upsert({
-                    name: mapname,
+                    id: mapname,
                     data: dbsvc.map
                 });
             });
         });
     };
     dbsvc.updateTrackDb = function(mapname, trackId, changes, callback) {
-        console.log('updateTrackDb');
+        console.log('updateTrackDb '+mapname);
         //  console.log(changes);
         dbsvc.dB.openStore("Maps", function(store) {
             store.find(mapname).then(function(map) {
@@ -182,20 +178,34 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                     }
                 }
             }).then(function() {
+                //console.log('upsert');
                 store.upsert({
-                    name: mapname,
+                    id: mapname,
                     data: dbsvc.map
-                }).then(function() {
-                    if (typeof(callback) != 'undefined') {
-                        callback({
-                            name: mapname,
-                            data: dbsvc.map
-                        });
-                    }
                 });
+                if (typeof(callback) != 'undefined') {
+                    callback({
+                        id: mapname,
+                        data: dbsvc.map
+                    });
+                }
             });
         });
     };
+    
+    dbsvc.getGeoFence=function(mapname,gid,callback){
+        dbsvc.dB.openStore("Maps", function(store) {
+            store.find(mapname).then(function(map) {
+                dbsvc.map = map.data;
+                for (var i = 0; i < dbsvc.map.Map.GeoFences.GeoFence.length; i++) {
+                    if (dbsvc.map.Map.GeoFences.GeoFence[i]._id === gid) {
+                        callback(dbsvc.map.Map.GeoFences.GeoFence[i]);
+                    }
+                }
+            });
+        });
+    };
+    
     dbsvc.updateGeoFenceDb = function(mapname, entityId, fieldname, value) {
         //console.log('updateDb ' + entityId + ' map name:' + mapname + ' fieldname:' + fieldname + ' value:' + value);
         dbsvc.dB.openStore("Maps", function(store) {
@@ -208,7 +218,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                 }
             }).then(function() {
                 store.upsert({
-                    name: mapname,
+                    id: mapname,
                     data: dbsvc.map
                 });
             });
@@ -226,7 +236,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     dbsvc.updateDbFile = function(storename, recordname, data, url, $http) {
         dbsvc.dB.openStore(storename, function(store) {
             store.upsert({
-                name: recordname,
+                id: recordname,
                 data: data,
                 url: url
             }).then(function() {
@@ -239,7 +249,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     dbsvc.updateMapFile = function(mapname, data, url) {
         dbsvc.dB.openStore('Maps', function(store) {
             store.upsert({
-                name: mapname,
+                id: mapname,
                 data: data,
                 url: url
             });
@@ -248,7 +258,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     dbsvc.updateMapView = function(mapname, data) {
         dbsvc.dB.openStore('Maps', function(store) {
             store.upsert({
-                name: mapname,
+                id: mapname,
                 data: data
             });
         });
@@ -271,7 +281,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     dbsvc.addRecord = function(storename, recordname, recdata) {
         dbsvc.dB.openStore(storename, function(mstore) {
             mstore.upsert({
-                name: recordname,
+                id: recordname,
                 data: recdata
             });
         });
@@ -280,13 +290,11 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         dbsvc.dB.openStore(storename, function(mstore) {
             mstore.upsert({
                 id: recordid,
-                name:recdata._name,
                 data: recdata
             }).then(function() {
                 if (typeof callback !== 'undefined') {
                     callback({
                         id: recordid,
-                        name:recdata._name,
                         data: recdata
                     });
                 }
@@ -305,7 +313,7 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     dbsvc.updateConnection = function(listname, newdata) {
         dbsvc.dB.openStore('User', function(mstore) {
             mstore.upsert({
-                name: listname,
+                id: listname,
                 data: newdata
             });
         });
@@ -323,16 +331,16 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         });
     };
 
-    dbsvc.updateMapData = function(map_id, mapdata, callback) {
+    dbsvc.updateMapData = function(map_name, mapdata, callback) {
         //console.log("setUserMapData");
         dbsvc.dB.openStore('Maps', function(store) {
             store.upsert({
-                id: map_id,
+                id: map_name,
                 data: mapdata
             }).then(function() {
                 if (typeof(callback) !== "undefined") {
                     callback({
-                        id: map_id,
+                        id: map_name,
                         data: mapdata
                     });
                 };
@@ -440,7 +448,7 @@ TacMap.factory('GeoService', function($indexedDB) {
         for (var i = 0; i < geofences.length; i++) {
             console.log(geofences[i]._id);
             if (geosvc.sdatasources[geosvc.mapid].entities.getById(geofences[i]._id)) {
-                geosvc.updateCesiumPolyline(geofences[i]);
+                geosvc.updateCesiumPolyline(geofences[i]._id,geofences[i]);
             }
             else {
                 //geosvc.addCesiumPoint(geofences[i], 'RED');
@@ -489,10 +497,12 @@ TacMap.factory('GeoService', function($indexedDB) {
 
     };
     geosvc.addCesiumPolyline = function(poly) {
+         console.log('addCesiumPolyline ' + poly._id);
         var loc = poly._points;
         if (!angular.isArray(loc)) {
             loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
         }
+        //console.log(loc);
         //Cartesian wants long, lat
         geosvc.sdatasources[geosvc.mapid].entities.add({
             id: poly._id,
@@ -504,16 +514,24 @@ TacMap.factory('GeoService', function($indexedDB) {
             }
         });
     };
-    geosvc.updateCesiumPolyline = function(poly) {
+
+    geosvc.updateCesiumPolyline = function(id,poly) {
+         console.log('updateCesiumPolyline ' + poly._id);
+        geosvc.sdatasources[geosvc.mapid].entities.removeById(id);
         var loc = poly._points;
         if (!angular.isArray(loc)) {
             loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
         }
-        //Cartesian wants long, lat
-        var pline = geosvc.sdatasources[geosvc.mapid].entities.getById(poly._id);
-        pline.name = poly._name,
-            pline.polyline.positions = Cesium.Cartesian3.fromDegreesArray(loc.reverse());
-        pline.polyline.material = Cesium.Color[poly._color];
+        //console.log(loc);
+       geosvc.sdatasources[geosvc.mapid].entities.add({
+            id: poly._id,
+            name: poly._name,
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArray(loc.reverse()),
+                width: 1,
+                material: Cesium.Color[poly._color]
+            }
+        });
     };
     geosvc.addCesiumBillboard = function(entity) {
         //console.log("Add billboard");
@@ -573,6 +591,11 @@ TacMap.factory('GeoService', function($indexedDB) {
         console.log("Add point " + geosvc.mapid + ", " + entity._id + ", " + entity._location);
         var loc = entity._location;
         //loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+        var e=geosvc.sdatasources[geosvc.mapid].entities.getById(entity._id);
+        if (typeof e !=="undefined"){
+           geosvc.sdatasources[geosvc.mapid].entities.removeById(entity._id);
+           geosvc.addCesiumPoint(entity, color);
+        }
         geosvc.sdatasources[geosvc.mapid].entities.add({
             id: entity._id,
             name: entity._name,
@@ -592,6 +615,7 @@ TacMap.factory('GeoService', function($indexedDB) {
                 pixelOffset: new Cesium.Cartesian2(0, 15)
             }
         });
+        
         if (entity.polypoints) {
             geosvc.addStoredWaypoints(entity);
         }
@@ -629,7 +653,7 @@ TacMap.factory('GeoService', function($indexedDB) {
         geosvc.compress(data, function(cmp) {
             geosvc.dB.openStore(storename, function(mstore) {
                 mstore.upsert({
-                    name: mapid,
+                    id: mapid,
                     data: cmp
                 });
             });
@@ -697,14 +721,16 @@ TacMap.factory('GeoService', function($indexedDB) {
 
 TacMap.factory('MsgService', function($indexedDB, $http) {
     var msgsvc = {};
-
+    //msgsvc.xj = new X2JS();
     msgsvc.postMsg = function(url, data) {
         console.log("postMsg");
         //console.log(url);
         //console.log(data);
         //var url2="http://10.111.50.40:8080"+url;
+       // var xmlAsStr = msgsvc.xj.json2xml_str(data);
+        console.log(data);
         $http.post(url, data).success(function(response) {
-            console.log("success");
+            console.log("Msg POST success");
         }).error(function(err) {
             console.log("failure " + err);
         });
@@ -714,11 +740,8 @@ TacMap.factory('MsgService', function($indexedDB, $http) {
              console.log("failure " + err);
          });*/
     }
-
     msgsvc.mtfMsg = function() {
-
     }
-
     return msgsvc;
 })
 

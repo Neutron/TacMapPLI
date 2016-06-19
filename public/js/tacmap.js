@@ -17,9 +17,9 @@
 /* global Cesium, angular, stctl */
 var databasename = "tacmapDb";
 var storestructure = [
-    ['Resources', 'id', true, [['name', 'name', true],['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['Maps', 'id', true, [['name', 'name', true],['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
-    ['User', 'id', true, [['name', 'name', true], ['data', 'data', false]]]
+    ['Resources', 'id', true, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
+    ['Maps', 'id', true, [['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
+    ['User', 'id', true, [['data', 'data', false]]]
 ];
 Cesium.BingMapsApi.defaultKey = 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i';
 var viewer = new Cesium.Viewer('cesiumContainer', {
@@ -33,11 +33,11 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
 /*    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
     }), */
-    imageryProvider: new Cesium.BingMapsImageryProvider({
+   /* imageryProvider: new Cesium.BingMapsImageryProvider({
      url: '//dev.virtualearth.net',
      key: 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i',
      mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
-     }),
+     }),*/
     /*imageryProvider: new Cesium.GoogleEarthImageryProvider({
      url: '//earth.localdomain',
      channel: 1008
@@ -46,9 +46,9 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     //        url: 'Cesium/Assets/Textures/NaturalEarthII'
     //   }),
     //OpenStreetMap tile provider
-    // imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-    //     url: '../tiles'
-    // }),
+     imageryProvider:Cesium.createOpenStreetMapImageryProvider({
+         url: '../MapTiles'
+     }),
     homeButton: false,
     geocoder: false
 });

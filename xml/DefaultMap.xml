@@ -26,10 +26,10 @@
             53.11789884266493,17.95156726642816" />
     </Polygons>
     <Networks>
-        <Network id="nato" name="NATO" icon="img/NATO_Flag.png" netcon="NatoHq" address="localhost" port="8080"/>
-        <Network id="usa" name="USA" icon="img/USA_Flag.png" netcon="MeuArg" address="tacmap.neushul.net" port="80"/>
-        <Network id="can" name="CAN" icon="img/CAN_Flag.png" netcon="CanACoHq" address="10.111.50.40" port="8080"/>
-        <Network id="nld" name="NLD" icon="img/NLD_Flag.png" netcon="NldDCoHq" address="https://tacmappli-neusol.c9users.io" port="80"/>
+        <Network id="nato" name="NATO" icon="img/NATO_Flag.png" netcon="NatoHq" address="localhost" port="8080" />
+        <Network id="usa" name="USA" icon="img/USA_Flag.png" netcon="MeuArg" address="tacmap.neushul.net" port="80" />
+        <Network id="can" name="CAN" icon="img/CAN_Flag.png" netcon="CanACoHq" address="10.111.50.40" port="8080" />
+        <Network id="nld" name="NLD" icon="img/NLD_Flag.png" netcon="NldDCoHq" address="https://tacmappli-neusol.c9users.io" port="80" />
     </Networks>
     <Entities>
         <Entity id="jdn" name="JDN" icon="img/bluedot.png" location="" />
@@ -37,10 +37,10 @@
     <Tracks>
         <Track id="NatoHq" name="NATO HQ" icon="img/10131000151211950000.png" location="53.1207350007867,17.97967700009256" network="NATO" report_to="NatoHq" echelon="Batallion" timestamp="1464776539349" />
         <Track id="MeuArg" name="MEU ARG" icon="img/10133000001100000002.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Batallion" timestamp="1464776539349" />
-        <Track id="Osprey1" name="Rescue 1" icon="img/10130100001102000802.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
-        <Track id="Osprey2" name="Rescue 2" icon="img/10130100001102000802.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
-        <Track id="Recon" name="Recon" icon="img/tacicon.png" location="53.11475848802662,17.91911251207748" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
-        <Track id="Pilot" name="HVI" icon="img/10131000001900000000.png" location="53.11475848802692,17.91911251207788" network="USA" report_to="MeuArg" echelon="Person" timestamp="1464776539349" />
+        <Track id="Rescue1" name="Rescue 1" icon="img/10130100001102000802.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
+        <Track id="Rescue2" name="Rescue 2" icon="img/10130100001102000802.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
+        <Track id="Recon" name="Recon" icon="img/tacicon.png" location="53.1177747692874,17.918276798506216" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
+        <Track id="HVI" name="HVI" icon="img/10131000001900000000.png" location="53.11475848802692,17.91911251207788" network="USA" report_to="MeuArg" echelon="Person" timestamp="1464776539349" />
         <Track id="CanACoHq" name="CAN A CO HQ" icon="img/10131000151211950000.png" location="53.09437284078162,17.99854506993847" network="CAN" report_to="NatoHq" echelon="Company" timestamp="1464776539349" />
         <Track id="Can-A-1" name="CAN A 1PLT HQ" icon="img/10131000141211000000.png" location="53.10041455085361,17.95499655870865" network="CAN" report_to="CanACoHq" echelon="Platoon" timestamp="1464776539349" />
         <Track id="Can-A-1-1" name="CAN A 1PLT 1SQ" icon="img/10131000121211000000.png" location="53.10041455085371,17.95499655870869" network="CAN" report_to="CanACoHq" echelon="Squad" timestamp="1464776539349" />
@@ -58,6 +58,12 @@
         53.168579906385,17.9651494664661,
         53.1752172765775,17.9819750880629,
         53.1963239131605,17.9912298182076,
-        53.1838422671039,17.9566562027535"/>
+        53.1838422671039,17.9566562027535" />
+        <GeoFence id="airfield" name="Airfield" location=" 53.09803709611088,17.949980131850854" points="53.09803709611088,17.949980131850854,
+        53.10618548971525,17.965161363027427,
+        53.10494407123093,18.00275145815212,
+        53.09401743237602,18.006007314206368,
+        53.09092237843391,17.951830899798196,
+        53.09803709611088,17.949980131850854"/>
     </GeoFences>
 </Map>

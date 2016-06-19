@@ -340,6 +340,7 @@ option {
 
 .smbtngrp {
     margin-left: 2px;
+    margin-bottom:4px;
 }
 
 .maplist {
@@ -506,7 +507,6 @@ option {
 
 .editunit{
     display:block;
-    margin-top:10px;
     border:thin black solid;
     padding:10px;
 }
@@ -533,7 +533,23 @@ option {
 .col{
     width:100%;
     float:left;
-    padding-bottom:10px;
+    font-size:10px;
+    margin-top:5px;
+    padding-bottom:5px;
+}
+.vizlist{
+  max-height:120px;
+  width:100%; 
+  font-size:12px;
+  font-weight:bold;
+  overflow-y: auto;
+  border-bottom:solid thin black;
+}
+.vizcol{
+    width:90%;
+    margin-left:10px;
+    float:left;
+    padding-bottom:2px;
 }
 
 .lftbtn{
@@ -544,7 +560,7 @@ option {
 
 .rtbtn{
     display: block;
-    float:left;
+    float:right;
 }
 
 .bline{
@@ -554,6 +570,14 @@ option {
     border-left:solid thin black;
 }
 
+
 input{
+    font-size:10px;
     max-width:132px;
+}
+select{
+    font-size:10px;
+}
+option{
+    font-size:10px;
 }

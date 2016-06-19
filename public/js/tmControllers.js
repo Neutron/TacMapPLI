@@ -30,6 +30,7 @@ TacMap.controller('viewCtl', function() {
     vwctl.treenode = "views/unitTreeNode.html";
     vwctl.infosec = "views/infosecForm.html";
     vwctl.editbox = "views/editunitbox.html";
+    vwctl.editgeofence = "views/geofence.html";
     //initiate an array to hold all active tabs
     vwctl.activeTabs = [];
     //check if the tab is active
@@ -211,7 +212,8 @@ TacMap.controller('userCtl', function($scope, $http, DbService, GeoService, Sock
                 DlgBx.select("Select Unit View: ", "", usrctl.userlist).then(function(uname) {
                     if (uname === "New Unit") {
                         usrctl.newUser(data);
-                    } else {
+                    }
+                    else {
                         if (uname === "") {
                             uname = "Admin";
                         }
@@ -279,9 +281,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     mapctl.currmapData = [];
     mapctl.maplist = {};
     mapctl.trackselected = null;
-    mapctl.geofenceselected = null;
     mapctl.mapurl = "";
-    mapctl.editgeofencechecked = false;
     mapctl.editlocchecked = false;
     mapctl.import = false;
     mapctl.polygons = [];
@@ -290,7 +290,6 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     mapctl.geofences = [];
     mapctl.networks = [];
     mapctl.maps = [];
-    mapctl.geofencelist = [];
     mapctl.loc = [];
     mapctl.mapid = "";
     mapctl.network = "";
@@ -307,8 +306,17 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     mapctl.editnetwork = "";
     mapctl.infosectypes = ['Unit', 'Echelon', 'Network', 'GeoFence'];
     mapctl.infosectype = "";
-    mapctl.echelons = ['Person', 'Team', 'Squad', 'Platoon', 'Company', 'Batalion', 'Regiment', 'Division', 'Force', 'All'];
+    mapctl.echelons = ['Person', 'Team', 'Squad', 'Platoon', 'Company', 'Batallion', 'Regiment', 'Division', 'Force', 'All'];
     mapctl.infosecval = "";
+    mapctl.newgeofence = false;
+    mapctl.geofencelist = [];
+    mapctl.editgeofence = false;
+    mapctl.editgeofencename = "";
+    mapctl.editgeofencepts = false;
+    mapctl.geofenceselected = null;
+    mapctl.geofencepts = [];
+    mapctl.unittracks = [];
+
     //*******************************************//
 
     //Copies current map assuming name already deconflicted
@@ -321,7 +329,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                 var newurl = u.substring(u.lastIndexOf('/') + 1) + newmapid;
                 DbService.dB.openStore("Maps", function(store) {
                     store.insert({
-                        name: newmapid,
+                        id: newmapid,
                         url: newurl,
                         data: map.data
                     });
@@ -330,34 +338,47 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         });
     };
     //Loads map.  If Not in Maps store, initializes from Resources.
-    mapctl.loadMap = function(mapname) {
-        console.log("loadMap " + mapname);
-        DbService.getRecord("Maps",mapname, function(jdata) {
+    mapctl.loadMap = function(userid) {
+        DbService.getRecord("Maps", userid, function(jdata) {
             if (jdata === null) {
+                console.log("loadMap defaultmap");
                 DbService.getRecord("Resources", "defaultmap", function(jdata) {
                     //console.log(jdata);
-                    mapctl.currmap = mapname;
+                    mapctl.currmap = userid;
                     mapctl.currmapData = jdata.data;
-                    mapctl.currmapData.id=mapname;
-                    mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
+                    mapctl.currmapData.id = userid;
+                    mapctl.getUnitTracks(userid);
+                    mapctl.tracks = mapctl.unittracks;
+                    mapctl.currmapData.Map.Tracks.Track = mapctl.tracks;
+                    //mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
                     mapctl.networks = mapctl.currmapData.Map.Networks.Network;
                     mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
-                    DbService.updateMapData(mapname, mapctl.currmapData, function(mdta) {
-                        mapctl.maplist[mapname] = mapctl.currmapData;
-                        GeoService.initGeodesy(mapname, mdta.data, mapctl.syncTracks);
+                    DbService.updateMapData(userid, mapctl.currmapData, function(mdta) {
+                        GeoService.initGeodesy(userid, mdta.data, mapctl.syncTracks);
                     });
                 })
             }
             else {
-                mapctl.currmapData = mapname;
-                mapctl.currmapData = jdata;
+                console.log("loadMap " + userid);
+                mapctl.currmap = userid;
+                mapctl.currmapData = jdata.data;
+                mapctl.currmapData.id = userid;
                 mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
                 mapctl.networks = mapctl.currmapData.Map.Networks.Network;
                 mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
-                GeoService.initGeodesy(mapname, jdata, mapctl.syncTracks);
+                GeoService.initGeodesy(userid, jdata.data, mapctl.syncTracks);
             }
         });
 
+    };
+
+    mapctl.getUnitTracks = function(trckid) {
+        var trck = mapctl.getById(mapctl.currmapData.Map.Tracks.Track, trckid);
+        for (var t in mapctl.currmapData.Map.Tracks.Track) {
+            if (mapctl.currmapData.Map.Tracks.Track[t]._network === trck._network) {
+                mapctl.unittracks.push(mapctl.currmapData.Map.Tracks.Track[t]);
+            }
+        }
     };
     //Puiblish Tracks to SocketIO
     mapctl.syncTracks = function(mapdta) {
@@ -383,15 +404,10 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     mapctl.lftClickHandler.setInputAction(function(mouse) {
         mapctl.mousepos = mouse.position;
         var pickedObject = scene.pick(mouse.position);
-        if (mapctl.editgeofencechecked && mapctl.geofenceselected !== null) {
-            var gf = mapctl.geofenceselected;
-            mapctl.addGeoFencePoint(gf, gf._points[0], gf._points[1]);
-            mapctl.updateGeoFences(gf);
-            mapctl.editgeofencechecked = false;
-            mapctl.geofenceselected = null;
-            // console.log(mapctl.geofences[mapctl.mapview]);
+        if (mapctl.editgeofence && mapctl.geofenceselected !== null) {
+            mapctl.addGeoFencePoint(mapctl.geofencepts[0], mapctl.geofencepts[1]);
         }
-        if (typeof pickedObject !== 'undefined') {
+        else if (typeof pickedObject !== 'undefined') {
             if (Cesium.defined(pickedObject) && pickedObject.id.billboard || pickedObject.id.ellipsoid || pickedObject.id.point) {
                 mapctl.selectTrack(pickedObject.id);
             }
@@ -424,13 +440,9 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
             var cartographic = ellipsoid.cartesianToCartographic(cartesian);
             mapctl.addTrack(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
         }
-        else if (mapctl.editgeofencechecked && cartesian && mapctl.geofenceselected === null) {
+        else if (mapctl.editgeofencepts && cartesian) {
             var cartographic = ellipsoid.cartesianToCartographic(cartesian);
-            mapctl.addGeoFence(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
-        }
-        else if (mapctl.editgeofencechecked && cartesian && mapctl.geofenceselected !== null) {
-            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
-            mapctl.addGeoFencePoint(mapctl.geofenceselected, Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
+            mapctl.addGeoFencePoint(Cesium.Math.toDegrees(cartographic.latitude), Cesium.Math.toDegrees(cartographic.longitude));
         }
     }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
     //
@@ -459,22 +471,24 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         return ([latitudeString, longitudeString]);
     };
     mapctl.setLocation = function(entity, lat, lng) {
+        //console.log(entity);
         mapctl.mapid = GeoService.mapid;
         if (typeof entity._id !== 'undefined') {
             var chg = [];
             chg['_location'] = lat + "," + lng;
             chg['_timestamp'] = Date.now();
             DbService.updateTrackDb(mapctl.mapid, entity._id, chg, function(mdata) {
+                //console.log(mdata);
                 mapctl.currmapData = mdata.data;
                 GeoService.sdatasources[mapctl.mapid].entities.getById(entity._id).position = Cesium.Cartesian3.fromDegrees(lng, lat);
-
                 MsgService.postMsg('/msg/', {
                     scktid: SocketService.scktid,
                     scktmsg: 'POSREP',
                     payload: {
                         unit_id: entity._id,
                         latitude: lat,
-                        longitude: lng
+                        longitude: lng,
+                        visibility:entity._visibility
                     }
                 });
             });
@@ -554,10 +568,10 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         mapctl.editunit = false;
         mapctl.mapid = GeoService.mapid;
         mapctl.trackselected = mapctl.getById(mapctl.tracks, unit._id);
-        //console.log(mapctl.trackselected);
+        // console.log(mapctl.trackselected);
         var tracksel = GeoService.sdatasources[mapctl.mapid].entities.getById(unit._id);
         // console.log(tracksel);
-        //DlgBx.alert("Track Selected");
+        // DlgBx.alert("Track Selected");
         mapctl.loc = mapctl.getLoc(tracksel);
         if (zoomto) {
             GeoService.sdatasources[GeoService.mapid].selectedEntity = tracksel;
@@ -573,122 +587,210 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
 
     };
     //
-    mapctl.newGeofence = function(mapid) {
-        console.log('new GeoFence in ' + mapid);
-        mapctl.mapview = mapid;
-        mapctl.editgeofencechecked = true;
-        mapctl.geofenceselected = null;
-    };
-    mapctl.addGeoFence = function(lat, lng) {
-        console.log("addGeoFence");
+    mapctl.newGeofence = function() {
         mapctl.mapid = GeoService.mapid;
-        if (mapctl.geofences === "") {
-            mapctl.geofences = [];
-        }
-        DlgBx.prompt("No GeoFence Selected .. Enter Name to Create new GeoFence", "").then(function(geofencename) {
-            var overwrite = null;
-            for (var n = 0; n < mapctl.geofences.length - 1; n++) {
-                if (geofencename === mapctl.geofences[n]._name) {
-                    overwrite = mapctl.geofences[n]._name;
-                }
-            }
-            if (overwrite !== null) {
-                DlgBx.alert("GeoFence name exists");
+        console.log('new GeoFence in ' + mapctl.mapid);
+        //console.log(mapctl.geofences);
+        mapctl.newgeofence = true;
+        mapctl.geofenceselected = null;
+        mapctl.editgeofencename = "";
+    };
+    mapctl.editGeofence = function(indx) {
+        console.log('Edit GeoFence ' + mapctl.geofences[indx]._id);
+        mapctl.editgeofenceid = mapctl.geofences[indx]._id;
+        mapctl.editgeofencename = mapctl.geofences[indx]._name;
+        mapctl.newgeofence = false;
+        mapctl.mapid = GeoService.mapid;
+        mapctl.geofenceselected = mapctl.geofences[indx];
+        //console.log(mapctl.geofenceselected)
+        mapctl.editgeofence = true;
+        mapctl.editgeofencepts = true;
+    };
+
+    mapctl.removeGeoFence = function(indx) {
+        DlgBx.confirm("Delete GeoFence " + mapctl.geofenceselected._name, "This cannot be undone").then(function(yes) {
+            if (yes) {
+                GeoService.sdatasources[GeoService.mapid].entities.removeById(mapctl.geofenceselected._id);
+                mapctl.geofences.splice(indx, 1);
+                mapctl.currmapData.Map.GeoFences.GeoFence = mapctl.geofences;
+                DbService.updateMapData(GeoService.mapid, mapctl.currmapData, function() {
+                    mapctl.editgeofence = false;
+                });
             }
             else {
-                console.log("Create GeoFence " + geofencename);
-                var geofnce = {
-                    "_id": geofencename + "_GeoFence",
-                    "_name": geofencename,
-                    "_map": mapctl.mapview,
-                    "_location": [lat, lng],
-                    "_points": [lat, lng]
-                };
-                mapctl.geofenceselected = geofnce;
-                GeoService.addCesiumPoint(geofnce, 'RED');
-                mapctl.geofences.push(geofnce);
-                mapctl.currmapData.Map.GeoFences.GeoFence = mapctl.geofences;
-                mapctl.selectGeoFence(geofnce, true);
+                console.log("Delete Geofence cancelled");
             }
         });
     };
-    mapctl.addGeoFencePoint = function(geofncesel, lat, lng) {
-        console.log("addGeoFencePoint " + geofncesel._id);
-        //console.log(geofncesel);
-        var len = geofncesel._points.length;
+
+    mapctl.cancelGeofEdit = function(indx) {
+        console.log("cancelGeofEdit " + mapctl.geofences[indx]._id);
+        DbService.getGeoFence(mapctl.mapid, mapctl.geofences[indx]._id, function(geof) {
+            GeoService.updateCesiumPolyline(mapctl.geofences[indx]._id, geof);
+            mapctl.editgeofencename = "";
+            mapctl.editgeofence = false;
+            mapctl.editgeofencepts = false;
+        })
+    };
+    mapctl.saveGeofenceName = function() {
+        if (mapctl.editgeofencename !== "") {
+            mapctl.editgeofencepts = true;
+            mapctl.mapid = GeoService.mapid;
+            if (mapctl.geofences === "") {
+                mapctl.geofences = [];
+            }
+            mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
+            var geofnce = {
+                "_id": mapctl.editgeofencename.toLowerCase(),
+                "_name": mapctl.editgeofencename,
+                "_location": [],
+                "_points": []
+            };
+            mapctl.geofenceselected = geofnce;
+            mapctl.geofences.push(geofnce);
+            mapctl.currmapData.Map.GeoFences.GeoFence = mapctl.geofences;
+            DbService.updateMapData(mapctl.mapid, mapctl.currmapData, function() {
+                //console.log(mapctl.geofences);
+                mapctl.editgeofencename = "";
+                mapctl.newgeofence = false;
+            });
+        }
+    };
+    mapctl.saveGeofenceEdit = function(indx) {
+        mapctl.geofences[indx]._name = mapctl.editgeofencename;
+        mapctl.geofences[indx]._id = mapctl.editgeofencename.toLowerCase();
+        mapctl.currmapData.Map.GeoFences.GeoFence = mapctl.geofences;
+        GeoService.updateCesiumPolyline(mapctl.editgeofenceid, mapctl.geofences[indx]);
+        DbService.updateMapData(GeoService.mapid, mapctl.currmapData, function() {
+            mapctl.editgeofence = false;
+            mapctl.editgeofencepts = false;
+        });
+    };
+
+
+    mapctl.geoFenceExists = function(gfname) {
+        for (var n in mapctl.geofences) {
+            if (gfname === mapctl.geofences[n]._name) {
+                return true;
+            }
+        }
+
+    };
+    mapctl.addGeoFencePoint = function(lat, lng) {
+        var geofncesel = mapctl.geofenceselected;
+        console.log("addGeoFencePoint " + geofncesel._id + " " + lat + " " + lng);
+        mapctl.geofencepts = geofncesel._points.toString();
+        var len;
+        if (!Array.isArray(mapctl.geofencepts)) {
+            mapctl.geofencepts = mapctl.geofencepts.replace(/\s|\"|\[|\]/g, "").split(",");
+            len = mapctl.geofencepts.length;
+        }
+        else {
+            len = mapctl.geofencepts.length;
+        }
         var pt = [];
         pt._id = geofncesel._id + len;
-        pt._points = [geofncesel._points[len - 2], geofncesel._points[len - 1]];
+        pt._points = [mapctl.geofencepts[len - 2], mapctl.geofencepts[len - 1]];
         pt._points.push(lat);
         pt._points.push(lng);
         pt._color = 'LIGHTYELLOW';
-        // console.log('addGeoFencePoint ' + pt._id);
-        GeoService.addCesiumPolyline(pt);
-        geofncesel._points.push(lat);
-        geofncesel._points.push(lng);
-        //DbService.updateEntityDb(mapctl.currentMap, geofid, '_geofence', mapctl.geofences[mapctl.mapview][geofid]._points);
+        mapctl.geofencepts.push(lat);
+        mapctl.geofencepts.push(lng);
+        if (len === 0) {
+            geofncesel._location = [lat, lng];
+            GeoService.addCesiumPoint(geofncesel, 'RED');
+            mapctl.selectGeoFence(geofncesel, true);
+            mapctl.geofenceselected._points = mapctl.geofencepts.toString();
+
+        }
+        else {
+            GeoService.addCesiumPolyline(pt);
+            mapctl.geofenceselected._points = mapctl.geofencepts.toString();
+        }
     };
     //
-    mapctl.removeGeoFencePoint = function() {
-        mapctl.mapid = GeoService.mapid;
-        var geofid = mapctl.geofenceselected._id;
-        var len = mapctl.geofences[mapctl.mapview][geofid]._points.length;
-        if (len > 2) {
-            var id = geofid + (len - 2);
-            console.log('removeGeoFencePoint ' + id);
-            GeoService.removeEntity(id);
-            mapctl.geofences[mapctl.mapview][geofid]._points.length = len - 2;
-            DbService.updateEntityDb(mapctl.currentMap, geofid, '_geofence', mapctl.geofences[mapctl.mapview][geofid]._points);
+    mapctl.removeGeoFencePoint = function(indx) {
+        var geofid = mapctl.geofences[indx]._id;
+        mapctl.geofencepts = mapctl.geofences[indx]._points;
+        var len;
+        if (!Array.isArray(mapctl.geofencepts)) {
+            mapctl.geofencepts = mapctl.geofencepts.replace(/\s|\"|\[|\]/g, "").split(",");
+            len = mapctl.geofencepts.length;
+        }
+        else {
+            len = mapctl.geofencepts.length;
+        }
+        console.log("removeGeoFencePoint " + len);
+        if (len === 2) {
+            mapctl.geofencepts.length = len - 2;
+            mapctl.geofences[indx]._location = [];
+            mapctl.geofences[indx]._points = mapctl.geofencepts.toString();
+            GeoService.updateCesiumPolyline(mapctl.editgeofenceid, mapctl.geofences[indx]);
+        }
+        else if (len > 0) {
+            mapctl.geofencepts.length = len - 2;
+            mapctl.geofences[indx]._points = mapctl.geofencepts.toString();
+            GeoService.updateCesiumPolyline(mapctl.editgeofenceid, mapctl.geofences[indx]);
         }
     };
-    mapctl.removeAllGeoFencePoints = function(geofid) {
-        mapctl.mapid = GeoService.mapid;
-        var geofid = mapctl.geofenceselected._id;
-        var len = mapctl.geofences[mapctl.mapview][geofid]._points.length;
-        if (len > 2) {
-            for (var i = 0; i < len; i += 2) {
-                GeoService.removeEntity(geofid + i);
-            }
-            mapctl.geofences[geofid]._points.length = 2;
-            DbService.updateEntityDb(mapctl.currentMap, geofid, '_geofence', mapctl.geofences[mapctl.mapview][geofid]._points);
+    mapctl.removeAllGeoFencePoints = function(indx) {
+        var geofncesel = mapctl.geofences[indx];
+        var geofid = geofncesel._id;
+        mapctl.geofencepts = geofncesel._points.toString();
+        var len;
+        if (!Array.isArray(mapctl.geofencepts)) {
+            mapctl.geofencepts = mapctl.geofencepts.replace(/\s|\"|\[|\]/g, "").split(",");
+            len = mapctl.geofencepts.length;
         }
+        else {
+            len = mapctl.geofencepts.length;
+        }
+        mapctl.geofencepts.length = 0;
+        mapctl.geofences[indx]._points = mapctl.geofencepts.toString();
+        GeoService.updateCesiumPolyline(mapctl.editgeofenceid, mapctl.geofences[indx]);
     };
     mapctl.updateGeoFences = function(geofence) {
-            console.log(mapctl.geofences);
-            var gfncs = [];
-            for (var n = 0; n < mapctl.geofences.length; n++) {
-                if (mapctl.geofences[n]._id === geofence._id) {
-                    gfncs.push(geofence);
-                }
-                else {
-                    gfncs.push(mapctl.geofences[n])
-                }
+        console.log(mapctl.geofences);
+        var gfncs = [];
+        for (var n = 0; n < mapctl.geofences.length; n++) {
+            if (mapctl.geofences[n]._id === geofence._id) {
+                gfncs.push(geofence);
             }
-            mapctl.geofences = gfncs;
-            mapctl.currmapData.Map.GeoFences.GeoFence = mapctl.geofences;
-            DbService.updateMapData(mapctl.currentMap, mapctl.currmapData, function() {
-                console.log(mapctl.geofences);
-            });
+            else {
+                gfncs.push(mapctl.geofences[n]);
+            }
         }
-        //
+        mapctl.geofences = gfncs;
+        mapctl.currmapData.Map.GeoFences.GeoFence = mapctl.geofences;
+        DbService.updateMapData(mapctl.currentMap, mapctl.currmapData, function() {
+            console.log(mapctl.geofences);
+        });
+    };
+    //
     mapctl.selectGeoFence = function(gf, zoomto) {
         console.log(gf._id);
         mapctl.mapid = GeoService.mapid;
         mapctl.geofenceselected = mapctl.getById(mapctl.geofences, gf._id);
-        console.log(mapctl.geofenceselected);
+        // console.log(mapctl.geofenceselected);
         var geofencesel = GeoService.sdatasources[mapctl.mapid].entities.getById(gf._id);
-        console.log(geofencesel);
-        mapctl.loc = mapctl.geofenceselected._location;
-        if (zoomto) {
-            GeoService.sdatasources[mapctl.mapid].selectedEntity = geofencesel;
-            viewer.selectedEntity = geofencesel;
-            viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(mapctl.loc[1], mapctl.loc[0], 10000.0),
-                duration: 1
-            });
-        }
-        else {
-            $scope.$apply();
+        // console.log(geofencesel);
+        var loc = mapctl.geofenceselected._location;
+        if (loc.length > 0) {
+            if (!Array.isArray(loc)) {
+                loc = loc.replace(/\s|\"|\[|\]/g, "").split(",");
+            }
+            console.log(loc[1] + ", " + loc[0]);
+            if (zoomto) {
+                GeoService.sdatasources[mapctl.mapid].selectedEntity = geofencesel;
+                viewer.selectedEntity = geofencesel;
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(loc[1], loc[0], 10000.0),
+                    duration: 1
+                });
+            }
+            else {
+                $scope.$apply();
+            }
         }
     };
     //
@@ -733,13 +835,20 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     };
     //
     mapctl.getById = function(jobj, id) {
-            for (var x in jobj) {
-                if (jobj[x]._id === id) {
-                    return jobj[x];
-                }
+        for (var x in jobj) {
+            if (jobj[x]._id === id) {
+                return jobj[x];
             }
         }
-        //
+    };
+    mapctl.getByName = function(jobj, nm) {
+        for (var x in jobj) {
+            if (jobj[x]._name === nm) {
+                return jobj[x];
+            }
+        }
+    };
+    //
 
     mapctl.unitTree = function() {
         var s = {};
@@ -749,7 +858,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                 s[id] = mapctl.tracks[u];
                 if (mapctl.hasChildren(s[id])) {
                     var kids = mapctl.treeChildren(s[id]);
-                    //console.log(kids);
+                    // console.log(kids);
                     for (var n in kids) {
                         s[id][kids[n]._id] = kids[n];
                     }
@@ -779,7 +888,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                 return true;
             }
         }
-    }
+    };
 
     mapctl.treeChildren = function(p) {
         var k = {};
@@ -796,28 +905,36 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
             }
         }
         return k;
-    }
+    };
     mapctl.editUnit = function() {
         mapctl.editunit = true;
+        mapctl.editlocchecked = false;
         mapctl.editid = mapctl.trackselected._id;
         mapctl.editname = mapctl.trackselected._name;
         mapctl.editechelon = mapctl.trackselected._echelon;
         mapctl.editreport_to = mapctl.trackselected._report_to;
         mapctl.editnetwork = mapctl.trackselected._network;
-    }
+        mapctl.editvisibility = mapctl.trackselected._visibility;
+       // var g = mapctl.getById(mapctl.geofences, 'airfield');
+        //var loc = mapctl.trackselected._location.replace(/\s|\"|\[|\]/g, "").split(",");
+        //var t = mapctl.withinGeoFence(loc, g);
+       //console.log(t);
+    };
     mapctl.joinNet = function(nsel) {
 
-    }
+    };
     mapctl.cancelUnitEdit = function() {
         mapctl.editunit = false;
         mapctl.editid = "";
         mapctl.editname = "";
-        mapctl.editechelon ="";
+        mapctl.editechelon = "";
         mapctl.editreport_to = "";
         mapctl.editnetwork = "";
+        mapctl.editvisibility = [];
+        mapctl.infosectype = "";
+        mapctl.infosecval = "";
     }
     mapctl.saveUnitEdit = function() {
-        mapctl.editunit = false;
         var chg = [];
         if (mapctl.editid !== mapctl.trackselected._id) {
             //mapctl.trackselected._id= mapctl.editid;
@@ -839,6 +956,10 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
             mapctl.trackselected._network = mapctl.editnetwork;
             chg['_network'] = mapctl.editnetwork;
         }
+        if (mapctl.editvisibility !== mapctl.trackselected._visibility) {
+            mapctl.trackselected._visibility = mapctl.editvisibility;
+            chg['_visibility'] = mapctl.editvisibility;
+        }
         DbService.updateTrackDb(mapctl.mapid, mapctl.trackselected._id, chg, function(mdata) {
             mapctl.currmapData = mdata.data;
             if (mapctl.editid !== mapctl.trackselected._id) {
@@ -847,31 +968,99 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                 mapctl.trackselected._id = mapctl.editid;
                 GeoService.addCesiumBillboard(mapctl.trackselected);
             }
+            mapctl.cancelUnitEdit();
         });
     }
+
+    mapctl.addInfoSecParam = function() {
+        if (mapctl.infosectype !== "" && mapctl.infosecval !== "") {
+            if (typeof mapctl.editvisibility === 'undefined') {
+                mapctl.editvisibility = [];
+                mapctl.editvisibility.push({
+                    type: mapctl.infosectype,
+                    value: mapctl.infosecval
+                });
+                mapctl.infosectype = "";
+                mapctl.infosecval = "";
+            }
+            else {
+                if (!mapctl.hasParam(mapctl.infosectype, mapctl.infosecval)) {
+                    mapctl.editvisibility.push({
+                        type: mapctl.infosectype,
+                        value: mapctl.infosecval
+                    });
+                    mapctl.infosectype = "";
+                    mapctl.infosecval = "";
+                }
+            }
+        }
+    };
+    mapctl.removeInfoSecParam = function(indx) {
+        console.log(indx);
+        mapctl.trackselected._visibility.splice(indx, 1);
+    };
+
+    mapctl.hasParam = function(t, v) {
+        for (var p in mapctl.editvisibilit) {
+            if (mapctl.editvisibility[p].type === t && mapctl.editvisibility[p].value === v) {
+                return true;
+            }
+        }
+    };
+
+    mapctl.withinGeoFence = function(loc, geofence) {
+        var gpts = geofence._points.replace(/\s|\"|\[|\]/g, "").split(",");
+        var temp = gpts.slice();
+        var poly = [];
+        while (temp.length) {
+            poly.push(temp.splice(0, 2));
+        }
+        return pointInPolygon(loc, poly);
+    };
+
+
+    function pointInPolygon(point, vs) {
+        // ray-casting algorithm based on
+        // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+        var xi, xj, yi,yj, i, intersect,
+            x = point[0]/100,
+            y = point[1]/100,
+            inside = false;
+        for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                xi = vs[i][0]/100,
+                yi = vs[i][1]/100,
+                xj = vs[j][0]/100,
+                yj = vs[j][1]/100,
+                intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+
     SocketService.socket.on('load map', function(endpoint) {
         mapctl.ep = endpoint;
         mapctl.loadMap(endpoint.user_id);
-        SocketService.requestMaps();
+        // SocketService.requestMaps();
     });
+
     SocketService.socket.on('update maps', function(maplist) {
         console.log('update maps');
         mapctl.maps = maplist;
-        //console.log(mapctl.maps);
+        // console.log(mapctl.maps);
         DbService.updateRecord('Maps', m.id, m.data, function(rec) {
 
         });
         mapctl.maplist = [];
         for (var m in maplist) {
             mapctl.maplist.push({
-                id: m.id,
-                name: m.name
+                id: m.id
             });
             DbService.updateRecord('Maps', m.id, m.data);
         }
     });
     //
-    //{scktmsg:'POSREP',unit_id:entity._id,latitude:lat,longitude:lng}
+    // {scktmsg:'POSREP',unit_id:entity._id,latitude:lat,longitude:lng}
     SocketService.socket.on('POSREP', function(msg) {
         var uid = msg.payload.unit_id;
         var lat = msg.payload.latitude;
@@ -884,7 +1073,8 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
             if (msg.scktid !== SocketService.scktid) {
                 var chg = [];
                 chg['_location'] = lat + "," + lng;
-                chg['_timestamp'] = Date.now();
+                //chg['_timestamp'] = Date.now();
+                chg['_timestamp'] = time;
                 mapctl.trackselected._location = chg['_location'];
                 mapctl.trackselected._timestamp = chg['_timestamp'];
                 DbService.updateTrackDb(mapctl.mapid, uid, chg, function(mdata) {

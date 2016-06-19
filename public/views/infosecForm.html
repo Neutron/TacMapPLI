@@ -17,6 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 -->
+<div class="vizlist">
+    <div class="vizcol" data-ng-repeat="p in mapctl.editvisibility track by $index">
+        <div style="width:75px; float:left; margin-left:5px">{{p.type}}</div>
+        <div style="width:90px; float:left; margin-left:8px;">{{p.value}}</div>
+        <button class="smbtn" style="float:left; margin-left:3px;" ng-click="mapctl.removeInfoSecParam($index)">X</button>
+    </div>
+</div>
 <div class="col">
     <div style="width:80px; float:left; margin-left:5px;">
         <select data-ng-model="mapctl.infosectype">
@@ -31,13 +38,13 @@
             <option data-ng-repeat="e in mapctl.echelons track by $index" value="{{e}}">{{e}}</option>
         </select>
         <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='Unit'">
-            <option data-ng-repeat="t in mapctl.tracks track by $index" value="{{t._id}}">{{t._name}}</option>
+            <option data-ng-repeat="t in mapctl.tracks track by $index" value="{{t._name}}">{{t._name}}</option>
         </select>
         <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='Network'">
-            <option data-ng-repeat="n in mapctl.networks track by $index" value="{{n._id}}">{{n._name}}</option>
+            <option data-ng-repeat="n in mapctl.networks track by $index" value="{{n._name}}">{{n._name}}</option>
         </select>
         <select data-ng-model="mapctl.infosecval" data-ng-show="mapctl.infosectype==='GeoFence'">
-            <option data-ng-repeat="g in mapctl.geofences track by $index" value="{{g._id}}">{{g._name}}</option>
+            <option data-ng-repeat="g in mapctl.geofences track by $index" value="{{g._name}}">{{g._name}}</option>
         </select>
     </div>
     <button class="smbtn" style="float:left; margin-left:3px;" ng-click="mapctl.addInfoSecParam()">Add</button>
