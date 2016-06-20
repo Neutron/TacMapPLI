@@ -373,14 +373,19 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     };
 
     mapctl.getUnitTracks = function(trckid) {
-        var trck = mapctl.getById(mapctl.currmapData.Map.Tracks.Track, trckid);
-        for (var t in mapctl.currmapData.Map.Tracks.Track) {
-            if (mapctl.currmapData.Map.Tracks.Track[t]._network === trck._network) {
-                mapctl.unittracks.push(mapctl.currmapData.Map.Tracks.Track[t]);
+        if (trckid === "Admin") {
+            mapctl.unittracks = mapctl.currmapData.Map.Tracks.Track;
+        }
+        else {
+            var trck = mapctl.getById(mapctl.currmapData.Map.Tracks.Track, trckid);
+            for (var t in mapctl.currmapData.Map.Tracks.Track) {
+                if (mapctl.currmapData.Map.Tracks.Track[t]._network === trck._network) {
+                    mapctl.unittracks.push(mapctl.currmapData.Map.Tracks.Track[t]);
+                }
             }
         }
     };
-    //Puiblish Tracks to SocketIO
+    //Publish Tracks to SocketIO
     mapctl.syncTracks = function(mapdta) {
         console.log("syncTracks");
         SocketService.syncTracks(mapdta.Map.Tracks.Track);
@@ -488,7 +493,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                         unit_id: entity._id,
                         latitude: lat,
                         longitude: lng,
-                        visibility:entity._visibility
+                        visibility: entity._visibility
                     }
                 });
             });
@@ -915,10 +920,10 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
         mapctl.editreport_to = mapctl.trackselected._report_to;
         mapctl.editnetwork = mapctl.trackselected._network;
         mapctl.editvisibility = mapctl.trackselected._visibility;
-       // var g = mapctl.getById(mapctl.geofences, 'airfield');
+        // var g = mapctl.getById(mapctl.geofences, 'airfield');
         //var loc = mapctl.trackselected._location.replace(/\s|\"|\[|\]/g, "").split(",");
         //var t = mapctl.withinGeoFence(loc, g);
-       //console.log(t);
+        //console.log(t);
     };
     mapctl.joinNet = function(nsel) {
 
@@ -1022,15 +1027,15 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     function pointInPolygon(point, vs) {
         // ray-casting algorithm based on
         // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-        var xi, xj, yi,yj, i, intersect,
-            x = point[0]/100,
-            y = point[1]/100,
+        var xi, xj, yi, yj, i, intersect,
+            x = point[0] / 100,
+            y = point[1] / 100,
             inside = false;
         for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-                xi = vs[i][0]/100,
-                yi = vs[i][1]/100,
-                xj = vs[j][0]/100,
-                yj = vs[j][1]/100,
+            xi = vs[i][0] / 100,
+                yi = vs[i][1] / 100,
+                xj = vs[j][0] / 100,
+                yj = vs[j][1] / 100,
                 intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
             if (intersect) inside = !inside;
         }
