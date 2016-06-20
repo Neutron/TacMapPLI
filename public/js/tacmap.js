@@ -33,11 +33,11 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
 /*    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
         url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
     }), */
-   /* imageryProvider: new Cesium.BingMapsImageryProvider({
+    imageryProvider: new Cesium.BingMapsImageryProvider({
      url: '//dev.virtualearth.net',
      key: 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i',
      mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
-     }),*/
+     }),
     /*imageryProvider: new Cesium.GoogleEarthImageryProvider({
      url: '//earth.localdomain',
      channel: 1008
@@ -46,9 +46,9 @@ var viewer = new Cesium.Viewer('cesiumContainer', {
     //        url: 'Cesium/Assets/Textures/NaturalEarthII'
     //   }),
     //OpenStreetMap tile provider
-     imageryProvider:Cesium.createOpenStreetMapImageryProvider({
+    /* imageryProvider:Cesium.createOpenStreetMapImageryProvider({
          url: '../MapTiles'
-     }),
+     }),*/
     homeButton: false,
     geocoder: false
 });
