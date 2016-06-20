@@ -318,7 +318,9 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     mapctl.unittracks = [];
 
     //*******************************************//
-
+    mapctl.getMapName=function(){
+        return mapctl.mapid;
+    }
     //Copies current map assuming name already deconflicted
     mapctl.saveMap = function(currentmap, newmapid) {
         console.log("Copy " + currentmap + " to " + newmapid);

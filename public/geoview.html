@@ -34,7 +34,7 @@
                 <div id="infoCol" class="noselect">
                     <div class="accordion__container outline">
                         <div class="accordion__tab">
-                            <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('user')">USER PROFILE</div>
+                            <div class="accordion__tab-subtitle" style="text-align:center; font-size:14px;" ng-model="mapctl.currmap" ng-click="vwctl.openTab('user')">{{mapctl.currmap}}</div>
                             <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('user')">
                                 <div ng-include="vwctl.userProfile"></div>
                             </div>
