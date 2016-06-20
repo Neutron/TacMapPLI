@@ -28,6 +28,8 @@
     var cors = require('cors');
     var https = require('https');
     var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+    var dgram = require('dgram');
+    var client = dgram.createSocket('udp4');
     var yargs = require('yargs').options({
         'port': {
             'default': server_port,
