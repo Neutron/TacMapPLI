@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!--
+Copyright (C) 2015 jdn
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<div ng-model="mapctl.geofenceselected" ng-click="mapctl.selectGeoFence(fnce, true)" ng-hide="mapctl.editgeofence && mapctl.geofenceselected._name===fnce._name" ng-class="{selected : mapctl.geofenceselected._id === fnce._id}">
+    {{fnce._name}}
+    <i class="fa fa-pencil" style="float:right;" aria-hidden="true" ng-click="mapctl.editGeofence($index)"></i>
+</div>
+<div ng-show="mapctl.editgeofence && mapctl.geofenceselected._name===fnce._name" style="padding-top:3px; height:65px; border:thin solid black">
+    <input type="text" ng-model="mapctl.editgeofencename" style="font-size:10px; margin-top:4px; float:left" size="28"></input>
+    <button class="smbtn" style="margin-top:4px; margin-left:8px;" ng-click="mapctl.removeGeoFence($index) ">X</button>
+    <div style="width:100%">
+        <div style="margin-top:8px; float:left;">Rt Click to add Points:</div>
+        <div class="smbtngrp rtalgn">
+            <button class="smbtn " ng-click="mapctl.removeGeoFencePoint($index) ">del pt</button>
+            <button class="smbtn " ng-click="mapctl.removeAllGeoFencePoints($index) ">del all</button>
+        </div>
+        <div style="width:100%;" class="smbtngrp rtalgn">
+            <button class="smbtn lftbtn" ng-click="mapctl.saveGeofenceEdit($index)">Save</button>
+            <button class="smbtn rtbtn" ng-click="mapctl.cancelGeofEdit($index)">Cancel</button>
+        </div>
+    </div>
+</div>
