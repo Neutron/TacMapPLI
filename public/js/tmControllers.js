@@ -498,6 +498,16 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                         visibility: entity._visibility
                     }
                 });
+		MsgService.postMsg('/udpmsg/', {
+                    scktid: SocketService.scktid,
+                    scktmsg: 'POSREP',
+                    payload: {
+                        unit_id: entity._id,
+                        latitude: lat,
+                        longitude: lng,
+                        visibility: entity._visibility
+                    }
+                });
             });
 
         }

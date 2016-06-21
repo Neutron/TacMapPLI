@@ -728,7 +728,7 @@ TacMap.factory('MsgService', function($indexedDB, $http) {
         //console.log(data);
         //var url2="http://10.111.50.40:8080"+url;
        // var xmlAsStr = msgsvc.xj.json2xml_str(data);
-        console.log(data);
+        //console.log(data);
         $http.post(url, data).success(function(response) {
             console.log("Msg POST success");
         }).error(function(err) {

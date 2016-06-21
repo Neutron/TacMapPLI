@@ -28,8 +28,19 @@
     var cors = require('cors');
     var https = require('https');
     var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
-    var dgram = require('dgram');
-    var client = dgram.createSocket('udp4');
+    //UDP Service
+    var dgram = require('dgram');   
+    var udpserver = dgram.createSocket('udp4');
+    var udpPort= 33333;
+    udpserver.bind(udpPort);   
+    udpserver.on('message', function (message) {
+    	var msg=message.toString();
+	var jsonmsg=JSON.parse(msg);
+	sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
+    });
+
+
+
     var yargs = require('yargs').options({
         'port': {
             'default': server_port,
@@ -221,9 +232,14 @@
 
     app.post('/msg/*',cors(),function(req,res){
         var jsonmsg=req.body;
-        //console.log(jsonmsg);
         sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
         res.send(req.body);
+    });
+    app.post('/udpmsg/*',cors(),function(req,res){
+	var jsonmsg=JSON.stringify(req.body);
+        var jsonmsg=new Buffer(jsonmsg);
+	udpserver.send(jsonmsg, 0,jsonmsg.length,udpPort,'192.168.225.5');
+	res.send(req.body);
     });
 
 
