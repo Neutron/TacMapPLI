@@ -1,0 +1,94 @@
+{
+    "printrequests": [{
+        "label": "",
+        "typeid": "_wpg",
+        "mode": 2,
+        "format": false
+    }, {
+        "label": "MessageClassification",
+        "typeid": "_txt",
+        "mode": 1,
+        "format": ""
+    }, {
+        "label": "DateTime",
+        "typeid": "_dat",
+        "mode": 1,
+        "format": ""
+    }, {
+        "label": "ExerciseNickname",
+        "typeid": "_txt",
+        "mode": 1,
+        "format": ""
+    }, {
+        "label": "GeodeticDatumSet",
+        "typeid": "_gmy",
+        "mode": 1,
+        "format": ""
+    }, {
+        "label": "CivilAffairsInformationSet",
+        "typeid": "_txt",
+        "mode": 1,
+        "format": ""
+    }, {
+        "label": "RefugeesOrDisplacedCiviliansSet",
+        "typeid": "_num",
+        "mode": 1,
+        "format": ""
+    }],
+    "results": {
+        "DC/HA Assessment4": {
+            "printouts": {
+                "MessageClassification": [
+                    "UNCLASSIFIED"
+                ],
+                "DateTime": [
+                    "1466208000"
+                ],
+                "ExerciseNickname": [
+                    "CWIX 2016"
+                ],
+                "GeodeticDatumSet": [
+                    "POINT(22.621715013449602 58.93740363453485)"
+                ],
+                "CivilAffairsInformationSet": [
+                    "Hiiumaa Refugee Camp is a Short Term camp with 12,000 civilians. "
+                ],
+                "RefugeesOrDisplacedCiviliansSet": [
+                    12000
+                ]
+            },
+            "fulltext": "DC/HA Assessment4",
+            "fullurl": "https://foc.marcims.org/index.php/DC/HA_Assessment4",
+            "namespace": 0,
+            "exists": true
+        },
+        "DC/HA Assessment4 2": {
+            "printouts": {
+                "MessageClassification": [
+                    "UNCLASSIFIED"
+                ],
+                "DateTime": [
+                    "1466380800"
+                ],
+                "ExerciseNickname": [
+                    "CWIX 2016"
+                ],
+                "GeodeticDatumSet": [
+                    "POINT(22.621715013449602 58.93740363453485)"
+                ],
+                "CivilAffairsInformationSet": [
+                    "Hiiumaa Refugee Camp is a Short Term camp with 12,000 civilians. "
+                ],
+                "RefugeesOrDisplacedCiviliansSet": [
+                    12000
+                ]
+            },
+            "fulltext": "DC/HA Assessment4 2",
+            "fullurl": "https://foc.marcims.org/index.php/DC/HA_Assessment4_2",
+            "namespace": 0,
+            "exists": true
+        }
+    },
+    "version": 0.5,
+    "rows": 2
+}

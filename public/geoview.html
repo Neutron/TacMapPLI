@@ -31,74 +31,86 @@
     <div ng-app="TacMap">
         <div ng-controller="viewCtl as vwctl">
             <div ng-controller="mapCtl as mapctl">
-                <div id="infoCol" class="noselect">
-                    <div class="accordion__container outline">
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-subtitle" style="text-align:center; font-size:14px;" ng-model="mapctl.currmap" ng-click="vwctl.openTab('user')">{{mapctl.currmap}}</div>
-                            <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('user')">
-                                <div ng-include="vwctl.userProfile"></div>
-                            </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('nets')">NETWORKS</div>
-                            <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('nets')">
-                                <div ng-include="vwctl.networks"></div>
-                            </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-sub-subtitle" ng-click="vwctl.openTab('units')">UNITS</div>
-                            <div ng-show="vwctl.isOpenTab('units')">
-                                <div class="trcksect">
-                                    <div ng-include="vwctl.tree"></div>
-                                    <div class="trcks">
-                                        <button class="smbtn" ng-click="mapctl.newTrack(k,usrctl.endpoint.networkid,usrctl.endpoint.userid)">Add</button>
-                                        <div class="rtalgn">
-                                            <input ng-model="mapctl.editlocchecked" ng-false-value="0" type="checkbox" ng-change="mapctl.editgeofencechecked = 0" />
-                                            <span>Set Locations</span>
-                                        </div>
-                                    </div>
-                                    <div class="msect" ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
+                <div ng-controller="messageCtl as msgctl">
+                    <div id="infoCol" class="noselect">
+                        <div class="accordion__container outline">
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-subtitle" style="text-align:center; font-size:14px;" ng-model="mapctl.currmap" ng-click="vwctl.openTab('user')">{{mapctl.currmap}}</div>
+                                <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('user')">
+                                    <div ng-include="vwctl.userProfile"></div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-sub-subtitle" ng-click="vwctl.openTab('GEOFENCES')">GEOFENCES</div>
-                            <div ng-show="vwctl.isOpenTab('GEOFENCES')">
-                                <div class="trcksect">
-                                    <div ng-repeat="fnce in mapctl.geofences track by $index">
-                                        <div ng-include="vwctl.editgeofence"></div>
-                                    </div>
-                                    <div class="smbtngrp rtalgn" ng-show="mapctl.newgeofence">
-                                        <input type="text" ng-model="mapctl.editgeofencename" style="font-size:10px; margin-top:4px;" size="28"></input>
-                                        <div style="width:100%;" class="smbtngrp rtalgn">
-                                            <button class="smbtn lftbtn" ng-click="mapctl.saveGeofenceName()" ng-hide="mapctl.geoFenceExists(mapctl.editgeofencename) && mapctl.editgeofencename!==fnce._name">Save</button>
-                                            <div ng-show="mapctl.geoFenceExists(mapctl.editgeofencename) && mapctl.editgeofencename!==fnce._name" class="lftbtn" style="color:red ">Geofence Exists</div>
-                                            <button class="smbtn rtbtn" ng-click="mapctl.cancelGeofEdit()">Cancel</button>
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('nets')">NETWORKS</div>
+                                <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('nets')">
+                                    <div ng-include="vwctl.networks"></div>
+                                </div>
+                            </div>
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-sub-subtitle" ng-click="vwctl.openTab('units')">UNITS</div>
+                                <div ng-show="vwctl.isOpenTab('units')">
+                                    <div class="trcksect">
+                                        <div ng-include="vwctl.tree"></div>
+                                        <div class="trcks">
+                                            <button class="smbtn" ng-click="mapctl.newTrack(k,usrctl.endpoint.networkid,usrctl.endpoint.userid)">Add</button>
+                                            <div class="rtalgn">
+                                                <input ng-model="mapctl.editlocchecked" ng-false-value="0" type="checkbox" ng-change="mapctl.editgeofencechecked = 0" />
+                                                <span>Set Locations</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="trcks">
-                                        <button class="smbtn" ng-hide="mapctl.newgeofence || mapctl.editgeofence" ng-click="mapctl.newGeofence()">Add</button>
+                                        <div class="msect" ng-show="mapctl.editlocchecked">Right Click to Set Location</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('maps')">SAVE / LOAD</div>
-                            <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('maps')">
-                                <div ng-include="vwctl.mapStore"></div>
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-sub-subtitle" ng-click="vwctl.openTab('GEOFENCES')">GEOFENCES</div>
+                                <div ng-show="vwctl.isOpenTab('GEOFENCES')">
+                                    <div class="trcksect">
+                                        <div ng-repeat="fnce in mapctl.geofences track by $index">
+                                            <div ng-include="vwctl.editgeofence"></div>
+                                        </div>
+                                        <div class="smbtngrp rtalgn" ng-show="mapctl.newgeofence">
+                                            <input type="text" ng-model="mapctl.editgeofencename" style="font-size:10px; margin-top:4px;" size="28"></input>
+                                            <div style="width:100%;" class="smbtngrp rtalgn">
+                                                <button class="smbtn lftbtn" ng-click="mapctl.saveGeofenceName()" ng-hide="mapctl.geoFenceExists(mapctl.editgeofencename) && mapctl.editgeofencename!==fnce._name">Save</button>
+                                                <div ng-show="mapctl.geoFenceExists(mapctl.editgeofencename) && mapctl.editgeofencename!==fnce._name" class="lftbtn" style="color:red ">Geofence Exists</div>
+                                                <button class="smbtn rtbtn" ng-click="mapctl.cancelGeofEdit()">Cancel</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="trcks">
+                                            <button class="smbtn" ng-hide="mapctl.newgeofence || mapctl.editgeofence" ng-click="mapctl.newGeofence()">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="accordion__tab">
-                            <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('msgs')">MESSAGE LOG</div>
-                            <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('msgs')">
-                                <div ng-include="vwctl.msgLog"></div>
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-subtitle" ng-click="msgctl.getMarcims(vwctl)">REPORTS</div>
+                                <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('rpt')">
+                                    <div ng-include="vwctl.reportsList"></div>
+                                </div>
+                            </div>
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('maps')">SAVE / LOAD</div>
+                                <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('maps')">
+                                    <div ng-include="vwctl.mapStore"></div>
+                                </div>
+                            </div>
+
+                            <div class="accordion__tab">
+                                <div class="accordion__tab-subtitle" ng-click="vwctl.openTab('msgs')">MESSAGE LOG</div>
+                                <div class="accordion__tab-content" ng-show="vwctl.isOpenTab('msgs')">
+                                    <div ng-include="vwctl.msgLog"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div ng-show="mapctl.trackselected">
-                    <div ng-include="vwctl.info"></div>
+                    <div ng-show="mapctl.trackselected">
+                        <div ng-include="vwctl.info"></div>
+                    </div>
+                    <div ng-show="msgctl.rptselected">
+                        <div ng-include="vwctl.reportView"></div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -31,7 +31,9 @@ TacMap.controller('viewCtl', function() {
     vwctl.infosec = "views/infosecForm.html";
     vwctl.editbox = "views/editunitbox.html";
     vwctl.editgeofence = "views/geofence.html";
-    //initiate an array to hold all active tabs
+    vwctl.reportsList = "views/reportsList.html";
+    vwctl.reportView = "views/reportView.html"
+        //initiate an array to hold all active tabs
     vwctl.activeTabs = [];
     //check if the tab is active
     vwctl.isOpenTab = function(tab) {
@@ -318,10 +320,10 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
     mapctl.unittracks = [];
 
     //*******************************************//
-    mapctl.getMapName=function(){
-        return mapctl.mapid;
-    }
-    //Copies current map assuming name already deconflicted
+    mapctl.getMapName = function() {
+            return mapctl.mapid;
+        }
+        //Copies current map assuming name already deconflicted
     mapctl.saveMap = function(currentmap, newmapid) {
         console.log("Copy " + currentmap + " to " + newmapid);
         DbService.dB.openStore("Maps", function(store) {
@@ -351,11 +353,12 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                     mapctl.currmapData.id = userid;
                     mapctl.getUnitTracks(userid);
                     mapctl.tracks = mapctl.unittracks;
-                    mapctl.currmapData.Map.Tracks.Track = mapctl.tracks;
-                    //mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
+                    //mapctl.currmapData.Map.Tracks.Track = mapctl.tracks;
+                    mapctl.tracks = mapctl.currmapData.Map.Tracks.Track;
                     mapctl.networks = mapctl.currmapData.Map.Networks.Network;
                     mapctl.geofences = mapctl.currmapData.Map.GeoFences.GeoFence;
                     DbService.updateMapData(userid, mapctl.currmapData, function(mdta) {
+                        //console.log(mdta);
                         GeoService.initGeodesy(userid, mdta.data, mapctl.syncTracks);
                     });
                 })
@@ -498,7 +501,7 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
                         visibility: entity._visibility
                     }
                 });
-		MsgService.postMsg('/udpmsg/', {
+                MsgService.postMsg('/udpmsg/', {
                     scktid: SocketService.scktid,
                     scktmsg: 'POSREP',
                     payload: {
@@ -1146,13 +1149,14 @@ TacMap.controller('mapCtl', function($scope, DbService, GeoService, SocketServic
 });
 
 //messageCtl handles messages
-TacMap.controller('messageCtl', function(GeoService, SocketService) {
+TacMap.controller('messageCtl', function(GeoService, SocketService, $http,$scope) {
     var msgctl = this;
-    msgctl.maptxt = "";
     msgctl.addmap = false;
     msgctl.messages = [];
-    msgctl.tracks = [];
-
+    msgctl.reports = [];
+    msgctl.marcims = [];
+    msgctl.rptselected = null;
+    var ellipsoid = scene.globe.ellipsoid;
     msgctl.sendReport = function(msgobj) {
         //default ui
         SocketService.sendMessage(msgobj, msgobj.network);
@@ -1168,6 +1172,134 @@ TacMap.controller('messageCtl', function(GeoService, SocketService) {
             network: net
         });
     };
+
+    msgctl.getMarcims = function(vwctl) {
+        if (!vwctl.isOpenTab('rpt')) {
+            $http.get('json/marcims.json').success(function(data) {
+                //console.log(JSON.stringify(data));
+                console.log("Got JSON");
+                vwctl.openTab('rpt');
+                for (var r in data.results) {
+                    var rpt_id = data.results[r].fulltext;
+                    var rptsel = GeoService.sdatasources[GeoService.mapid].entities.getById(rpt_id);
+                    console.log(rptsel);
+                    if (typeof rptsel === 'undefined') {
+                        msgctl.addRpt(data.results[r]);
+                        msgctl.marcims.push(data.results[r]);
+                    }
+                }
+                //console.log(msgctl.marcims);
+            }).error(function(err) {
+                console.log("get Marcims failure " + err);
+            });
+        }
+        else {
+            vwctl.openTab('rpt');
+        }
+    };
+
+    msgctl.addRpt = function(rpt) {
+        var pt = rpt.printouts.GeodeticDatumSet[0];
+        var loc = pt.substring(6, pt.length - 1);
+        var lng = loc.substring(0, loc.indexOf(' '));
+        var lat = loc.substring(loc.indexOf(' '));
+        //console.log("addRpt");
+       // console.log(rpt);
+        var report = {
+            "_icon": "img/bluedot.png",
+            "_id": rpt.fulltext,
+            "_location": [lat, lng],
+            "_name": rpt.fulltext,
+            "MessageClassification": rpt.printouts.MessageClassification,
+            "DateTime": rpt.printouts.DateTime,
+            "ExerciseNickname": rpt.printouts.ExerciseNickname,
+            "CivilAffairsInformationSet": rpt.printouts.CivilAffairsInformationSet,
+            "RefugeesOrDisplacedCiviliansSet": rpt.printouts.RefugeesOrDisplacedCiviliansSet
+        };
+        //console.log(report);
+        msgctl.reports.push(report);
+        GeoService.sdatasources[GeoService.mapid].entities.add({
+            id: rpt.fulltext,
+            name: rpt.fulltext,
+            position: Cesium.Cartesian3.fromDegrees(lng, lat),
+            point: {
+                pixelSize: 5,
+                color: Cesium.Color["RED"],
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            },
+            label: {
+                text: rpt.fulltext,
+                font: '10pt monospace',
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                outlineWidth: 2,
+                verticalOrigin: Cesium.VerticalOrigin.TOP,
+                pixelOffset: new Cesium.Cartesian2(0, 15)
+            }
+        });
+    };
+    
+    msgctl.selectRptPt = function(rpt, zoomto){
+         for (var x in msgctl.reports) {
+            if (msgctl.reports[x]._id === rpt._id) {
+                msgctl.rptselected=msgctl.reports[x];
+                $scope.$apply();
+            }
+        }
+    }
+
+    msgctl.selectRpt = function(rpt, zoomto) {
+        //console.log(rpt);
+        //msgctl.rptselected === rpt;
+        msgctl.rptselected = rpt;
+        // console.log(mapctl.trackselected);
+        var rptsel = GeoService.sdatasources[GeoService.mapid].entities.getById(rpt._id);
+        // console.log(tracksel);
+        // DlgBx.alert("Track Selected");
+        msgctl.loc = msgctl.getRptLoc(rptsel);
+        if (zoomto) {
+            GeoService.sdatasources[GeoService.mapid].selectedEntity = rptsel;
+            viewer.selectedEntity = rptsel;
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(msgctl.loc[1], msgctl.loc[0], 10000.0),
+                duration: 1
+            });
+        }
+        else {
+            $scope.$apply();
+        }
+
+    };
+
+    msgctl.getRptLoc = function(rpt) {
+        var cartesian = rpt.position.getValue();
+        var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+        var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+        var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+        rpt.description = "Location: " + latitudeString + ", " + longitudeString;
+        return ([latitudeString, longitudeString]);
+    };
+    msgctl.lftClickHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    msgctl.lftClickHandler.setInputAction(function(mouse) {
+        msgctl.mousepos = mouse.position;
+        var pickedObject = scene.pick(mouse.position);
+        if (typeof pickedObject !== 'undefined') {
+            if (pickedObject.id._point) {
+               // console.log(pickedObject);
+                msgctl.selectRptPt(pickedObject.id,'true');
+            }
+            else {
+                msgctl.rptselected = null;
+                $scope.$apply();
+            }
+        }
+        else {
+            msgctl.rptselected = null;
+            $scope.$apply();
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+
 });
 //
 TacMap.directive('draggable', ['$window', function($window) {

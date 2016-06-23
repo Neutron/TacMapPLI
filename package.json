@@ -25,7 +25,8 @@
     "cors": "2.7.x",
     "express": "4.10.2",
     "socket.io": "1.4.x",
-    "yargs": "4.7.x"
+    "yargs": "4.7.x",
+    "jsonfile":"2.3.x"
   },
   "author": "James Neushul",
   "bugs": {

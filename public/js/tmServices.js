@@ -424,7 +424,7 @@ TacMap.factory('GeoService', function($indexedDB) {
         }
     };
     geosvc.addPolygons = function(polygons) {
-        //console.log('addPolygons ' + polygons.length);
+        console.log('addPolygons ' + polygons.length);
         //console.log(polygons);
         for (var i = 0; i < polygons.length; i++) {
             if (polygons[i]._points.length > 0) {
