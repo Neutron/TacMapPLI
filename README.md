@@ -5,8 +5,6 @@ TacMap is a browser based track visualizaton tool
 
 ### Project Description
 * This is a simplified version of TacMap project at https://github.com/Neutron/TacMap.git
-* 
-* DEMO: http://tacmap.neushul.net
 
 
 ### Components Employed ###
