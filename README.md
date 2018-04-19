@@ -6,6 +6,8 @@ TacMap is a browser based track visualizaton tool
 ### Project Description
 * This is a simplified version of TacMap project at https://github.com/Neutron/TacMap.git
 
+### Live Demo: 
+* <a href="https://tacnet.neushul.net" target="_blank">https://tacnet.neushul.net/</a>
 
 ### Components Employed ###
 *  Cesium Web Map
