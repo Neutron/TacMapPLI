@@ -21,30 +21,13 @@
     var compression = require('compression');
     var url = require('url');
     var request = require('request');
-    var jsonfile = require('jsonfile');
     var bodyParser = require('body-parser');
     var fs = require('fs');
     var cesium = require('./geoserver/cesiumserver');
     //var http = require('http');
     var cors = require('cors');
     var https = require('https');
-    var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
-    //UDP Service
-    var dgram = require('dgram');
-    var udpserver = dgram.createSocket('udp4');
-    var udpPort = 33333;
-    udpserver.bind(udpPort);
-    udpserver.on('message', function(message) {
-        var msg = message.toString();
-        var jsonmsg = JSON.parse(msg);
-        sio.emit(jsonmsg.scktmsg, {
-            scktid: jsonmsg.sctkid,
-            payload: jsonmsg.payload
-        });
-    });
-
-
-
+    var server_port = 8080;
     var yargs = require('yargs').options({
         'port': {
             'default': server_port,
@@ -155,14 +138,13 @@
             res.send(code, body);
         });
     });
-    var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+    var server_ip_address = '127.0.0.1';
     var server = app.listen(server_port, argv.public ? undefined : server_ip_address, function() {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
-        }
-        else if (argv.publicssl) {
-            server.key = fs.readFileSync('key.pem');
-            server.cert = fs.readFileSync('cert.pem');
+        } else if (argv.publicssl) {
+            server.key=fs.readFileSync('key.pem');
+            server.cert=fs.readFileSync('cert.pem');
             console.log('TacMap development server running publicly.  Connect to https://localhost:%d/', server.address().port);
         }
         else {
@@ -203,15 +185,10 @@
         res.sendFile(__dirname + '/' + req.url);
     });
     app.get('/json/*', function(req, res) {
-        console.log('jsonp');
-        var file = __dirname + '/' + req.url;
-        jsonfile.readFile(file, function(err, obj) {
-            res.sendFile(obj);
-        });
+        res.sendFile(__dirname + '/' + req.url);
     });
     app.post('/json/*', function(req, res) {
         //console.log(request.body);
-
         fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function() {
             res.end();
         });
@@ -233,25 +210,17 @@
         });
     });
     app.put('/entity/*', function(req, res) {
-        console.log("Put entity " + req.url);
-        console.log(req.body);
-        fs.writeFile(__dirname + '/public' + req.url, req.body, function() {
-            res.end();
+            console.log("Put entity " + req.url);
+            console.log(req.body);
+            fs.writeFile(__dirname + '/public' + req.url, req.body, function() {
+                res.end();
+            });
         });
-    });
 
-    app.post('/msg/*', cors(), function(req, res) {
-        var jsonmsg = req.body;
-        sio.emit(jsonmsg.scktmsg, {
-            scktid: jsonmsg.sctkid,
-            payload: jsonmsg.payload
-        });
-        res.send(req.body);
-    });
-    app.post('/udpmsg/*', cors(), function(req, res) {
-        var msg = JSON.stringify(req.body);
-        var jsonmsg = new Buffer(jsonmsg);
-        udpserver.send(jsonmsg, 0, jsonmsg.length, udpPort, '192.168.225.5');
+    app.post('/msg/*',cors(),function(req,res){
+        var jsonmsg=req.body;
+        //console.log(jsonmsg);
+        sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
         res.send(req.body);
     });
 
@@ -350,10 +319,7 @@
         // Synch Tracks 
         socket.on('Sync Tracks', function(trackdata) {
             console.log('Sync Tracks');
-            sio.emit('update tracks', {
-                scktid: trackdata.scktid,
-                tracks: trackdata.tracks
-            });
+            sio.emit('update tracks', {scktid:trackdata.scktid,tracks:trackdata.tracks});
         });
         //
         //Publish message to single socketid, or to one or all network

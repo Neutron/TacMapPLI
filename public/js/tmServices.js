@@ -31,8 +31,8 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         dbsvc.dB.openStore('Resources', function(mstore) {
             mstore.getAllKeys().then(function(keys) {
                 if (keys.indexOf('resources.json') === -1) {
-                    $http.get('xml/resources.xml').success(function(resdata, status, headers) {
-                        var resrcs = dbsvc.xj.xml_str2json(resdata);
+                    $http.get('xml/resources.xml').then(function(result) {
+                        var resrcs = dbsvc.xj.xml_str2json(result.data);
                         dbsvc.dB.openStore('Resources', function(mstore) {
                             mstore.upsert({
                                 id: 'resources.json',
@@ -63,22 +63,22 @@ TacMap.factory('DbService', function($indexedDB, $http) {
         console.log("loadResource");
         var id = rscrc._id;
         var u = rscrc._url;
-        $http.get(u).success(function(resdata, status, headers) {
-            var mod = headers()['last-modified'];
+        $http.get(u).then(function(result) {
+            var mod = result.headers()['last-modified'];
             if (u.substring(u.indexOf('.')) === '.json') {
                 dbsvc.openStore('Resources', function(mstore) {
                     mstore.upsert({
                         id: id,
                         url: u,
                         lastmod: mod,
-                        data: resdata
+                        data: result.data
                     }).then(function() {
-                        callback(resdata);
+                        callback(result.data);
                     });
                 });
             }
             else if (u.substring(u.indexOf('.')) === '.xml') {
-                var jdata = dbsvc.xj.xml_str2json(resdata);
+                var jdata = dbsvc.xj.xml_str2json(result.data);
                 var jname = rscrc._name.replace(' ', '').toLowerCase();
                 dbsvc.dB.openStore('Resources', function(mstore) {
                     mstore.upsert({
@@ -96,8 +96,8 @@ TacMap.factory('DbService', function($indexedDB, $http) {
     // Loads latest version of file or updates server based on last modified 
     dbsvc.syncFile = function(storename, url, callback) {
             var filename = url.substring(url.lastIndexOf('/') + 1);
-            $http.get(url).success(function(resdata, status, headers) {
-                var mod = headers()['last-modified'];
+            $http.get(url).then(function(result) {
+                var mod = result.headers()['last-modified'];
                 dbsvc.dB.openStore(storename, function(store) {
                     store.getAllKeys().then(function(keys) {
                         if (keys.indexOf(filename) === -1) {
@@ -105,9 +105,9 @@ TacMap.factory('DbService', function($indexedDB, $http) {
                                 id: filename,
                                 url: url,
                                 lastmod: mod,
-                                data: resdata
+                                data: result.data
                             });
-                            callback(resdata);
+                            callback(result.data);
                         }
                         else {
                             store.find(filename).then(function(dbrec) {
@@ -424,7 +424,7 @@ TacMap.factory('GeoService', function($indexedDB) {
         }
     };
     geosvc.addPolygons = function(polygons) {
-        console.log('addPolygons ' + polygons.length);
+        //console.log('addPolygons ' + polygons.length);
         //console.log(polygons);
         for (var i = 0; i < polygons.length; i++) {
             if (polygons[i]._points.length > 0) {
@@ -728,7 +728,7 @@ TacMap.factory('MsgService', function($indexedDB, $http) {
         //console.log(data);
         //var url2="http://10.111.50.40:8080"+url;
        // var xmlAsStr = msgsvc.xj.json2xml_str(data);
-        //console.log(data);
+        console.log(data);
         $http.post(url, data).success(function(response) {
             console.log("Msg POST success");
         }).error(function(err) {

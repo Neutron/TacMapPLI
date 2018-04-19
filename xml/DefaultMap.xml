@@ -1,70 +1,69 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Map name="Default Map">
     <Polygons>
-        <Polygon id="Default" name="Skolkan" color="BLACK" points="55.56575607490174, 12.89036281976739, 
-            55.439008273141525, 12.973755732370883, 
-            55.45449439522046, 13.18242302009085,
-            55.55866188578008, 13.257385493915168,
-            55.64124548570126, 13.234890424171137,
-            55.655730381379335, 13.054736368827603,
-            55.565262172651636, 12.892124454534516"/>
-        <Polygon id="CanACoAO" name="CAN A CO AO" color="BLUE" points="55.565636571057176, 12.893657670265927, 
-            55.655473695649036, 13.055128741479646, 
-            55.64225017458774, 13.106019022693065, 
-            55.621026714647655, 13.057798168813187,
-            55.60823747860208, 13.02539081964753,
-            55.58428625019656, 13.007220932944655,
-            55.565142755927326, 13.000973215812111,
-            55.5483535301156, 13.002480137883001,
-            55.54757807132252, 12.965473773646236,
-            55.545537826909374, 12.908671044242523,
-            55.56575607490174, 12.89036281976739"/>
-        <Polygon id="CzeDCoAO" name="CZE D CO AO" color="ORANGE" points="55.54830500603035, 13.004053222517514,
-        55.550379790635546, 13.060361107818094,
-        55.58326897684857, 13.111228332326474,
-        55.60212162147694, 13.117370811995132,
-        55.59927622674653, 13.133568565412727,
-        55.601485491026274, 13.140698660676883,
-        55.607122414386154, 13.141323558301583,
-        55.619515031242564, 13.159148665016424,
-        55.62115217445712, 13.158987567884884,
-        55.63235200708722, 13.171375125318976,
-        55.64203675946847, 13.147666054864064,
-        55.6420135156114, 13.10653229313368,
-        55.60775420254313, 13.027183359416693,
-        55.58430106577818, 13.00747128068299,
-        55.58406753966376, 13.007806737267996,
-        55.56512188045701, 13.001220686877584,
-        55.54831404886978, 13.003472670682024"
-                />
+        <Polygon id="Default" name="Bydgoszcz" color="BLACK" points="52.9974565821361,17.8404060428482, 
+            53.24950421786391,17.8404060428482, 
+            53.24950421786391,18.1764695571518, 
+            52.9974565821361,18.1764695571518,
+            52.9974565821361,17.8404060428482" />
+        <Polygon id="CanACoAO" name="CAN A CO AO" color="BLUE" points="53.08595123293665,18.0071422272312,
+            53.10826016607894,18.00835425802229,
+            53.10848941711222,17.99296104873016,
+            53.11098403759814,17.97943920954539,
+            53.11222988599757,17.95140338028827,
+            53.09178339219432,17.94738034226369,
+            53.08595123293665,18.0071422272312" />
+        <Polygon id="NldDCoAO" name="NLD D CO AO" color="ORANGE" points="53.11789884266493,17.95156726642816,
+            53.11873432669751,17.94170268262486,
+            53.12068503462501,17.94020600435845,
+            53.12436490917027,17.90372552661295,
+            53.1269356014815,17.88143211046626,
+            53.10808450748531,17.88476923438718,
+            53.09473738928052,17.89676217079163,
+            53.08847229347532,17.90284983086235,
+            53.09137296873295,17.91030099436572,
+            53.09489703236727,17.94685111086739,
+            53.11789884266493,17.95156726642816" />
     </Polygons>
     <Networks>
         <Network id="nato" name="NATO" icon="img/NATO_Flag.png" netcon="NatoHq" address="localhost" port="8080" />
         <Network id="usa" name="USA" icon="img/USA_Flag.png" netcon="MeuArg" address="tacmap.neushul.net" port="80" />
         <Network id="can" name="CAN" icon="img/CAN_Flag.png" netcon="CanACoHq" address="10.111.50.40" port="8080" />
-        <Network id="cze" name="CZE" icon="img/CZE_Flag.png" netcon="CzeDCoHq" address="https://tacmappli-neusol.c9users.io" port="80" />
+        <Network id="nld" name="NLD" icon="img/NLD_Flag.png" netcon="NldDCoHq" address="https://tacmappli-neusol.c9users.io" port="80" />
     </Networks>
-      <Entities>
+    <Entities>
         <Entity id="jdn" name="JDN" icon="img/bluedot.png" location="" />
     </Entities>
     <Tracks>
-        <Track id="NatoHq" name="NATO HQ" icon="img/10131000151211950000.png" location="55.643494745710036, 13.090305622832632" network="NATO" report_to="NatoHq" echelon="Batallion" timestamp="1464776539349" />
-        <Track id="MeuArg" name="MEU ARG" icon="img/10133000001100000002.png" location="55.41871512127549, 12.54926405744234" network="USA" report_to="MeuArg" echelon="Batallion" timestamp="1464776539349" />
-        <Track id="Rescue1" name="Rescue 1" icon="img/10130100001102000802.png" location="55.41871512127549, 12.54926405744234" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
-        <Track id="Rescue2" name="Rescue 2" icon="img/10130100001102000802.png" location="55.41871512127552, 12.54926405744238" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
-        <Track id="Recon" name="Recon" icon="img/tacicon.png" location="55.608586202081966, 13.121102792912823" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
-        <Track id="HVI" name="HVI" icon="img/10131000001900000000.png" location="55.608586202081966, 13.121102792912808" network="USA" report_to="MeuArg" echelon="Person" timestamp="1464776539349" />
-        <Track id="CanACoHq" name="CAN A CO HQ" icon="img/10131000151211950000.png" location="55.609874184156006, 12.988018898389175" network="CAN" report_to="NatoHq" echelon="Company" timestamp="1464776539349" />
-        <Track id="Can-A-1-1" name="CAN A 1PLT 1SQ" icon="img/10131000121211000000.png" location="55.60537380777781, 13.015474069801217" network="CAN" report_to="CanACoHq" echelon="Squad" timestamp="1464776539349" />
-        <Track id="Can-A-1-2" name="CAN A 1PLT 2SQ" icon="img/10131000121211040000.png" location="55.56547552122973, 12.901308492644409" network="CAN" report_to="CanACoHq" echelon="Squad" timestamp="1464776539349" />
-        <Track id="Can-A-Op" name="CAN A CO OP" icon="img/10131000101212000000.png" location="55.60087295941101, 12.994523163425265" network="CAN" report_to="CanACoHq" echelon="Team" timestamp="1464776539349" />
-        <Track id="CzeDCoHq" name="CZE D CO HQ" icon="img/10131000151211950000.png" location="55.57152219437396, 13.08665056190492" network="CZE" report_to="NatoHq" echelon="Company" timestamp="1464776539349" />
-        <Track id="Cze-D-1-1" name="CZE D 1PLT 1SQ" icon="img/10131000121211040000.png" location="55.63091233648055, 13.1383834177924" network="CZE" report_to="CzeDCoHq" echelon="Squad" timestamp="1464776539349" />
-        <Track id="Cze-D-1-2" name="CZE D 1PLT 2SQ" icon="img/10131000121211000000.png" location="55.689525764833874, 13.162332258626693" network="CZE" report_to="CzeDCoHq" echelon="Squad" timestamp="1464776539349" />
-        <Track id="Cze-D-Op" name="CZE D CO OP" icon="img/10131000101212000000.png" location="55.57479364961776, 13.095548457956438" network="CZE" report_to="CzeDCoHq" echelon="Team" timestamp="1464776539349" />
+        <Track id="NatoHq" name="NATO HQ" icon="img/10131000151211950000.png" location="53.1207350007867,17.97967700009256" network="NATO" report_to="NatoHq" echelon="Batallion" timestamp="1464776539349" />
+        <Track id="MeuArg" name="MEU ARG" icon="img/10133000001100000002.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Batallion" timestamp="1464776539349" />
+        <Track id="Rescue1" name="Rescue 1" icon="img/10130100001102000802.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
+        <Track id="Rescue2" name="Rescue 2" icon="img/10130100001102000802.png" location="55.26759100163176,17.97967700009256" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
+        <Track id="Recon" name="Recon" icon="img/tacicon.png" location="53.1177747692874,17.918276798506216" network="USA" report_to="MeuArg" echelon="Team" timestamp="1464776539349" />
+        <Track id="HVI" name="HVI" icon="img/10131000001900000000.png" location="53.11475848802692,17.91911251207788" network="USA" report_to="MeuArg" echelon="Person" timestamp="1464776539349" />
+        <Track id="CanACoHq" name="CAN A CO HQ" icon="img/10131000151211950000.png" location="53.09437284078162,17.99854506993847" network="CAN" report_to="NatoHq" echelon="Company" timestamp="1464776539349" />
+        <Track id="Can-A-1" name="CAN A 1PLT HQ" icon="img/10131000141211000000.png" location="53.10041455085361,17.95499655870865" network="CAN" report_to="CanACoHq" echelon="Platoon" timestamp="1464776539349" />
+        <Track id="Can-A-1-1" name="CAN A 1PLT 1SQ" icon="img/10131000121211000000.png" location="53.10041455085371,17.95499655870869" network="CAN" report_to="CanACoHq" echelon="Squad" timestamp="1464776539349" />
+        <Track id="Can-A-1-2" name="CAN A 1PLT 2SQ" icon="img/10131000121211040000.png" location="53.10800188773993,18.00820347796147" network="CAN" report_to="CanACoHq" echelon="Squad" timestamp="1464776539349" />
+        <Track id="Can-A-Op" name="CAN A CO OP" icon="img/10131000101212000000.png" location="53.1094113685998,17.95272375646002" network="CAN" report_to="CanACoHq" echelon="Team" timestamp="1464776539349" />
+        <Track id="NldDCoHq" name="NLD D CO HQ" icon="img/10131000151211950000.png" location="53.09627599941032,17.92301299801406" network="NLD" report_to="NatoHq" echelon="Company" timestamp="1464776539349" />
+        <Track id="Nld-D-1" name="NLD D 1PLT HQ" icon="img/10131000141211000000.png" location="53.10797545110169,17.9446363332539" network="NLD" report_to="NldDCoHq" echelon="Platoon" timestamp="1464776539349" />
+        <Track id="Nld-D-1-1" name="NLD D 1PLT 1SQ" icon="img/10131000121211040000.png" location="53.10797545110159,17.9446363332549" network="NLD" report_to="NldDCoHq" echelon="Squad" timestamp="1464776539349" />
+        <Track id="Nld-D-1-2" name="NLD D 1PLT 2SQ" icon="img/10131000121211000000.png" location="53.123514220917,17.89819303492627" network="NLD" report_to="NldDCoHq" echelon="Squad" timestamp="1464776539349" />
+        <Track id="Nld-D-Op" name="NLD D CO OP" icon="img/10131000101212000000.png" location="53.10838540752472,17.9233507759995" network="NLD" report_to="NldDCoHq" echelon="Team" timestamp="1464776539349" />
     </Tracks>
     <GeoFences>
-        <GeoFence id="geofence1" name="GeoFence_1" points=""/>
-        <GeoFence id="airfield" name="Airfield" points=""/>
+        <GeoFence id="geofence1" name="GeoFence_1" location="53.1838422671039, 17.9566562027535" points="53.1838422671039, 17.9566562027535,
+        53.1749203311073, 17.9329869743015,
+        53.168579906385,17.9651494664661,
+        53.1752172765775,17.9819750880629,
+        53.1963239131605,17.9912298182076,
+        53.1838422671039,17.9566562027535" />
+        <GeoFence id="airfield" name="Airfield" location=" 53.09803709611088,17.949980131850854" points="53.09803709611088,17.949980131850854,
+        53.10618548971525,17.965161363027427,
+        53.10494407123093,18.00275145815212,
+        53.09401743237602,18.006007314206368,
+        53.09092237843391,17.951830899798196,
+        53.09803709611088,17.949980131850854"/>
     </GeoFences>
 </Map>

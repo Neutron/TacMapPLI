@@ -2,7 +2,7 @@
   "name": "tacmap_pli",
   "version": "0.0.1",
   "description": "Simulation using Cesium JavaScript library to visualize PLI message traffic for moving units on a map.",
-  "homepage": "http://tacmappli-neushul.rhcloud.com",
+  "homepage": "https://github.com/Neutron/TacMapPLI",
   "license": "GPL-3.0",
   "repository": {
     "type": "git",
@@ -14,19 +14,18 @@
   },
   "devDependencies": {
     "compression": "1.0.8",
-    "request": "2.36.0",
-    "socket.io-client": "1.4.x"
+    "request": "2.85.0",
+    "socket.io-client": "^1.7.4"
   },
   "dependencies": {
-    "angular": "^1.5.6",
-    "font-awesome": "4.6.x",
-    "body-parser": "^1.13.1",
-    "cesium": "1.x",
+    "angular": "^1.6.10",
+    "body-parser": "^1.18.2",
+    "cesium": "^1.44.x",
     "cors": "2.7.x",
+    "eslint": "^4.19.1",
     "express": "4.10.2",
     "socket.io": "1.4.x",
-    "yargs": "4.7.x",
-    "jsonfile":"2.3.x"
+    "yargs": "4.7.x"
   },
   "author": "James Neushul",
   "bugs": {
