@@ -18,7 +18,7 @@
     "socket.io-client": "^2.2.0"
   },
   "dependencies": {
-    "angular": "^1.7.8",
+    "angular": "^1.7.9",
     "body-parser": "^1.19.0",
     "cesium": "^1.58.1",
     "cors": "2.7.x",
