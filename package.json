@@ -15,7 +15,7 @@
   "devDependencies": {
     "compression": "^1.7.4",
     "request": "^2.88.0",
-    "socket.io-client": "^2.2.0"
+    "socket.io-client": "^4.2.1"
     "minimist": ">=1.2.2"
   },
   "dependencies": {
@@ -25,7 +25,7 @@
     "cors": "2.7.x",
     "eslint": "^5.16.0",
     "express": "4.16.0",
-    "socket.io": "^2.2.0",
+    "socket.io": "^4.2.1",
     "yargs": "4.7.x"
   },
   "author": "James Neushul",
