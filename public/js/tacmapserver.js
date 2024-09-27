@@ -15,42 +15,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 /* global Cesium, angular, stctl */
-var databasename = "tacmapDb";
+var databasename = "tacmapPliDb";
 var storestructure = [
     ['Resources', 'id', true, [['url', 'url', true], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
     ['Maps', 'id', true, [['url', 'url', false], ['lastmod', 'lastmod', false], ['data', 'data', false]]],
     ['User', 'id', true, [['data', 'data', false]]]
 ];
-Cesium.BingMapsApi.defaultKey = 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i';
+
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3MTg2YTliMi05YWYzLTQ0MzgtYWRjNS01NjRlOGY4NjgwZGUiLCJpZCI6ODU3Nywic2NvcGVzIjpbImFzciIsImdjIl0sImlhdCI6MTU1MjMyNzk0Mn0.-bqHZmN7eaGyZPP_tSEklGadxL9WTBJLEfiQkd0fFkw';
+var compression = false;
 var viewer = new Cesium.Viewer('cesiumContainer', {
     animation: false,
     timeline: false,
     infoBox: false,
     selectionIndicator: true,
-    baseLayerPicker: false,
+    baseLayerPicker: true,
     navigationHelpButton: false,
     navigationInstructionsInitiallyVisible: false,
-/*    imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-        url: '//services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-    }), */
+    /*  imageryProvider: new Cesium.BingMapsImageryProvider({
+         url: '//dev.virtualearth.net',
+         key: 'AtO-6nT2HLG-BF4IvAbGvEppiYqeW9W4KSemE-7wVH_9GgWnThseKQdwe4-xj-S0',
+         mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
+     }), */
     imageryProvider: new Cesium.BingMapsImageryProvider({
-     url: '//dev.virtualearth.net',
-     key: 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i',
-     mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
-     }),
-    /*imageryProvider: new Cesium.GoogleEarthImageryProvider({
-     url: '//earth.localdomain',
-     channel: 1008
-     }),*/
-    //    imageryProvider: new Cesium.TileMapServiceImageryProvider({
-    //        url: 'Cesium/Assets/Textures/NaturalEarthII'
-    //   }),
-    //OpenStreetMap tile provider
-    /* imageryProvider:Cesium.createOpenStreetMapImageryProvider({
-         url: '../MapTiles'
-     }),*/
+        url: '//dev.virtualearth.net',
+        key: 'Av-awJpLri3lhryWXBPHSNRjL8J6AGncSSvX8VNSlk2ESgesZhwkfCh8a0EX0n1i',
+        mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
+    }),
     homeButton: false,
     geocoder: false
+    /*  imageryProvider: new Cesium.GoogleEarthEnterpriseMapsProvider({
+         url: "https://earth.localdomain"
+     }), */
+    /* imageryProvider: new Cesium.BingMapsImageryProvider({
+        url: '//dev.virtualearth.net',
+        key: 'AtO-6nT2HLG-BF4IvAbGvEppiYqeW9W4KSemE-7wVH_9GgWnThseKQdwe4-xj-S0',
+        mapStyle: Cesium.BingMapsStyle.AERIAL_WITH_LABELS
+    }), */
 });
 var scene = viewer.scene;
 var TacMap = angular.module("TacMap", ["indexedDB"]);
@@ -58,7 +59,7 @@ var msgLog = "views/msgLog.html";
 var mapStore = "views/mapStore.html";
 var userProfile = "views/userProfile.html";
 var mapEntities = "views/mapEntities.html";
-var userdata=[];
+var userdata = [];
 
 TacMap.config(function ($indexedDBProvider) {
     $indexedDBProvider.connection(databasename).upgradeDatabase(1, function (event, db, tx) {

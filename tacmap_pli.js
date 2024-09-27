@@ -14,20 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* global __dirname, require, process */
-(function() {
+(function () {
     "use strict";
     var express = require('express');
     var compression = require('compression');
     var url = require('url');
-    var request = require('request');
+    var request = require('axios');
     var bodyParser = require('body-parser');
     var fs = require('fs');
     var cesium = require('./geoserver/cesiumserver');
     //var http = require('http');
     var cors = require('cors');
-    var https = require('https');
-    var server_port = 8080;
+
+    var server_port = 8181;
     var yargs = require('yargs').options({
         'port': {
             'default': server_port,
@@ -82,7 +81,7 @@
     function filterHeaders(req, headers) {
         var result = {};
         // filter out headers that are listed in the regex above
-        Object.keys(headers).forEach(function(name) {
+        Object.keys(headers).forEach(function (name) {
             if (!dontProxyHeaderRegex.test(name)) {
                 result[name] = headers[name];
             }
@@ -93,18 +92,18 @@
     var upstreamProxy = argv['upstream-proxy'];
     var bypassUpstreamProxyHosts = {};
     if (argv['bypass-upstream-proxy-hosts']) {
-        argv['bypass-upstream-proxy-hosts'].split(',').forEach(function(host) {
+        argv['bypass-upstream-proxy-hosts'].split(',').forEach(function (host) {
             bypassUpstreamProxyHosts[host.toLowerCase()] = true;
         });
     }
-    app.get('/proxy/*', function(req, res, next) {
+    app.get('/proxy/*', function (req, res, next) {
         // look for request like http://localhost:8080/proxy/http://example.com/file?query=1
         var remoteUrl = getRemoteUrlFromParam(req);
         if (!remoteUrl) {
             // look for request like http://localhost:8080/proxy/?http%3A%2F%2Fexample.com%2Ffile%3Fquery%3D1
             remoteUrl = Object.keys(req.query)[0];
             if (remoteUrl) {
-                remoteUrl = url.parse(remoteUrl);
+                remoteUrl = new URL(remoteUrl);
             }
         }
 
@@ -128,7 +127,7 @@
             headers: filterHeaders(req, req.headers),
             encoding: null,
             proxy: proxy
-        }, function(error, response, body) {
+        }, function (error, response, body) {
             var code = 500;
             if (response) {
                 code = response.statusCode;
@@ -139,19 +138,19 @@
         });
     });
     var server_ip_address = '127.0.0.1';
-    var server = app.listen(server_port, argv.public ? undefined : server_ip_address, function() {
+    var server = app.listen(server_port, argv.public ? undefined : server_ip_address, function () {
         if (argv.public) {
             console.log('TacMap development server running publicly.  Connect to http://localhost:%d/', server.address().port);
         } else if (argv.publicssl) {
-            server.key=fs.readFileSync('key.pem');
-            server.cert=fs.readFileSync('cert.pem');
+            server.key = fs.readFileSync('key.pem');
+            server.cert = fs.readFileSync('cert.pem');
             console.log('TacMap development server running publicly.  Connect to https://localhost:%d/', server.address().port);
         }
         else {
             console.log('TacMap development server running locally.  Connect to http://localhost:%d/', server.address().port);
         }
     });
-    server.on('error', function(e) {
+    server.on('error', function (e) {
         if (e.code === 'EADDRINUSE') {
             console.log('Error: Port %d is already in use, select a different port.', argv.port);
             console.log('Example: node server.js --port %d', argv.port + 1);
@@ -165,11 +164,11 @@
         console.log(e);
         process.exit(1);
     });
-    server.on('close', function() {
+    server.on('close', function () {
         console.log('Cesium development server stopped.');
     });
-    process.on('SIGINT', function() {
-        server.close(function() {
+    process.on('SIGINT', function () {
+        server.close(function () {
             process.exit(0);
         });
     });
@@ -178,64 +177,61 @@
      * @param req Request
      * @param res Result
      * **/
-    app.get('/', function(req, res) {
+    app.get('/', function (req, res) {
         res.sendFile(__dirname + '/public/geoview.html');
     });
-    app.get('/node_modules/*', function(req, res) {
+    app.get('/node_modules/*', function (req, res) {
         res.sendFile(__dirname + '/' + req.url);
     });
-    app.get('/json/*', function(req, res) {
+    app.get('/json/*', function (req, res) {
         res.sendFile(__dirname + '/' + req.url);
     });
-    app.post('/json/*', function(req, res) {
+    app.post('/json/*', function (req, res) {
         //console.log(request.body);
-        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function() {
+        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function () {
             res.end();
         });
     });
-    app.put('/json/*', function(req, res) {
+    app.put('/json/*', function (req, res) {
         //console.log(req.body);
-        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function() {
+        fs.writeFile(__dirname + '/public' + req.url, JSON.stringify(req.body), function () {
             res.end();
         });
     });
-    app.get('/xml/*', function(req, res) {
+    app.get('/xml/*', function (req, res) {
         res.sendFile(__dirname + '/' + req.url);
     });
-    app.put('/xml/*', function(req, res) {
+    app.put('/xml/*', function (req, res) {
         console.log("Put " + req.url);
         console.log(req.body);
-        fs.writeFile(__dirname + '/' + req.url, req.body, function() {
+        fs.writeFile(__dirname + '/' + req.url, req.body, function () {
             res.end();
         });
     });
-    app.put('/entity/*', function(req, res) {
-            console.log("Put entity " + req.url);
-            console.log(req.body);
-            fs.writeFile(__dirname + '/public' + req.url, req.body, function() {
-                res.end();
-            });
+    app.put('/entity/*', function (req, res) {
+        console.log("Put entity " + req.url);
+        console.log(req.body);
+        fs.writeFile(__dirname + '/public' + req.url, req.body, function () {
+            res.end();
         });
+    });
 
-    app.post('/msg/*',cors(),function(req,res){
-        var jsonmsg=req.body;
+    app.post('/msg/*', cors(), function (req, res) {
+        var jsonmsg = req.body;
         //console.log(jsonmsg);
-        sio.emit(jsonmsg.scktmsg, {scktid:jsonmsg.sctkid,payload:jsonmsg.payload});
+        sio.emit(jsonmsg.scktmsg, { scktid: jsonmsg.sctkid, payload: jsonmsg.payload });
         res.send(req.body);
     });
 
 
     /** SocketIO Services **/
-    var sio = require('socket.io').listen(server);
+    var sio = require('socket.io')(server);
     sio.serveClient(true);
-    //The following code implements a peer map service that uses SockeIO namespaces
-    //to publish and subscribe to position reporting and other data.
 
-    /** Global SockeIO Connection **/
 
     /** @param topsocket Top level socket connection **/
 
-    sio.of('').on('connection', function(topsocket) {
+    sio.of('').on('connection', function (topsocket) {
         topsocket.emit('connection', {
             message: 'Msg Socket Ready',
             socketid: topsocket.id
@@ -245,17 +241,17 @@
          * @param mapdta {id,netname,mapviewid}
          * @param callback  
          * **/
-        topsocket.on('join namespace', function(ep, callback) {
+        topsocket.on('join namespace', function (ep, callback) {
             console.log("join namespace: " + ep.user_id);
             sio.of('/' + ep.user_id)
-                .once('connection', function(map_socket) {
+                .once('connection', function (map_socket) {
                     console.log('user connected to ' + ep.user_id);
                     socketOps(map_socket);
                 });
             callback(ep);
         });
         /** @param endpoint {id,netname,mapviewid}**/
-        topsocket.on('initial connection', function(endpoint) {
+        topsocket.on('initial connection', function (endpoint) {
             sio.to(endpoint.socketid).emit('load map', endpoint);
         });
 
@@ -267,63 +263,63 @@
 
         // Create a mapview
         /** @param mapdata {user_id,name,data} **/
-        topsocket.on('create map', function(mapdata) {
+        topsocket.on('create map', function (mapdata) {
             console.log('create map');
             sio.of('/' + mapdata.id)
-                .once('connection', function(map_socket) {
+                .once('connection', function (map_socket) {
                     console.log('user connected to ' + mapdata.id);
                     socketOps(map_socket);
                 });
         });
         // Remove a mapview
         /** @param mapdata {id,name,url,data} **/
-        topsocket.on('remove map', function(mapdata) {
+        topsocket.on('remove map', function (mapdata) {
             sio.emit('remove map', mapdata);
         });
         // Update a mapview
         /** @param mapdata {id,name,url,data} **/
-        topsocket.on('update map', function(mapdata) {
+        topsocket.on('update map', function (mapdata) {
             sio.emit('update map', mapdata);
         });
     });
-    var socketOps = function(socket) {
+    var socketOps = function (socket) {
         // Disconnect endpoint.  Remove from all lists
-        socket.once('disconnect', function() {
-            console.log('disconnect ' + socket.id);
-            sio.emit('disconnect', {
+        socket.once('socketDisconnect', function () {
+            console.log('Socket Disconnect ' + socket.id);
+            sio.emit('socketDisconnect', {
                 socketid: socket.id
             });
         });
         // Join a network.
-        socket.on('join network', function(netdata) {
+        socket.on('join network', function (netdata) {
             socket.join(netdata.network_id);
             sio.emit('join net', netdata);
         });
         // Leave a network.
-        socket.on('leave network', function(netdata) {
+        socket.on('leave network', function (netdata) {
             socket.leave(netdata.network_id);
             sio.emit('leave net', netdata);
         });
         // Rename a network.
-        socket.on('update network', function(netdata) {
+        socket.on('update network', function (netdata) {
             sio.emit('update net', netdata);
         });
         // Create a network as a socketIO room
-        socket.on('create network', function(netdata) {
+        socket.on('create network', function (netdata) {
             sio.emit('create net', netdata);
         });
         // Remove a network 
-        socket.on('remove network', function(netdata) {
+        socket.on('remove network', function (netdata) {
             sio.emit('remove net', netdata);
         });
         // Synch Tracks 
-        socket.on('Sync Tracks', function(trackdata) {
+        socket.on('Sync Tracks', function (trackdata) {
             console.log('Sync Tracks');
-            sio.emit('update tracks', {scktid:trackdata.scktid,tracks:trackdata.tracks});
+            sio.emit('update tracks', { scktid: trackdata.scktid, tracks: trackdata.tracks });
         });
         //
         //Publish message to single socketid, or to one or all network
-        socket.on('publish msg', function(msg) {
+        socket.on('publish msg', function (msg) {
             if (typeof msg.data.destination !== 'undefined') {
                 sio.to(msg.data.destination.socketid).emit(msg.scktmsg, msg.data);
             }
